@@ -34,11 +34,6 @@ import java.util.regex.Pattern;
  * @since 0.1
  */
 public final class FileCoordinates implements ArtifactCoordinates {
-    /**
-     * Regex pattern to match {@code <groupId>:<artifactId>:<extension>[:<classifier>]:<version>}.
-     */
-    private static final Pattern PATTERN =
-        Pattern.compile("([^: ]+):([^: ]+)(:([^: ]*)(:([^: ]+))?)?:([^: ]+)");
 
     /**
      * GroupId.
@@ -70,7 +65,7 @@ public final class FileCoordinates implements ArtifactCoordinates {
     private final String extension;
 
     /**
-     * Use factory method.
+     * Use {@link Parser}.
      *
      * @param groupId GroupId
      * @param artifactId ArtifactId
@@ -88,32 +83,6 @@ public final class FileCoordinates implements ArtifactCoordinates {
         this.version = version;
         this.classifier = classifier;
         this.extension = extension;
-    }
-
-    /**
-     * Validates given string.
-     *
-     * @param coords Artifact coords matching {@value #PATTERN}
-     * @return FileCoordinates instance
-     * @throws IllegalArgumentException if coords does not match specified pattern
-     */
-    @SuppressWarnings("PMD.ProhibitPublicStaticMethods")
-    public static FileCoordinates parse(final String coords) {
-        final var matcher = PATTERN.matcher(coords);
-        if (!matcher.matches()) {
-            throw new IllegalArgumentException("Invalid format");
-        }
-        // @checkstyle LocalFinalVariableNameCheck (2 lines)
-        final var groupId = matcher.group(1);
-        // @checkstyle LocalFinalVariableNameCheck (2 lines)
-        final var artifactId = matcher.group(2);
-        final var extension = matcher.group(4);
-        // @checkstyle MagicNumberCheck (1 line)
-        final var classifier = Optional.ofNullable(matcher.group(6))
-            .filter(s -> !s.isBlank())
-            .orElse(null);
-        final var version = matcher.group(7);
-        return new FileCoordinates(groupId, artifactId, version, classifier, extension);
     }
 
     /**
@@ -206,5 +175,45 @@ public final class FileCoordinates implements ArtifactCoordinates {
         return Objects.hash(
             this.groupId, this.artifactId, this.version, this.classifier, this.extension
         );
+    }
+
+    /**
+     * Parses and validates given string.
+     *
+     * @since 0.1
+     */
+    public static class Parser {
+        /**
+         * Regex pattern to match
+         * {@code <groupId>:<artifactId>:<extension>[:<classifier>]:<version>}.
+         */
+        private static final Pattern PATTERN =
+            Pattern.compile("([^: ]+):([^: ]+)(:([^: ]*)(:([^: ]+))?)?:([^: ]+)");
+
+        /**
+         * Validates given string.
+         *
+         * @param coords Artifact coords matching {@value #PATTERN}
+         * @return FileCoordinates instance
+         * @throws IllegalArgumentException if coords does not match specified pattern
+         * @checkstyle NonStaticMethodCheck (2 lines)
+         */
+        public FileCoordinates parse(final String coords) {
+            final var matcher = PATTERN.matcher(coords);
+            if (!matcher.matches()) {
+                throw new IllegalArgumentException("Invalid format");
+            }
+            // @checkstyle LocalFinalVariableNameCheck (2 lines)
+            final var groupId = matcher.group(1);
+            // @checkstyle LocalFinalVariableNameCheck (2 lines)
+            final var artifactId = matcher.group(2);
+            final var extension = matcher.group(4);
+            // @checkstyle MagicNumberCheck (1 line)
+            final var classifier = Optional.ofNullable(matcher.group(6))
+                .filter(s -> !s.isBlank())
+                .orElse(null);
+            final var version = matcher.group(7);
+            return new FileCoordinates(groupId, artifactId, version, classifier, extension);
+        }
     }
 }

@@ -32,19 +32,26 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  * Test class for {@link FileCoordinates}.
- *
  * @since 0.1
  */
 class FileCoordinatesTest {
 
+    /**
+     * Creates test instances.
+     */
+    private static final FileCoordinates.Parser PARSER =
+        new FileCoordinates.Parser();
+
     @Test
     public void testEmptyClassifier() {
-        OptionalAssertions.empty(FileCoordinates.parse("group:artifact:1.0").getClassifier());
+        OptionalAssertions.empty(
+            PARSER.parse("group:artifact:1.0").getClassifier()
+        );
     }
 
     @Test
     public void testPresentClassifier() {
-        final var classifier = FileCoordinates.parse("group:artifact:jar:sources:1.0")
+        final var classifier = PARSER.parse("group:artifact:jar:sources:1.0")
             .getClassifier();
         OptionalAssertions.present(
             classifier,
@@ -58,7 +65,7 @@ class FileCoordinatesTest {
         "'artifact-1.0-sources.jar','org.group:artifact:jar:sources:1.0'"
     })
     public void testGetFileName(final String name, final String coordinates) {
-        final var actual = FileCoordinates.parse(coordinates).getFileName();
+        final var actual = PARSER.parse(coordinates).getFileName();
         Assertions.assertEquals(name, actual);
     }
 
@@ -68,7 +75,7 @@ class FileCoordinatesTest {
         "'org/group/artifact/1.0/artifact-1.0-sources.jar','org.group:artifact:jar:sources:1.0'"
     })
     public void testGetPath(final String path, final String coordinates) {
-        final var actual = FileCoordinates.parse(coordinates).getPath();
+        final var actual = PARSER.parse(coordinates).getPath();
         Assertions.assertEquals(path, actual);
     }
 
