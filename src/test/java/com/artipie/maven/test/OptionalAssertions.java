@@ -32,11 +32,6 @@ import org.junit.jupiter.api.Assertions;
 /**
  * Custom assertions for Optional.
  *
- * @todo #1:30min We added class com.artipie.maven.test.OptionalAssertions,
- *  which contains some utility methods for asserting Optional stuff within our
- *  unit tests. Please, provide some unit tests for this class. It's a tool used in
- *  our tests, which should be tested itself to ensure it works as expected.
- *
  * @since 0.1
  */
 @SuppressWarnings("PMD.ProhibitPublicStaticMethods")
@@ -59,7 +54,7 @@ public final class OptionalAssertions {
                 .orElseGet(() -> "present");
             return String.format("expected empty, actual %s", present);
         };
-        Assertions.assertTrue(optional.isEmpty(), msg);
+        OptionalAssertions.empty(optional, msg);
     }
 
     /**
@@ -68,7 +63,10 @@ public final class OptionalAssertions {
      * @param optional Actual argument
      * @param msg Assertion message supplier
      */
-    public static void empty(final Optional<?> optional, final Supplier<String> msg) {
+    public static void empty(
+        final Optional<?> optional,
+        final Supplier<String> msg
+    ) {
         Assertions.assertTrue(optional.isEmpty(), msg);
     }
 
@@ -79,7 +77,7 @@ public final class OptionalAssertions {
      * @param <T> Present value type
      */
     public static <T> void present(final Optional<T> optional) {
-        present(optional, value -> { });
+        OptionalAssertions.present(optional, value -> { });
     }
 
     /**
@@ -91,7 +89,11 @@ public final class OptionalAssertions {
      */
     public static <T> void present(final Optional<T> optional,
         final Consumer<T> assertion) {
-        present(optional, assertion, () -> "expected present, actual empty");
+        OptionalAssertions.present(
+            optional,
+            assertion,
+            () -> "expected present, actual empty"
+        );
     }
 
     /**
