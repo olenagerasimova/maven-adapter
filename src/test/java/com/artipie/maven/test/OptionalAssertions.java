@@ -32,6 +32,11 @@ import org.junit.jupiter.api.Assertions;
 /**
  * Custom assertions for Optional.
  *
+ * @todo #1:30min We added class com.artipie.maven.test.OptionalAssertions,
+ *  which contains some utility methods for asserting Optional stuff within our
+ *  unit tests. Please, provide some unit tests for this class. It's a tool used in
+ *  our tests, which should be tested itself to ensure it works as expected.
+ *
  * @since 0.1
  */
 @SuppressWarnings("PMD.ProhibitPublicStaticMethods")
