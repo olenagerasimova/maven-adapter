@@ -51,16 +51,6 @@ public final class OptionalAssertions {
     /**
      * Asserts if given Optional is empty.
      *
-     * @param optional Actual argument
-     * @param msg Assertion message supplier
-     */
-    public static void empty(final Optional<?> optional, final Supplier<String> msg) {
-        Assertions.assertTrue(optional.isEmpty(), msg);
-    }
-
-    /**
-     * Asserts if given Optional is empty.
-     *
      * @param optional Test assertion actual argument
      */
     public static void empty(final Optional<?> optional) {
@@ -75,14 +65,33 @@ public final class OptionalAssertions {
     /**
      * Asserts if given Optional is empty.
      *
+     * @param optional Actual argument
+     * @param msg Assertion message supplier
+     */
+    public static void empty(final Optional<?> optional, final Supplier<String> msg) {
+        Assertions.assertTrue(optional.isEmpty(), msg);
+    }
+
+    /**
+     * Asserts if given Optional is empty.
+     *
+     * @param optional Test assertion actual argument
+     * @param <T> Present value type
+     */
+    public static <T> void present(final Optional<T> optional) {
+        present(optional, value -> { });
+    }
+
+    /**
+     * Asserts if given Optional is empty.
+     *
      * @param optional Test assertion actual argument
      * @param assertion Present value assertion
      * @param <T> Present value type
      */
-    public static <T> void present(final Optional<T> optional, final Consumer<T> assertion) {
-        optional.ifPresentOrElse(
-            assertion, () -> Assertions.fail("expected present, actual empty")
-        );
+    public static <T> void present(final Optional<T> optional,
+        final Consumer<T> assertion) {
+        present(optional, assertion, () -> "expected present, actual empty");
     }
 
     /**
