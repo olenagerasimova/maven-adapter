@@ -72,17 +72,17 @@ public final class FileCoordinates implements ArtifactCoordinates {
     /**
      * Use factory method.
      *
-     * @param groupId    GroupId.
-     * @param artifactId ArtifactId.
-     * @param version    Version.
-     * @param classifier Classifier.
-     * @param extension  Extension.
+     * @param groupId GroupId
+     * @param artifactId ArtifactId
+     * @param version Version
+     * @param classifier Classifier
+     * @param extension Extension
      */
     // @checkstyle JavadocLocationCheck (3 lines)
     // @checkstyle ParameterNumberCheck (3 lines)
     // @checkstyle ParameterNameCheck (2 lines)
     private FileCoordinates(final String groupId, final String artifactId, final String version,
-                            final String classifier, final String extension) {
+        final String classifier, final String extension) {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;

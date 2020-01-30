@@ -53,16 +53,20 @@ class FileCoordinatesTest {
     }
 
     @ParameterizedTest
-    @CsvSource( {"'artifact-2.0.jar','org.group:artifact:jar:2.0'",
-        "'artifact-1.0-sources.jar','org.group:artifact:jar:sources:1.0'"})
+    @CsvSource({
+        "'artifact-2.0.jar','org.group:artifact:jar:2.0'",
+        "'artifact-1.0-sources.jar','org.group:artifact:jar:sources:1.0'"
+    })
     public void testGetFileName(final String name, final String coordinates) {
         final var actual = FileCoordinates.parse(coordinates).getFileName();
         Assertions.assertEquals(name, actual);
     }
 
     @ParameterizedTest
-    @CsvSource( {"'org/group/artifact/2.0/artifact-2.0.pom','org.group:artifact:pom:2.0'",
-        "'org/group/artifact/1.0/artifact-1.0-sources.jar','org.group:artifact:jar:sources:1.0'"})
+    @CsvSource({
+        "'org/group/artifact/2.0/artifact-2.0.pom','org.group:artifact:pom:2.0'",
+        "'org/group/artifact/1.0/artifact-1.0-sources.jar','org.group:artifact:jar:sources:1.0'"
+    })
     public void testGetPath(final String path, final String coordinates) {
         final var actual = FileCoordinates.parse(coordinates).getPath();
         Assertions.assertEquals(path, actual);
