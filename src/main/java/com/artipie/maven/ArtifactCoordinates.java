@@ -25,7 +25,7 @@
 package com.artipie.maven;
 
 /**
- * Gradle-style artifact coordinates groupId:artifactId:version.
+ * Artifact coordinates parts split into meaningful parts.
  * All return values should not be null.
  *
  * @since 0.1
