@@ -41,3 +41,5 @@ Scenario:
 3. Generate checksum files (files with extensions md5 and sha1)
 4. Generate (and merge) metadata `maven-metadata-*.xml` which includes appending current version,
 updating release (and latest) refs, lastUpdated properties
+
+API `com.artipie.maven.Repository.upload(String path, InputStream content)`
