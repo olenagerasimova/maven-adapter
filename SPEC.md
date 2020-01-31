@@ -42,6 +42,4 @@ Scenario:
 4. Generate (and merge) metadata `maven-metadata-*.xml` which includes appending current version,
 updating release (and latest) refs, lastUpdated properties
 
-API `com.artipie.maven.Repository.upload(com.artipie.maven.UploadRequest)`
-
-`UploadRequest` includes artifact coordinates and actual file.
+API `com.artipie.maven.Repository.upload(String path, InputStream content)`
