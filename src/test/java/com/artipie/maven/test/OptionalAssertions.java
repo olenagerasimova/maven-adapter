@@ -32,11 +32,6 @@ import org.junit.jupiter.api.Assertions;
 /**
  * Custom assertions for Optional.
  *
- * @todo #1:30min We added class com.artipie.maven.test.OptionalAssertions,
- *  which contains some utility methods for asserting Optional stuff within our
- *  unit tests. Please, provide some unit tests for this class. It's a tool used in
- *  our tests, which should be tested itself to ensure it works as expected.
- *
  * @since 0.1
  */
 @SuppressWarnings("PMD.ProhibitPublicStaticMethods")
@@ -51,16 +46,6 @@ public final class OptionalAssertions {
     /**
      * Asserts if given Optional is empty.
      *
-     * @param optional Actual argument
-     * @param msg Assertion message supplier
-     */
-    public static void empty(final Optional<?> optional, final Supplier<String> msg) {
-        Assertions.assertTrue(optional.isEmpty(), msg);
-    }
-
-    /**
-     * Asserts if given Optional is empty.
-     *
      * @param optional Test assertion actual argument
      */
     public static void empty(final Optional<?> optional) {
@@ -69,7 +54,30 @@ public final class OptionalAssertions {
                 .orElseGet(() -> "present");
             return String.format("expected empty, actual %s", present);
         };
+        OptionalAssertions.empty(optional, msg);
+    }
+
+    /**
+     * Asserts if given Optional is empty.
+     *
+     * @param optional Actual argument
+     * @param msg Assertion message supplier
+     */
+    public static void empty(
+        final Optional<?> optional,
+        final Supplier<String> msg
+    ) {
         Assertions.assertTrue(optional.isEmpty(), msg);
+    }
+
+    /**
+     * Asserts if given Optional is empty.
+     *
+     * @param optional Test assertion actual argument
+     * @param <T> Present value type
+     */
+    public static <T> void present(final Optional<T> optional) {
+        OptionalAssertions.present(optional, value -> { });
     }
 
     /**
@@ -79,9 +87,12 @@ public final class OptionalAssertions {
      * @param assertion Present value assertion
      * @param <T> Present value type
      */
-    public static <T> void present(final Optional<T> optional, final Consumer<T> assertion) {
-        optional.ifPresentOrElse(
-            assertion, () -> Assertions.fail("expected present, actual empty")
+    public static <T> void present(final Optional<T> optional,
+        final Consumer<T> assertion) {
+        OptionalAssertions.present(
+            optional,
+            assertion,
+            () -> "expected present, actual empty"
         );
     }
 
