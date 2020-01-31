@@ -26,99 +26,38 @@ package com.artipie.maven;
 
 /**
  * Artifact file attributes.
- * Contains everything needed to access it later or validate it client-side.
  * @since 0.1
  */
-@SuppressWarnings({"PMD.AvoidFieldNameMatchingMethodName", "PMD.DataClass"})
-public final class ArtifactMetadata {
-    /**
-     * Artifact coordinates.
-     */
-    private final String coordinates;
-
-    /**
-     * Relative /-delimited path to the artifact.
-     */
-    private final String path;
-
-    /**
-     * Binary size.
-     */
-    private final long size;
-
-    /**
-     * MD5 hex-encoded checksum.
-     * @checkstyle MemberNameCheck (2 lines)
-     */
-    private final String md5;
-
-    /**
-     * SHA1 hex-encoded checksum.
-     * @checkstyle MemberNameCheck (2 lines)
-     */
-    private final String sha1;
-
-    /**
-     * All args constructor.
-     * @param coordinates Artifact coordinates
-     * @param path Artifact path
-     * @param size Binary size
-     * @param md5 MD5 checksum
-     * @param sha1 SHA1 checksum
-     * @checkstyle ParameterNameCheck (6 lines)
-     * @checkstyle ParameterNumberCheck (4 lines)
-     */
-    public ArtifactMetadata(
-        final String coordinates, final String path, final long size,
-        final String md5, final String sha1
-    ) {
-        this.coordinates = coordinates;
-        this.path = path;
-        this.size = size;
-        this.md5 = md5;
-        this.sha1 = sha1;
-    }
-
+public interface ArtifactMetadata {
     /**
      * Artifact coordinates.
      * @return Artifact coordinates
      */
-    public String coordinates() {
-        return this.coordinates;
-    }
+    ArtifactCoordinates coordinates();
 
     /**
      * Artifact path.
      * @return Artifact path
      */
-    public String path() {
-        return this.path;
-    }
+    String path();
 
     /**
      * Artifact binary size.
      * @return Artifact binary size
      */
-    public long size() {
-        return this.size;
-    }
+    long size();
 
     /**
      * MD5 hex-encoded checksum.
      * @return MD5 hex-encoded checksum
-     * @checkstyle MethodNameCheck (3 lines)
+     * @checkstyle MethodNameCheck (2 lines)
      */
-    public String md5() {
-        return this.md5;
-    }
+    String md5();
 
     /**
      * SHA1 hex-encoded checksum.
      * @return SHA1 hex-encoded checksum
-     * @checkstyle MethodNameCheck (3 lines)
+     * @checkstyle MethodNameCheck (2 lines)
      */
-    public String sha1() {
-        return this.sha1;
-    }
-
+    String sha1();
 }
