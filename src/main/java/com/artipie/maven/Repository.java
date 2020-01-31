@@ -24,6 +24,8 @@
 
 package com.artipie.maven;
 
+import java.io.InputStream;
+
 /**
  * General abstraction over Maven (remote) repository.
  *
@@ -32,8 +34,9 @@ package com.artipie.maven;
 public interface Repository {
     /**
      * Uploads given artifact.
-     * @param request Uploading artifact
-     * @return Uploaded artifact data
+     * @param path Artifact URI path segment
+     * @param content Artifact binary
+     * @return Artifact metadata
      */
-    UploadResponse upload(UploadRequest request);
+    ArtifactMetadata upload(String path, InputStream content);
 }

@@ -25,12 +25,12 @@
 package com.artipie.maven;
 
 /**
- * Artifact upload response.
- *
+ * Artifact file attributes.
+ * Contains everything needed to access it later or validate it client-side.
  * @since 0.1
  */
-@SuppressWarnings("PMD.DataClass")
-public final class UploadResponse {
+@SuppressWarnings({"PMD.AvoidFieldNameMatchingMethodName", "PMD.DataClass"})
+public final class ArtifactMetadata {
     /**
      * Artifact coordinates.
      */
@@ -65,12 +65,13 @@ public final class UploadResponse {
      * @param size Binary size
      * @param md5 MD5 checksum
      * @param sha1 SHA1 checksum
+     * @checkstyle ParameterNameCheck (6 lines)
+     * @checkstyle ParameterNumberCheck (4 lines)
      */
-    // @checkstyle JavadocLocationCheck (4 lines)
-    // @checkstyle ParameterNameCheck (3 lines)
-    // @checkstyle ParameterNumberCheck (2 lines)
-    public UploadResponse(final String coordinates, final String path,
-        final long size, final String md5, final String sha1) {
+    public ArtifactMetadata(
+        final String coordinates, final String path, final long size,
+        final String md5, final String sha1
+    ) {
         this.coordinates = coordinates;
         this.path = path;
         this.size = size;
@@ -82,7 +83,7 @@ public final class UploadResponse {
      * Artifact coordinates.
      * @return Artifact coordinates
      */
-    public String getCoordinates() {
+    public String coordinates() {
         return this.coordinates;
     }
 
@@ -90,7 +91,7 @@ public final class UploadResponse {
      * Artifact path.
      * @return Artifact path
      */
-    public String getPath() {
+    public String path() {
         return this.path;
     }
 
@@ -98,25 +99,25 @@ public final class UploadResponse {
      * Artifact binary size.
      * @return Artifact binary size
      */
-    public long getSize() {
+    public long size() {
         return this.size;
     }
 
     /**
      * MD5 hex-encoded checksum.
      * @return MD5 hex-encoded checksum
-     * @checkstyle MethodNameCheck (2 lines)
+     * @checkstyle MethodNameCheck (3 lines)
      */
-    public String getMd5() {
+    public String md5() {
         return this.md5;
     }
 
     /**
      * SHA1 hex-encoded checksum.
      * @return SHA1 hex-encoded checksum
-     * @checkstyle MethodNameCheck (2 lines)
+     * @checkstyle MethodNameCheck (3 lines)
      */
-    public String getSha1() {
+    public String sha1() {
         return this.sha1;
     }
 
