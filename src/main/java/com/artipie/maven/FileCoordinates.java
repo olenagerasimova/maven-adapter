@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Identifies a single artifact file split into meaningful parts.
@@ -235,7 +236,8 @@ public final class FileCoordinates implements ArtifactCoordinates {
          * @checkstyle NonStaticMethodCheck (3 lines)
          */
         public FileCoordinates path(final String path) {
-            final String[] split = path.split("/");
+            final String[] split = StringUtils.removeStart(path, "/")
+                .split("/");
             final var version = split[split.length - 2];
             // @checkstyle LocalFinalVariableNameCheck (2 lines)
             final var artifactId = split[split.length - 3];

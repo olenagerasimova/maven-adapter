@@ -106,4 +106,12 @@ class FileCoordinatesTest {
         );
     }
 
+    @Test
+    public void testPathTrailingSlash() {
+        Assertions.assertEquals(
+            PARSER.path("group/name/1.0/name-1.0.jar"),
+            PARSER.path("/group/name/1.0/name-1.0.jar")
+        );
+    }
+
 }
