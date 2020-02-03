@@ -24,9 +24,11 @@
 
 package com.artipie.maven;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * Identifies a single artifact file split into meaningful parts.
@@ -159,7 +161,7 @@ public final class FileCoordinates implements ArtifactCoordinates {
         if (this == obj) {
             return true;
         }
-        if (obj == null || getClass() != obj.getClass()) {
+        if (obj == null || this.getClass() != obj.getClass()) {
             return false;
         }
         final var that = (FileCoordinates) obj;
@@ -215,5 +217,42 @@ public final class FileCoordinates implements ArtifactCoordinates {
             final var version = matcher.group(7);
             return new FileCoordinates(groupId, artifactId, version, classifier, extension);
         }
+
+        /**
+         * Validates given string.
+         *
+         * Given path should follow convention
+         * org/group/artifact/version/artifact-version[-classifier].extension
+         *
+         * It starts parsing by splitting the path by '/' and picking
+         * segments from the end - name, version, artifact and then
+         * recreates groupId
+         *
+         *
+         * @param path URI /-delimited path
+         * @return FileCoordinates instance
+         * @checkstyle MagicNumberCheck (30 lines)
+         * @checkstyle NonStaticMethodCheck (3 lines)
+         */
+        public FileCoordinates path(final String path) {
+            final String[] split = path.split("/");
+            final var version = split[split.length - 2];
+            // @checkstyle LocalFinalVariableNameCheck (2 lines)
+            final var artifactId = split[split.length - 3];
+            // @checkstyle LocalFinalVariableNameCheck (2 lines)
+            final var groupId = String.join(
+                ".",
+                Arrays.copyOfRange(split, 0, split.length - 3)
+            );
+            final var name = split[split.length - 1];
+            final var extension = FilenameUtils.getExtension(name);
+            final var names = FilenameUtils.removeExtension(name).split("-");
+            var classifier = "";
+            if (names.length == 3) {
+                classifier = names[2];
+            }
+            return new FileCoordinates(groupId, artifactId, version, classifier, extension);
+        }
     }
+
 }

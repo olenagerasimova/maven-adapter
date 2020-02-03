@@ -79,4 +79,31 @@ class FileCoordinatesTest {
         Assertions.assertEquals(path, actual);
     }
 
+    @Test
+    public void testPathGeneral() {
+        final var path = PARSER.path("org/group/artifact/2.0/artifact-2.0.pom");
+        Assertions.assertAll(
+            () -> Assertions.assertEquals("org.group", path.getGroupId()),
+            () -> Assertions.assertEquals("artifact", path.getArtifactId()),
+            () -> Assertions.assertEquals("2.0", path.getVersion()),
+            () -> Assertions.assertEquals("pom", path.getExtension()),
+            () -> OptionalAssertions.empty(path.getClassifier())
+        );
+    }
+
+    @Test
+    public void testPathClassifier() {
+        final var path = PARSER.path("group/name/1.0/name-1.0-javadoc.jar");
+        Assertions.assertAll(
+            () -> Assertions.assertEquals("group", path.getGroupId()),
+            () -> Assertions.assertEquals("name", path.getArtifactId()),
+            () -> Assertions.assertEquals("1.0", path.getVersion()),
+            () -> Assertions.assertEquals("jar", path.getExtension()),
+            () -> OptionalAssertions.present(
+                path.getClassifier(),
+                c -> Assertions.assertEquals("javadoc", c)
+            )
+        );
+    }
+
 }
