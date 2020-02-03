@@ -29,11 +29,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * Identifies a single artifact file split into meaningful parts.
- *
  * @since 0.1
  */
 public final class FileCoordinates implements ArtifactCoordinates {
@@ -69,7 +67,6 @@ public final class FileCoordinates implements ArtifactCoordinates {
 
     /**
      * Use {@link Parser}.
-     *
      * @param groupId GroupId
      * @param artifactId ArtifactId
      * @param version Version
@@ -90,7 +87,6 @@ public final class FileCoordinates implements ArtifactCoordinates {
 
     /**
      * Classifier is not mandatory.
-     *
      * @return Optional of a classifier. Its value cannot be blank.
      */
     public Optional<String> getClassifier() {
@@ -149,7 +145,6 @@ public final class FileCoordinates implements ArtifactCoordinates {
 
     /**
      * File extension.
-     *
      * @return File extension
      */
     public String getExtension() {
@@ -182,7 +177,6 @@ public final class FileCoordinates implements ArtifactCoordinates {
 
     /**
      * Parses and validates given string.
-     *
      * @since 0.1
      */
     public static class Parser {
@@ -195,16 +189,18 @@ public final class FileCoordinates implements ArtifactCoordinates {
 
         /**
          * Validates given string.
-         *
          * @param coords Artifact coords matching {@value #PATTERN}
          * @return FileCoordinates instance
          * @throws IllegalArgumentException if coords does not match specified pattern
          * @checkstyle NonStaticMethodCheck (2 lines)
          */
         public FileCoordinates parse(final String coords) {
+            if (coords == null || coords.isBlank()) {
+                throw new IllegalArgumentException("coords should not be blank");
+            }
             final var matcher = PATTERN.matcher(coords);
             if (!matcher.matches()) {
-                throw new IllegalArgumentException("Invalid format");
+                throw new IllegalArgumentException(String.format("Invalid format %s", coords));
             }
             // @checkstyle LocalFinalVariableNameCheck (2 lines)
             final var groupId = matcher.group(1);
@@ -221,23 +217,28 @@ public final class FileCoordinates implements ArtifactCoordinates {
 
         /**
          * Validates given string.
-         *
+         * <p>
          * Given path should follow convention
          * org/group/artifact/version/artifact-version[-classifier].extension
-         *
+         * <p>
          * It starts parsing by splitting the path by '/' and picking
          * segments from the end - name, version, artifact and then
          * recreates groupId
-         *
-         *
          * @param path URI /-delimited path
          * @return FileCoordinates instance
          * @checkstyle MagicNumberCheck (30 lines)
          * @checkstyle NonStaticMethodCheck (3 lines)
          */
         public FileCoordinates path(final String path) {
-            final String[] split = StringUtils.removeStart(path, "/")
-                .split("/");
+            if (path == null || path.isBlank()) {
+                throw new IllegalArgumentException("path should not be blank");
+            }
+            final String[] split = Arrays.stream(path.split("/"))
+                .filter(s -> !s.isBlank())
+                .toArray(String[]::new);
+            if (split.length < 4) {
+                throw new IllegalArgumentException(String.format("Invalid path %s", path));
+            }
             final var version = split[split.length - 2];
             // @checkstyle LocalFinalVariableNameCheck (2 lines)
             final var artifactId = split[split.length - 3];

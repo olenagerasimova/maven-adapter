@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Test class for {@link FileCoordinates}.
@@ -111,6 +112,31 @@ class FileCoordinatesTest {
         Assertions.assertEquals(
             PARSER.path("group/name/1.0/name-1.0.jar"),
             PARSER.path("/group/name/1.0/name-1.0.jar")
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"name/1.0/name-1.0.jar", "name-1.0.jar", "/name-1.0.jar", ""})
+    public void testPathInvalidFormat(final String path) {
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> PARSER.path(path)
+        );
+    }
+
+    @Test
+    public void testPathNull() {
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> PARSER.path("")
+        );
+    }
+
+    @Test
+    public void testParseNull() {
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> PARSER.parse(null)
         );
     }
 
