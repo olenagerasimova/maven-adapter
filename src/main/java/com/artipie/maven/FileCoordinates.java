@@ -257,5 +257,4 @@ public final class FileCoordinates implements ArtifactCoordinates {
             return new FileCoordinates(groupId, artifactId, version, classifier, extension);
         }
     }
-
 }
