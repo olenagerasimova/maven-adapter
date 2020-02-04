@@ -61,7 +61,6 @@ public final class AetherFacade implements ServiceLocator {
 
     /**
      * Initializes {@link ServiceLocator}.
-     *
      * @param local Local repository root
      * @return Pre-configured {@link AetherFacade} instance
      */
