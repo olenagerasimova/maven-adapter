@@ -24,173 +24,120 @@
 
 package com.artipie.maven;
 
-import java.util.Objects;
+import java.util.Arrays;
 import java.util.Optional;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
- * Identifies a single artifact file split into meaningful parts.
+ * Parses and validates given string.
  * @since 0.1
  */
-public final class FileCoordinates implements ArtifactCoordinates {
+public final class FileCoordinates {
+
+    /**
+     * Path parts count.
+     */
+    private static final int PARTS_COUNT = 4;
+
+    /**
+     * Path parts.
+     */
+    private final String[] parts;
+
+    /**
+     * Creates a new instance, validating input string.
+     * @param path An URI path
+     * @throws IllegalArgumentException in case of invalid format
+     */
+    @SuppressWarnings("PMD.ConstructorOnlyInitializesOrCallOtherConstructors")
+    public FileCoordinates(final String path) {
+        if (path == null || path.isBlank()) {
+            throw new IllegalArgumentException("path should not be blank");
+        }
+        this.parts = StringUtils.removeStart(path, "/")
+            .split("/");
+        if (Arrays.stream(this.parts).anyMatch(String::isBlank)) {
+            throw new IllegalArgumentException("path should not contain blank parts");
+        }
+        if (this.parts.length < FileCoordinates.PARTS_COUNT) {
+            throw new IllegalArgumentException(
+                String.format(
+                    "path should contain at least %d slash-delimited parts",
+                    FileCoordinates.PARTS_COUNT
+                )
+            );
+        }
+    }
 
     /**
      * GroupId.
+     * @return Returns groupId part
+     * @checkstyle MagicNumberCheck (5 lines)
      */
-    // @checkstyle JavadocLocationCheck (2 lines)
-    // @checkstyle MemberNameCheck (1 line)
-    private final String groupId;
+    public String groupId() {
+        return String.join(
+            ".",
+            Arrays.copyOfRange(this.parts, 0, this.parts.length - 3)
+        );
+    }
 
     /**
-     * ArtifactId.
+     * Filename.
+     * @return Returns filename part
+     * @checkstyle MagicNumberCheck (3 lines)
      */
-    // @checkstyle JavadocLocationCheck (2 lines)
-    // @checkstyle MemberNameCheck (1 line)
-    private final String artifactId;
+    public String name() {
+        return this.parts[this.parts.length - 1];
+    }
 
     /**
      * Version.
+     * @return Returns version part
+     * @checkstyle MagicNumberCheck (3 lines)
      */
-    private final String version;
-
-    /**
-     * Nullable, usually it's "javadoc" or "sources".
-     */
-    private final String classifier;
-
-    /**
-     * File extension.
-     */
-    private final String extension;
-
-    /**
-     * Use {@link FileCoordinatesParser}.
-     * @param groupId GroupId
-     * @param artifactId ArtifactId
-     * @param version Version
-     * @param classifier Classifier
-     * @param extension Extension
-     */
-    // @checkstyle JavadocLocationCheck (3 lines)
-    // @checkstyle ParameterNumberCheck (3 lines)
-    // @checkstyle ParameterNameCheck (2 lines)
-    private FileCoordinates(final String groupId, final String artifactId, final String version,
-        final String classifier, final String extension) {
-        this.groupId = groupId;
-        this.artifactId = artifactId;
-        this.version = version;
-        this.classifier = classifier;
-        this.extension = extension;
+    public String version() {
+        return this.parts[this.parts.length - 2];
     }
 
     /**
-     * Classifier is not mandatory.
-     * @return Optional of a classifier. Its value cannot be blank.
+     * ArtifactId.
+     * @return Returns artifactId part
+     * @checkstyle MagicNumberCheck (3 lines)
      */
-    public Optional<String> getClassifier() {
-        return Optional.ofNullable(this.classifier)
+    public String artifactId() {
+        return this.parts[this.parts.length - 3];
+    }
+
+    /**
+     * Classifier.
+     * @return Returns classifier part
+     */
+    public String classifier() {
+        final var names = FilenameUtils.removeExtension(this.name())
+            .split("-");
+        var classifier = "";
+        // @checkstyle MagicNumberCheck (3 lines)
+        if (names.length == 3) {
+            classifier = names[2];
+        }
+        return classifier;
+    }
+
+    /**
+     * Classifier as Optional.
+     * @return Returns classifier part as Optional
+     */
+    public Optional<String> tryClassifier() {
+        return Optional.of(this.classifier())
             .filter(s -> !s.isBlank());
     }
 
-    @Override
-    public String toString() {
-        final var tsb = new StringBuilder(this.groupId)
-            .append(':').append(this.artifactId)
-            .append(':').append(this.extension);
-        if (this.classifier != null) {
-            tsb.append(':').append(this.classifier);
-        }
-        tsb.append(':').append(this.version);
-        return tsb.toString();
-    }
-
-    /**
-     * Returns full (local) path identifying the artifact.
-     * @return Relative slash-delimited path
-     */
-    public String getPath() {
-        final var group = this.groupId.replace('.', '/');
-        return String.join("/", group, this.artifactId, this.version, this.getFileName());
-    }
-
-    /**
-     * Returns only file name of {@link #getPath}.
-     * @return File name part
-     */
-    public String getFileName() {
-        final var name = new StringBuilder(this.artifactId)
-            .append("-").append(this.version);
-        this.getClassifier()
-            .ifPresent(s -> name.append("-").append(s));
-        name.append(".").append(this.extension);
-        return name.toString();
-    }
-
-    @Override
-    public String getGroupId() {
-        return this.groupId;
-    }
-
-    @Override
-    public String getArtifactId() {
-        return this.artifactId;
-    }
-
-    @Override
-    public String getVersion() {
-        return this.version;
-    }
-
     /**
      * File extension.
-     * @return File extension
+     * @return Returns file extension part
      */
-    public String getExtension() {
-        return this.extension;
-    }
-
-    @SuppressWarnings("PMD.OnlyOneReturn")
-    @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || this.getClass() != obj.getClass()) {
-            return false;
-        }
-        final var that = (FileCoordinates) obj;
-        return Objects.equals(this.groupId, that.groupId)
-            && Objects.equals(this.artifactId, that.artifactId)
-            && Objects.equals(this.version, that.version)
-            && Objects.equals(this.classifier, that.classifier)
-            && Objects.equals(this.extension, that.extension);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(
-            this.groupId, this.artifactId, this.version, this.classifier, this.extension
-        );
-    }
-
-    /**
-     * Validates given string and creates new {@link FileCoordinates} instance.
-     * <p>
-     * Given path should follow convention
-     * ../group/artifact/version/artifact-version[-classifier].extension
-     * <p>
-     * @param path URI /-delimited path
-     * @return FileCoordinates instance
-     * @checkstyle NonStaticMethodCheck (3 lines)
-     */
-    @SuppressWarnings("PMD.ProhibitPublicStaticMethods")
-    public static FileCoordinates path(final String path) {
-        final var parser = new FileCoordinatesParser(path);
-        return new FileCoordinates(
-            parser.groupId(),
-            parser.artifactId(),
-            parser.version(),
-            parser.classifier(),
-            parser.extension()
-        );
+    public String extension() {
+        return FilenameUtils.getExtension(this.name());
     }
 }

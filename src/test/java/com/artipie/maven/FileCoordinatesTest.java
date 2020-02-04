@@ -24,6 +24,7 @@
 
 package com.artipie.maven;
 
+import com.artipie.maven.test.OptionalAssertions;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,12 +34,12 @@ import org.junit.jupiter.params.provider.ValueSource;
  * Test class for {@link FileCoordinates}.
  * @since 0.1
  */
-class FileCoordinatesParserTest {
+public class FileCoordinatesTest {
 
     /**
      * Happy-path test param.
      */
-    private final FileCoordinatesParser parser = new FileCoordinatesParser(
+    private final FileCoordinates coordinates = new FileCoordinates(
         "org/group/example/1.0/example-1.0-classifier.jar"
     );
 
@@ -47,7 +48,7 @@ class FileCoordinatesParserTest {
     public void testFailing(final String param) {
         Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> new FileCoordinatesParser(param)
+            () -> new FileCoordinates(param)
         );
     }
 
@@ -55,37 +56,36 @@ class FileCoordinatesParserTest {
     public void testNull() {
         Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> new FileCoordinatesParser(null)
+            () -> new FileCoordinates(null)
         );
     }
 
     @Test
     public void testGroupId() throws Exception {
-        Assertions.assertEquals("org.group", this.parser.groupId());
+        Assertions.assertEquals("org.group", this.coordinates.groupId());
     }
 
     @Test
     public void testArtifactId() throws Exception {
-        Assertions.assertEquals("example", this.parser.artifactId());
+        Assertions.assertEquals("example", this.coordinates.artifactId());
     }
 
     @Test
     public void testVersion() throws Exception {
-        Assertions.assertEquals("1.0", this.parser.version());
+        Assertions.assertEquals("1.0", this.coordinates.version());
     }
 
     @Test
     public void testClassifier() throws Exception {
-        Assertions.assertEquals("classifier", this.parser.classifier());
+        Assertions.assertEquals("classifier", this.coordinates.classifier());
     }
 
     @Test
     public void testClassifierEmpty() throws Exception {
-        Assertions.assertEquals(
-            "",
-            new FileCoordinatesParser(
-                "group/example/1.0/example-1.0.jar"
-            ).classifier()
+        OptionalAssertions.empty(
+            new FileCoordinates(
+            "group/example/1.0/example-1.0.jar"
+            ).tryClassifier()
         );
     }
 }
