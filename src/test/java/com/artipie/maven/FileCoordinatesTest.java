@@ -34,7 +34,7 @@ import org.junit.jupiter.params.provider.ValueSource;
  * Test class for {@link FileCoordinates}.
  * @since 0.1
  */
-public class FileCoordinatesTest {
+public final class FileCoordinatesTest {
 
     /**
      * Happy-path test param.
@@ -48,7 +48,7 @@ public class FileCoordinatesTest {
     public void testFailing(final String param) {
         Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> new FileCoordinates(param)
+            () -> new FileCoordinates(param).version()
         );
     }
 
@@ -56,7 +56,7 @@ public class FileCoordinatesTest {
     public void testNull() {
         Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> new FileCoordinates(null)
+            () -> new FileCoordinates(null).version()
         );
     }
 

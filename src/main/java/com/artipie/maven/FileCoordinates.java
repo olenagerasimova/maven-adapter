@@ -26,6 +26,7 @@ package com.artipie.maven;
 
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -43,31 +44,33 @@ public final class FileCoordinates {
     /**
      * Path parts.
      */
-    private final String[] parts;
+    private final Supplier<String[]> splitter;
 
     /**
      * Creates a new instance, validating input string.
      * @param path An URI path
      * @throws IllegalArgumentException in case of invalid format
      */
-    @SuppressWarnings("PMD.ConstructorOnlyInitializesOrCallOtherConstructors")
     public FileCoordinates(final String path) {
-        if (path == null || path.isBlank()) {
-            throw new IllegalArgumentException("path should not be blank");
-        }
-        this.parts = StringUtils.removeStart(path, "/")
-            .split("/");
-        if (Arrays.stream(this.parts).anyMatch(String::isBlank)) {
-            throw new IllegalArgumentException("path should not contain blank parts");
-        }
-        if (this.parts.length < FileCoordinates.PARTS_COUNT) {
-            throw new IllegalArgumentException(
-                String.format(
-                    "path should contain at least %d slash-delimited parts",
-                    FileCoordinates.PARTS_COUNT
-                )
-            );
-        }
+        this.splitter = () -> {
+            if (path == null || path.isBlank()) {
+                throw new IllegalArgumentException("path should not be blank");
+            }
+            final var pts = StringUtils.removeStart(path, "/")
+                .split("/");
+            if (Arrays.stream(pts).anyMatch(String::isBlank)) {
+                throw new IllegalArgumentException("path should not contain blank parts");
+            }
+            if (pts.length < FileCoordinates.PARTS_COUNT) {
+                throw new IllegalArgumentException(
+                    String.format(
+                        "path should contain at least %d slash-delimited parts",
+                        FileCoordinates.PARTS_COUNT
+                    )
+                );
+            }
+            return pts;
+        };
     }
 
     /**
@@ -78,7 +81,7 @@ public final class FileCoordinates {
     public String groupId() {
         return String.join(
             ".",
-            Arrays.copyOfRange(this.parts, 0, this.parts.length - 3)
+            Arrays.copyOfRange(this.splitter.get(), 0, this.splitter.get().length - 3)
         );
     }
 
@@ -88,7 +91,7 @@ public final class FileCoordinates {
      * @checkstyle MagicNumberCheck (3 lines)
      */
     public String name() {
-        return this.parts[this.parts.length - 1];
+        return this.splitter.get()[this.splitter.get().length - 1];
     }
 
     /**
@@ -97,7 +100,7 @@ public final class FileCoordinates {
      * @checkstyle MagicNumberCheck (3 lines)
      */
     public String version() {
-        return this.parts[this.parts.length - 2];
+        return this.splitter.get()[this.splitter.get().length - 2];
     }
 
     /**
@@ -106,7 +109,7 @@ public final class FileCoordinates {
      * @checkstyle MagicNumberCheck (3 lines)
      */
     public String artifactId() {
-        return this.parts[this.parts.length - 3];
+        return this.splitter.get()[this.splitter.get().length - 3];
     }
 
     /**
