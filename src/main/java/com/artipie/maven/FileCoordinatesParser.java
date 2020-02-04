@@ -37,7 +37,7 @@ final class FileCoordinatesParser {
     /**
      * Path parts count.
      */
-    private static final int N_PARTS = 4;
+    private static final int PARTS_COUNT = 4;
 
     /**
      * Path parts.
@@ -59,11 +59,11 @@ final class FileCoordinatesParser {
         if (Arrays.stream(this.parts).anyMatch(String::isBlank)) {
             throw new IllegalArgumentException("path should not contain blank parts");
         }
-        if (this.parts.length < FileCoordinatesParser.N_PARTS) {
+        if (this.parts.length < FileCoordinatesParser.PARTS_COUNT) {
             throw new IllegalArgumentException(
                 String.format(
                     "path should contain at least %d slash-delimited parts",
-                    FileCoordinatesParser.N_PARTS
+                    FileCoordinatesParser.PARTS_COUNT
                 )
             );
         }
