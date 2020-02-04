@@ -184,7 +184,7 @@ public final class FileCoordinates implements ArtifactCoordinates {
      */
     @SuppressWarnings("PMD.ProhibitPublicStaticMethods")
     public static FileCoordinates path(final String path) {
-        final var parser = FileCoordinatesParser.splitting(path);
+        final var parser = new FileCoordinatesParser(path);
         return new FileCoordinates(
             parser.groupId(),
             parser.artifactId(),

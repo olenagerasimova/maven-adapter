@@ -38,7 +38,7 @@ class FileCoordinatesParserTest {
     /**
      * Happy-path test param.
      */
-    private final FileCoordinatesParser parser = FileCoordinatesParser.splitting(
+    private final FileCoordinatesParser parser = new FileCoordinatesParser(
         "org/group/example/1.0/example-1.0-classifier.jar"
     );
 
@@ -47,7 +47,7 @@ class FileCoordinatesParserTest {
     public void testFailing(final String param) {
         Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> FileCoordinatesParser.splitting(param)
+            () -> new FileCoordinatesParser(param)
         );
     }
 
@@ -55,7 +55,7 @@ class FileCoordinatesParserTest {
     public void testNull() {
         Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> FileCoordinatesParser.splitting(null)
+            () -> new FileCoordinatesParser(null)
         );
     }
 
@@ -83,7 +83,7 @@ class FileCoordinatesParserTest {
     public void testClassifierEmpty() throws Exception {
         Assertions.assertEquals(
             "",
-            FileCoordinatesParser.splitting(
+            new FileCoordinatesParser(
                 "group/example/1.0/example-1.0.jar"
             ).classifier()
         );

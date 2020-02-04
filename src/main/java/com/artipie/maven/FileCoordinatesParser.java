@@ -45,31 +45,21 @@ final class FileCoordinatesParser {
     private final String[] parts;
 
     /**
-     * All args constructor.
-     * @param parts Path parts
-     */
-    @SuppressWarnings("PMD.UseVarargs")
-    private FileCoordinatesParser(final String[] parts) {
-        this.parts = Arrays.copyOf(parts, parts.length);
-    }
-
-    /**
      * Creates a new instance, validating input string.
      * @param path An URI path
-     * @return A new instance
      * @throws IllegalArgumentException in case of invalid format
      */
-    @SuppressWarnings("PMD.ProhibitPublicStaticMethods")
-    public static FileCoordinatesParser splitting(final String path) {
+    @SuppressWarnings("PMD.ConstructorOnlyInitializesOrCallOtherConstructors")
+    FileCoordinatesParser(final String path) {
         if (path == null || path.isBlank()) {
             throw new IllegalArgumentException("path should not be blank");
         }
-        final String[] parts = StringUtils.removeStart(path, "/")
+        this.parts = StringUtils.removeStart(path, "/")
             .split("/");
-        if (Arrays.stream(parts).anyMatch(String::isBlank)) {
+        if (Arrays.stream(this.parts).anyMatch(String::isBlank)) {
             throw new IllegalArgumentException("path should not contain blank parts");
         }
-        if (parts.length < FileCoordinatesParser.N_PARTS) {
+        if (this.parts.length < FileCoordinatesParser.N_PARTS) {
             throw new IllegalArgumentException(
                 String.format(
                     "path should contain at least %d slash-delimited parts",
@@ -77,7 +67,6 @@ final class FileCoordinatesParser {
                 )
             );
         }
-        return new FileCoordinatesParser(Arrays.copyOf(parts, parts.length));
     }
 
     /**
