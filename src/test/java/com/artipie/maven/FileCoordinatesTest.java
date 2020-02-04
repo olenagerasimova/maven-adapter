@@ -28,55 +28,64 @@ import com.artipie.maven.test.OptionalAssertions;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Test class for {@link FileCoordinates}.
  * @since 0.1
  */
-class FileCoordinatesTest {
+public final class FileCoordinatesTest {
 
     /**
-     * Creates test instances.
+     * Happy-path test param.
      */
-    private static final FileCoordinates.Parser PARSER =
-        new FileCoordinates.Parser();
+    private final FileCoordinates coordinates = new FileCoordinates(
+        "org/group/example/1.0/example-1.0-classifier.jar"
+    );
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "org", "version/file.jar", "group/version/file.jar"})
+    public void testFailing(final String param) {
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> new FileCoordinates(param).version()
+        );
+    }
 
     @Test
-    public void testEmptyClassifier() {
+    public void testNull() {
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> new FileCoordinates(null).version()
+        );
+    }
+
+    @Test
+    public void testGroupId() throws Exception {
+        Assertions.assertEquals("org.group", this.coordinates.groupId());
+    }
+
+    @Test
+    public void testArtifactId() throws Exception {
+        Assertions.assertEquals("example", this.coordinates.artifactId());
+    }
+
+    @Test
+    public void testVersion() throws Exception {
+        Assertions.assertEquals("1.0", this.coordinates.version());
+    }
+
+    @Test
+    public void testClassifier() throws Exception {
+        Assertions.assertEquals("classifier", this.coordinates.classifier());
+    }
+
+    @Test
+    public void testClassifierEmpty() throws Exception {
         OptionalAssertions.empty(
-            PARSER.parse("group:artifact:1.0").getClassifier()
+            new FileCoordinates(
+            "group/example/1.0/example-1.0.jar"
+            ).tryClassifier()
         );
     }
-
-    @Test
-    public void testPresentClassifier() {
-        final var classifier = PARSER.parse("group:artifact:jar:sources:1.0")
-            .getClassifier();
-        OptionalAssertions.present(
-            classifier,
-            s -> Assertions.assertEquals("sources", s)
-        );
-    }
-
-    @ParameterizedTest
-    @CsvSource({
-        "'artifact-2.0.jar','org.group:artifact:jar:2.0'",
-        "'artifact-1.0-sources.jar','org.group:artifact:jar:sources:1.0'"
-    })
-    public void testGetFileName(final String name, final String coordinates) {
-        final var actual = PARSER.parse(coordinates).getFileName();
-        Assertions.assertEquals(name, actual);
-    }
-
-    @ParameterizedTest
-    @CsvSource({
-        "'org/group/artifact/2.0/artifact-2.0.pom','org.group:artifact:pom:2.0'",
-        "'org/group/artifact/1.0/artifact-1.0-sources.jar','org.group:artifact:jar:sources:1.0'"
-    })
-    public void testGetPath(final String path, final String coordinates) {
-        final var actual = PARSER.parse(coordinates).getPath();
-        Assertions.assertEquals(path, actual);
-    }
-
 }
