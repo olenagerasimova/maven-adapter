@@ -45,7 +45,7 @@ import org.apache.commons.io.output.NullOutputStream;
 public final class ChecksumAttribute {
 
     /**
-     * A file to calculate checksums for.
+     * File to calculate checksums for.
      */
     private final Path path;
 
