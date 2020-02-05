@@ -47,6 +47,7 @@ public enum ChecksumType {
      * MD5 algorithm.
      */
     MD5,
+
     /**
      * SHA1 algorithm.
      */
