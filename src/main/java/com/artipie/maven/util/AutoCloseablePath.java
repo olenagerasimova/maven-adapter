@@ -25,7 +25,6 @@
 package com.artipie.maven.util;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,7 +36,8 @@ import org.slf4j.LoggerFactory;
  * Adapts {@link Path} to {@link AutoCloseable} interface, quietly deleting on close.
  * @since 0.1
  */
-public final class AutoCloseablePath implements DelegatingPathSupport, AutoCloseable {
+public final class AutoCloseablePath implements AutoCloseable {
+
     /**
      * Class logger.
      */
@@ -65,42 +65,20 @@ public final class AutoCloseablePath implements DelegatingPathSupport, AutoClose
         }
     }
 
-    @Override
-    public Path delegate() {
+    /**
+     * Returns internal Path instance.
+     * @return Path instance
+     */
+    public Path unwrap() {
         return this.path;
-    }
-
-    /**
-     * A convenient helper method for {@link Files#size(Path)}.
-     * @return File size
-     */
-    public long size() {
-        try {
-            return Files.size(this.path);
-        } catch (final IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-    }
-
-    /**
-     * A convenient helper method for
-     * {@link Files#copy(java.io.InputStream, java.nio.file.Path, java.nio.file.CopyOption...)}.
-     * @param payload InputStream to read from
-     * @return Bytes written
-     */
-    public long copyFrom(final InputStream payload) {
-        try {
-            return Files.copy(payload, this.path);
-        } catch (final IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
     }
 
     /**
      * Encapsulates parent directory logic to not to expose it as a raw {@link Path}.
      * @since 0.1
      */
-    public static class Root {
+    public static class Parent {
+
         /**
          * Root directory.
          */
@@ -110,7 +88,7 @@ public final class AutoCloseablePath implements DelegatingPathSupport, AutoClose
          * All args constructor.
          * @param dir Root directory
          */
-        public Root(final Path dir) {
+        public Parent(final Path dir) {
             this.dir = dir;
         }
 
@@ -122,8 +100,9 @@ public final class AutoCloseablePath implements DelegatingPathSupport, AutoClose
          */
         public AutoCloseablePath resolve(final Path path) {
             try {
-                Files.createDirectories(path.getParent());
-                return new AutoCloseablePath(this.dir.resolve(path));
+                final var file = this.dir.resolve(path);
+                Files.createDirectories(file.getParent());
+                return new AutoCloseablePath(file);
             } catch (final IOException ex) {
                 throw new UncheckedIOException(ex);
             }
