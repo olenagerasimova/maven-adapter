@@ -24,22 +24,18 @@
 
 package com.artipie.maven;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
-import java.util.Comparator;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.slf4j.LoggerFactory;
 
 /**
  * Tests for {@link ChecksumAttribute}.
@@ -55,6 +51,7 @@ public final class ChecksumAttributeTest {
     /**
      * Temporary directory.
      */
+    @TempDir
     private Path temp;
 
     @ParameterizedTest
@@ -78,39 +75,17 @@ public final class ChecksumAttributeTest {
     @EnumSource(ChecksumType.class)
     public void testReadHex(final ChecksumType type) throws Exception {
         final var path = this.random();
-        Assertions.assertEquals(
-            Hex.encodeHexString(
-                DigestUtils.digest(
-                    MessageDigest.getInstance(type.algorithm()),
-                    Files.newInputStream(path)
-                )
-            ),
-            new ChecksumAttribute(path)
-                .readHex(type)
-        );
-    }
-
-    @BeforeEach
-    public void createTemp() throws Exception {
-        this.temp = Files.createTempDirectory("junit");
-        Files.createDirectories(this.temp);
-    }
-
-    @AfterEach
-    public void cleanup() throws Exception {
-        Files.walk(this.temp).sorted(
-            Comparator.<Path, Boolean>comparing(Files::isDirectory, Boolean::compare)
-                .thenComparing(Comparator.comparingInt(Path::getNameCount).reversed())
-        ).forEachOrdered(
-            path -> {
-                try {
-                    LoggerFactory.getLogger(ChecksumAttributeTest.class).debug("deleting {}", path);
-                    Files.deleteIfExists(path);
-                } catch (final IOException ex) {
-                    LoggerFactory.getLogger(ChecksumAttributeTest.class).warn("on cleanup", ex);
-                }
-            }
-        );
+        try(var stream = Files.newInputStream(path)) {
+            Assertions.assertEquals(
+                Hex.encodeHexString(
+                    DigestUtils.digest(
+                        MessageDigest.getInstance(type.algorithm()),
+                        stream
+                    )
+                ),
+                new ChecksumAttribute(path).readHex(type)
+            );
+        }
     }
 
     private Path random() throws Exception {
