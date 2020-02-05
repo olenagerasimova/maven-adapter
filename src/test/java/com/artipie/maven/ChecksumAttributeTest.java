@@ -36,7 +36,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.slf4j.LoggerFactory;
@@ -52,13 +52,10 @@ public final class ChecksumAttributeTest {
      */
     private static final int ARRAY_LENGTH = 8192;
 
-    // @checkstyle VisibilityModifierCheck (6 lines)
-
     /**
      * Temporary directory.
      */
-    @TempDir
-    Path temp;
+    private Path temp;
 
     @ParameterizedTest
     @EnumSource(ChecksumType.class)
@@ -91,6 +88,12 @@ public final class ChecksumAttributeTest {
             new ChecksumAttribute(path)
                 .readHex(type)
         );
+    }
+
+    @BeforeEach
+    public void createTemp() throws Exception {
+        this.temp = Files.createTempDirectory("junit");
+        Files.createDirectories(this.temp);
     }
 
     @AfterEach
