@@ -120,7 +120,7 @@ public final class AutoCloseablePath implements DelegatingPathSupport, AutoClose
          * @param path A child path.
          * @return AutoCloseablePath instance
          */
-        public Path resolve(final Path path) {
+        public AutoCloseablePath resolve(final Path path) {
             try {
                 Files.createDirectories(path.getParent());
                 return new AutoCloseablePath(this.dir.resolve(path));
@@ -134,7 +134,7 @@ public final class AutoCloseablePath implements DelegatingPathSupport, AutoClose
          * @param path Path as a string
          * @return AutoCloseablePath instance
          */
-        public Path resolve(final String path) {
+        public AutoCloseablePath resolve(final String path) {
             return this.resolve(Paths.get(path));
         }
     }
