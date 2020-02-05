@@ -39,6 +39,7 @@ import org.eclipse.aether.spi.locator.ServiceLocator;
  * @since 0.1
  */
 public final class AetherFacade implements ServiceLocator {
+
     /**
      * Actual ServiceLocator.
      */
@@ -47,32 +48,19 @@ public final class AetherFacade implements ServiceLocator {
     /**
      * Local repository root.
      */
-    private final LocalRepository local;
+    private final LocalRepository repository;
 
     /**
-     * All args constructor.
-     * @param services ServiceLocator instance
-     * @param local Local repository instance
+     * All args constructor initializing ServiceLocator.
+     * @param repository Local repository instance
      */
-    private AetherFacade(final ServiceLocator services, final LocalRepository local) {
-        this.delegate = services;
-        this.local = local;
-    }
-
-    /**
-     * Initializes {@link ServiceLocator}.
-     * @param local Local repository root
-     * @return Pre-configured {@link AetherFacade} instance
-     */
-    @SuppressWarnings("PMD.ProhibitPublicStaticMethods")
-    public static AetherFacade create(final LocalRepository local) {
-        return new AetherFacade(
-            MavenRepositorySystemUtils.newServiceLocator().setService(
+    public AetherFacade(final LocalRepository repository) {
+        this.repository = repository;
+        this.delegate = MavenRepositorySystemUtils.newServiceLocator()
+            .setService(
                 RepositoryConnectorFactory.class,
                 BasicRepositoryConnectorFactory.class
-            ),
-            local
-        );
+            );
     }
 
     /**
@@ -84,12 +72,12 @@ public final class AetherFacade implements ServiceLocator {
             final var session = MavenRepositorySystemUtils.newSession();
             session.setLocalRepositoryManager(
                 this.getService(LocalRepositoryManagerFactory.class)
-                    .newInstance(session, this.local)
+                    .newInstance(session, this.repository)
             );
             return session;
         } catch (final NoLocalRepositoryManagerException ex) {
             throw new IllegalStateException(
-                String.format("with local repository ", this.local.getBasedir()),
+                String.format("with local repository %s", this.repository.getBasedir()),
                 ex
             );
         }
