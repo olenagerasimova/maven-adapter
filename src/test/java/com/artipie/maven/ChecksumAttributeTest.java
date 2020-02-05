@@ -48,11 +48,12 @@ public final class ChecksumAttributeTest {
      */
     private static final int ARRAY_LENGTH = 8192;
 
+    // @checkstyle VisibilityModifierCheck (5 lines)
     /**
      * Temporary directory.
      */
     @TempDir
-    private Path temp;
+    Path temp;
 
     @ParameterizedTest
     @EnumSource(ChecksumType.class)
@@ -75,7 +76,7 @@ public final class ChecksumAttributeTest {
     @EnumSource(ChecksumType.class)
     public void testReadHex(final ChecksumType type) throws Exception {
         final var path = this.random();
-        try(var stream = Files.newInputStream(path)) {
+        try (var stream = Files.newInputStream(path)) {
             Assertions.assertEquals(
                 Hex.encodeHexString(
                     DigestUtils.digest(
