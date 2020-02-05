@@ -25,8 +25,11 @@
 package com.artipie.maven.util;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,6 +62,83 @@ public final class AutoCloseablePath implements AutoCloseable {
             Files.deleteIfExists(this.path);
         } catch (final IOException ex) {
             LOG.warn(String.format("with %s", this.path), ex);
+        }
+    }
+
+    /**
+     * Actual path.
+     * @return Actual path
+     */
+    public Path unwrap() {
+        return this.path;
+    }
+
+    /**
+     * A convenient helper method for {@link Files#size(Path)}.
+     * @return File size
+     */
+    public long size() {
+        try {
+            return Files.size(this.path);
+        } catch (final IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    /**
+     * A convenient helper method for
+     * {@link Files#copy(java.io.InputStream, java.nio.file.Path, java.nio.file.CopyOption...)}.
+     * @param payload InputStream to read from
+     * @return Bytes written
+     */
+    public long copyFrom(final InputStream payload) {
+        try {
+            return Files.copy(payload, this.path);
+        } catch (final IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    /**
+     * Encapsulates parent directory logic to not to expose it as a raw {@link Path}.
+     * @since 0.1
+     */
+    public static class Root {
+        /**
+         * Root directory.
+         */
+        private final Path dir;
+
+        /**
+         * All args constructor.
+         * @param dir Root directory
+         */
+        public Root(final Path dir) {
+            this.dir = dir;
+        }
+
+        /**
+         * Resolves given path (if it's relative path) as a child of the root.
+         * Creates parent directories if needed
+         * @param path A child path.
+         * @return AutoCloseablePath instance
+         */
+        public AutoCloseablePath resolve(final Path path) {
+            try {
+                Files.createDirectories(path.getParent());
+                return new AutoCloseablePath(this.dir.resolve(path));
+            } catch (final IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+
+        /**
+         * Resolves given path (if it's relative path) as a child of the root.
+         * @param path Path as a string
+         * @return AutoCloseablePath instance
+         */
+        public AutoCloseablePath resolve(final String path) {
+            return this.resolve(Paths.get(path));
         }
     }
 }
