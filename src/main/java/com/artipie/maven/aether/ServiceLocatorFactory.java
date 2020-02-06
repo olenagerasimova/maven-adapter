@@ -24,34 +24,30 @@
 
 package com.artipie.maven.aether;
 
-import org.eclipse.aether.repository.LocalRepository;
+import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
+import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.eclipse.aether.spi.locator.ServiceLocator;
 
 /**
- * Test for {@link AetherFacade}.
+ * Creates {@link ServiceLocator} instances, as it is not thread-safe by design.
+ * Basically a wrapper over {@link MavenRepositorySystemUtils}.
+ * Also it helps wiring services with different lifecycles -
+ * it propagates natural singletons inside one-shot instances.
  * @since 0.1
  */
-public final class AetherFacadeTest {
+public final class ServiceLocatorFactory {
 
-    @Test
-    void testNewSession() {
-        Assertions.assertNotNull(
-            new AetherFacade(new LocalRepository(""))
-                .newSession()
-                .getLocalRepositoryManager()
-        );
-    }
-
-    @ParameterizedTest
-    @ValueSource(classes = {RepositoryConnectorFactory.class})
-    void testServices(final Class<?> service) {
-        Assertions.assertNotNull(
-            new AetherFacade(new LocalRepository(""))
-                .getService(service)
-        );
+    /**
+     * Creates {@link ServiceLocator} instance.
+     * @return A ServiceLocator instance
+     * @checkstyle NonStaticMethodCheck (2 lines) Introduce class fields in following pull requests
+     */
+    public ServiceLocator serviceLocator() {
+        return MavenRepositorySystemUtils.newServiceLocator()
+            .setService(
+                RepositoryConnectorFactory.class,
+                BasicRepositoryConnectorFactory.class
+            );
     }
 }

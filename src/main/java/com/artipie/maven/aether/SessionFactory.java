@@ -24,26 +24,18 @@
 
 package com.artipie.maven.aether;
 
-import java.util.List;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.NoLocalRepositoryManagerException;
-import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.localrepo.LocalRepositoryManagerFactory;
 import org.eclipse.aether.spi.locator.ServiceLocator;
 
 /**
- * Wraps {@link ServiceLocator} and hides its boilerplate.
+ * Configures {@link RepositorySystemSession}.
  * @since 0.1
  */
-public final class AetherFacade implements ServiceLocator {
-
-    /**
-     * Actual ServiceLocator.
-     */
-    private final ServiceLocator delegate;
+public class SessionFactory {
 
     /**
      * Local repository root.
@@ -51,27 +43,29 @@ public final class AetherFacade implements ServiceLocator {
     private final LocalRepository repository;
 
     /**
-     * All args constructor initializing ServiceLocator.
-     * @param repository Local repository instance
+     * Maven service locator.
      */
-    public AetherFacade(final LocalRepository repository) {
+    private final ServiceLocator services;
+
+    /**
+     * All args constructor.
+     * @param repository Local repository root
+     * @param services Maven service locator
+     */
+    public SessionFactory(final LocalRepository repository, final ServiceLocator services) {
         this.repository = repository;
-        this.delegate = MavenRepositorySystemUtils.newServiceLocator()
-            .setService(
-                RepositoryConnectorFactory.class,
-                BasicRepositoryConnectorFactory.class
-            );
+        this.services = services;
     }
 
     /**
      * Hides {@link RepositorySystemSession} boilerplate.
-     * @return A pre-configured instance
+     * @return A RepositorySystemSession instance
      */
     public RepositorySystemSession newSession() {
         try {
             final var session = MavenRepositorySystemUtils.newSession();
             session.setLocalRepositoryManager(
-                this.getService(LocalRepositoryManagerFactory.class)
+                this.services.getService(LocalRepositoryManagerFactory.class)
                     .newInstance(session, this.repository)
             );
             return session;
@@ -81,15 +75,5 @@ public final class AetherFacade implements ServiceLocator {
                 ex
             );
         }
-    }
-
-    @Override
-    public <T> T getService(final Class<T> type) {
-        return this.delegate.getService(type);
-    }
-
-    @Override
-    public <T> List<T> getServices(final Class<T> type) {
-        return this.delegate.getServices(type);
     }
 }
