@@ -25,7 +25,6 @@
 package com.artipie.maven;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -60,8 +59,10 @@ public final class ChecksumAttribute {
     /**
      * Calculates checksums and writes them to corresponding files.
      * @return Map of HEX-encoded checksums per algorithms
+     * @throws IOException File reading failed
+     * @throws NoSuchAlgorithmException Invalid {@link ChecksumType}
      */
-    public Map<ChecksumType, String> write() {
+    public Map<ChecksumType, String> write() throws IOException, NoSuchAlgorithmException {
         final Map<ChecksumType, String> map = new EnumMap<>(ChecksumType.class);
         for (final ChecksumType type : ChecksumType.values()) {
             map.put(type, this.write(type));
@@ -73,20 +74,18 @@ public final class ChecksumAttribute {
      * Calculates checksum for a given type and writes it to a corresponding file.
      * @param type Checksum type
      * @return Map of HEX-encoded checksums per algorithms
+     * @throws IOException File reading failed
+     * @throws NoSuchAlgorithmException Invalid {@link ChecksumType}
      */
-    public String write(final ChecksumType type) {
-        try {
-            final var hex = this.readHex(type);
-            Files.writeString(
-                this.resolveName(type),
-                hex,
-                StandardOpenOption.TRUNCATE_EXISTING,
-                StandardOpenOption.CREATE
-            );
-            return hex;
-        } catch (final IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+    public String write(final ChecksumType type) throws IOException, NoSuchAlgorithmException {
+        final var hex = this.readHex(type);
+        Files.writeString(
+            this.resolveName(type),
+            hex,
+            StandardOpenOption.TRUNCATE_EXISTING,
+            StandardOpenOption.CREATE
+        );
+        return hex;
     }
 
     /**
@@ -108,16 +107,14 @@ public final class ChecksumAttribute {
      * Calculates a checksum for a path.
      * @param type Checksum algorithm
      * @return HEX-encoded checksum
+     * @throws IOException File reading failed
+     * @throws NoSuchAlgorithmException Invalid {@link ChecksumType}
      */
-    public String readHex(final ChecksumType type) {
+    public String readHex(final ChecksumType type) throws IOException, NoSuchAlgorithmException {
         try (var read = Files.newInputStream(this.path)) {
             final var digest = MessageDigest.getInstance(type.algorithm());
             read.transferTo(new DigestOutputStream(new NullOutputStream(), digest));
             return Hex.encodeHexString(digest.digest());
-        } catch (final IOException ex) {
-            throw new UncheckedIOException(ex);
-        } catch (final NoSuchAlgorithmException ex) {
-            throw new IllegalStateException(ex);
         }
     }
 }
