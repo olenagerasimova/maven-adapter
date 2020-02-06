@@ -94,7 +94,7 @@ public final class ChecksumAttribute {
      * @param type Checksum algorithm
      * @return Checksum file path
      */
-    Path resolveName(final ChecksumType type) {
+    public Path resolveName(final ChecksumType type) {
         return this.path.resolveSibling(
             String.format(
                 "%s.%s",
@@ -109,7 +109,7 @@ public final class ChecksumAttribute {
      * @param type Checksum algorithm
      * @return HEX-encoded checksum
      */
-    String readHex(final ChecksumType type) {
+    public String readHex(final ChecksumType type) {
         try (var read = Files.newInputStream(this.path)) {
             final var digest = MessageDigest.getInstance(type.algorithm());
             read.transferTo(new DigestOutputStream(new NullOutputStream(), digest));
