@@ -25,7 +25,6 @@
 package com.artipie.maven.util;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -90,23 +89,21 @@ public final class AutoCloseablePath implements AutoCloseable {
          * Creates parent directories if needed
          * @param path A child path.
          * @return AutoCloseablePath instance
+         * @throws IOException Failed to create parent directories
          */
-        public AutoCloseablePath resolve(final Path path) {
-            try {
-                final var file = this.dir.resolve(path);
-                Files.createDirectories(file.getParent());
-                return new AutoCloseablePath(file);
-            } catch (final IOException ex) {
-                throw new UncheckedIOException(ex);
-            }
+        public AutoCloseablePath resolve(final Path path) throws IOException {
+            final var file = this.dir.resolve(path);
+            Files.createDirectories(file.getParent());
+            return new AutoCloseablePath(file);
         }
 
         /**
          * Resolves given path (if it's relative path) as a child of the root.
          * @param path Path as a string
          * @return AutoCloseablePath instance
+         * @throws IOException Failed to create parent directories
          */
-        public AutoCloseablePath resolve(final String path) {
+        public AutoCloseablePath resolve(final String path) throws IOException {
             return this.resolve(Paths.get(path));
         }
     }

@@ -67,7 +67,7 @@ public final class AutoCloseablePathTest {
     }
 
     @Test
-    public void testParentResolveChild() {
+    public void testParentResolveChild() throws Exception {
         final Path parent = this.temp.resolve("parent");
         Assertions.assertTrue(
             new AutoCloseablePath.Parent(parent)
