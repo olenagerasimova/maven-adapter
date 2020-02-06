@@ -29,19 +29,12 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Adapts {@link Path} to {@link AutoCloseable} interface, quietly deleting on close.
  * @since 0.1
  */
 public final class AutoCloseablePath implements AutoCloseable {
-
-    /**
-     * Class logger.
-     */
-    private static final Logger LOG = LoggerFactory.getLogger(AutoCloseablePath.class);
 
     /**
      * Actual path.
@@ -61,7 +54,7 @@ public final class AutoCloseablePath implements AutoCloseable {
         try {
             Files.deleteIfExists(this.path);
         } catch (final IOException ex) {
-            LOG.warn(String.format("with %s", this.path), ex);
+            throw new FileCleanupException(ex);
         }
     }
 
@@ -117,4 +110,5 @@ public final class AutoCloseablePath implements AutoCloseable {
             return this.resolve(Paths.get(path));
         }
     }
+
 }

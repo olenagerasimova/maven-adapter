@@ -55,6 +55,18 @@ public final class AutoCloseablePathTest {
     }
 
     @Test
+    public void shouldThrowOnClose() throws Exception {
+        final var dir = this.temp.resolve("directory");
+        Files.createDirectories(dir);
+        Assumptions.assumeTrue(Files.isDirectory(dir));
+        Files.write(dir.resolve("anyfile.bin"), new byte[0]);
+        Assertions.assertThrows(
+            FileCleanupException.class,
+            () -> new AutoCloseablePath(dir).close()
+        );
+    }
+
+    @Test
     public void testParentResolveChild() {
         final Path parent = this.temp.resolve("parent");
         Assertions.assertTrue(
