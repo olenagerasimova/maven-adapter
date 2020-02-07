@@ -24,32 +24,42 @@
 
 package com.artipie.maven.aether;
 
-import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
-import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
-import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
-import org.eclipse.aether.spi.locator.ServiceLocator;
+import java.nio.file.Path;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
 
 /**
- * Creates {@link ServiceLocator} instances, as it is not thread-safe by design.
- * Basically a wrapper over {@link MavenRepositorySystemUtils}.
- * Also it helps wiring services with different lifecycles -
- * it propagates natural singletons inside one-shot instances.
+ * Resolves Maven artifacts in local repository.
  * @since 0.1
+ * @todo #10:30min LocalResolver unit test
  */
-public final class ServiceLocatorFactory {
+public final class LocalResolver {
 
     /**
-     * Creates {@link ServiceLocator} instance.
-     * @return A ServiceLocator instance
-     * @todo #10:30min Inject a LocalRepository into a ServiceLocator
-     * @todo #10:30min Create a ServiceLocator impl class that validates retrievable services
-     * @checkstyle NonStaticMethodCheck (2 lines) Introduce class fields in following pull requests
+     * Ongoing {@link org.eclipse.aether.RepositorySystem} session.
      */
-    public ServiceLocator serviceLocator() {
-        return MavenRepositorySystemUtils.newServiceLocator()
-            .setService(
-                RepositoryConnectorFactory.class,
-                BasicRepositoryConnectorFactory.class
-            );
+    private final RepositorySystemSession session;
+
+    /**
+     * All args constructor.
+     * @param session Ongoing session
+     */
+    public LocalResolver(final RepositorySystemSession session) {
+        this.session = session;
+    }
+
+    /**
+     * Resolves a given artifact in local repository.
+     * @param artifact The artifact to find.
+     * @return Path to the artifact.
+     */
+    public Path resolve(final Artifact artifact) {
+        final var lrm = this.session.getLocalRepositoryManager();
+        if (lrm == null) {
+            throw new IllegalStateException("LocalRepositoryManager should not be null");
+        }
+        return lrm.getRepository().getBasedir().toPath().resolve(
+            lrm.getPathForLocalArtifact(artifact)
+        );
     }
 }

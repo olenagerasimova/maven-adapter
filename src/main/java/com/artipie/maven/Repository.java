@@ -37,6 +37,7 @@ public interface Repository {
      * @param path Artifact URI path segment
      * @param content Artifact binary
      * @return Artifact metadata
+     * @throws Exception Uploading failed
      */
-    ArtifactMetadata upload(String path, InputStream content);
+    ArtifactMetadata upload(String path, InputStream content) throws Exception;
 }
