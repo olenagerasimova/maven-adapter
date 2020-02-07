@@ -36,17 +36,17 @@ public interface ArtifactCoordinates {
      *
      * @return Maven artifact groupId
      */
-    String getGroupId();
+    String groupId();
 
     /**
      * Maven artifactId.
      * @return Maven artifactId
      */
-    String getArtifactId();
+    String artifactId();
 
     /**
      * Maven artifact version.
      * @return Maven artifact version
      */
-    String getVersion();
+    String version();
 }

@@ -34,7 +34,7 @@ import org.apache.commons.lang3.StringUtils;
  * Parses and validates given string.
  * @since 0.1
  */
-public final class FileCoordinates {
+public final class FileCoordinates implements ArtifactCoordinates {
 
     /**
      * Path parts count.
@@ -71,6 +71,26 @@ public final class FileCoordinates {
             }
             return pts;
         };
+    }
+
+    /**
+     * Builds colon-delimited Gradle-style line.
+     * groupId:artifactId:extension[:classifier]:version.
+     * @return Artifact coordinates
+     * @todo #10:30min Implement FileCoordinates coords() method and test it
+     */
+    public String coords() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Rebuilds back the original path string.
+     * groupId/artifactId/version/name
+     * @return Original path string
+     * @todo #10:30min Implement FileCoordinates coords() method and test it
+     */
+    public String path() {
+        throw new UnsupportedOperationException();
     }
 
     /**
