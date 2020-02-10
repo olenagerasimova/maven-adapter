@@ -32,7 +32,7 @@ import org.eclipse.aether.artifact.Artifact;
  * Resolves Maven artifacts in local repository.
  * @since 0.1
  * @todo #10:30min LocalResolver unit test.
- * The class was covered by test to split the original pull request.
+ *  The class was covered by test to split the original pull request.
  */
 public final class LocalArtifactResolver {
 

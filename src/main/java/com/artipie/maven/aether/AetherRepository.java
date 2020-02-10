@@ -52,9 +52,9 @@ import org.slf4j.LoggerFactory;
  * Maven library implementation for {@link Repository}.
  * @since 0.1
  * @todo #10:30min AetherRepository unit test.
- * The implementation of the class is ongoing work.
- * We should resolve other TODOs before coding AetherRepository unit test
- * as AetherRepository is top-level class.
+ *  The implementation of the class is ongoing work.
+ *  We should resolve other TODOs before coding AetherRepository unit test
+ *  as AetherRepository is top-level class.
  */
 public final class AetherRepository implements Repository {
 
