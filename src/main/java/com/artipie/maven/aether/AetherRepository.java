@@ -35,8 +35,11 @@ import com.artipie.maven.util.FileCleanupException;
 import com.google.common.collect.Iterables;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.deployment.DeployRequest;
 import org.eclipse.aether.deployment.DeployResult;
@@ -48,7 +51,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Maven library implementation for {@link Repository}.
  * @since 0.1
- * @todo #10:1h AetherRepository unit test
+ * @todo #10:30min AetherRepository unit test.
+ * The implementation of the class is ongoing work.
+ * We should resolve other TODOs before coding AetherRepository unit test
+ * as AetherRepository is top-level class.
  */
 public final class AetherRepository implements Repository {
 
@@ -70,22 +76,22 @@ public final class AetherRepository implements Repository {
     /**
      * Staging files root.
      */
-    private final AutoCloseablePath.Parent parent;
+    private final AutoCloseablePath.Parent dir;
 
     /**
      * All args constructor.
      * @param locators Creates ServiceLocator instances
      * @param repository Local repository
-     * @param parent Staging files root
+     * @param dir Staging files root
      */
     public AetherRepository(
         final ServiceLocatorFactory locators,
         final LocalRepository repository,
-        final AutoCloseablePath.Parent parent
+        final AutoCloseablePath.Parent dir
     ) {
         this.locators = locators;
         this.repository = repository;
-        this.parent = parent;
+        this.dir = dir;
     }
 
     @Override
@@ -93,14 +99,14 @@ public final class AetherRepository implements Repository {
         final var coords = new FileCoordinates(path);
         final var locator = this.locators.serviceLocator();
         final var session = new SessionFactory(this.repository, locator).newSession();
-        final var deployed = Iterables.getOnlyElement(
+        final Artifact deployed = Iterables.getOnlyElement(
             new Deployer(locator, session)
                 .deploy(path, content)
                 .getArtifacts()
         );
-        final var file = new LocalResolver(session)
+        final Path file = new LocalArtifactResolver(session)
             .resolve(deployed);
-        final var checksums = new ChecksumAttribute(file)
+        final Map<ChecksumType, String> checksums = new ChecksumAttribute(file)
             .write();
         return new DetachedMetadata(
             coords,
@@ -149,7 +155,7 @@ public final class AetherRepository implements Repository {
                 throw new IllegalStateException("RepositorySystem cannot be null");
             }
             DeployResult result = null;
-            try (var staging = AetherRepository.this.parent.resolve(path)) {
+            try (var staging = AetherRepository.this.dir.resolve(path)) {
                 try (var file = Files.newOutputStream(staging.unwrap())) {
                     content.transferTo(file);
                 }

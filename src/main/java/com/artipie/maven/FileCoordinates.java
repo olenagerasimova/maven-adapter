@@ -77,20 +77,22 @@ public final class FileCoordinates implements ArtifactCoordinates {
      * Builds colon-delimited Gradle-style line.
      * groupId:artifactId:extension[:classifier]:version.
      * @return Artifact coordinates
-     * @todo #10:30min Implement FileCoordinates coords() method and test it
+     * @todo #10:30min Implement FileCoordinates coords() method and test it.
+     *  The method was not implemented to split the original pull request.
      */
     public String coords() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("coords() WIP");
     }
 
     /**
      * Rebuilds back the original path string.
      * groupId/artifactId/version/name
      * @return Original path string
-     * @todo #10:30min Implement FileCoordinates coords() method and test it
+     * @todo #10:30min Implement FileCoordinates coords() method and test it.
+     *  The method was not implemented to split the original pull request.
      */
     public String path() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("path() WIP");
     }
 
     /**

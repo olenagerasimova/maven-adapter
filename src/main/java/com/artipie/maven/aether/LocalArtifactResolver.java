@@ -31,9 +31,10 @@ import org.eclipse.aether.artifact.Artifact;
 /**
  * Resolves Maven artifacts in local repository.
  * @since 0.1
- * @todo #10:30min LocalResolver unit test
+ * @todo #10:30min LocalResolver unit test.
+ * The class was covered by test to split the original pull request.
  */
-public final class LocalResolver {
+public final class LocalArtifactResolver {
 
     /**
      * Ongoing {@link org.eclipse.aether.RepositorySystem} session.
@@ -44,7 +45,7 @@ public final class LocalResolver {
      * All args constructor.
      * @param session Ongoing session
      */
-    public LocalResolver(final RepositorySystemSession session) {
+    public LocalArtifactResolver(final RepositorySystemSession session) {
         this.session = session;
     }
 
