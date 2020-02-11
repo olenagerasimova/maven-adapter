@@ -22,31 +22,45 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven;
+package com.artipie.maven.aether;
+
+import java.nio.file.Path;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
 
 /**
- * Artifact coordinates parts split into meaningful parts.
- * All return values should not be null.
- *
+ * Resolves Maven artifacts in local repository.
  * @since 0.1
+ * @todo #10:30min LocalResolver unit test.
+ *  The class was covered by test to split the original pull request.
  */
-public interface ArtifactCoordinates {
-    /**
-     * Maven artifact groupId.
-     *
-     * @return Maven artifact groupId
-     */
-    String groupId();
+public final class LocalArtifactResolver {
 
     /**
-     * Maven artifactId.
-     * @return Maven artifactId
+     * Ongoing {@link org.eclipse.aether.RepositorySystem} session.
      */
-    String artifactId();
+    private final RepositorySystemSession session;
 
     /**
-     * Maven artifact version.
-     * @return Maven artifact version
+     * All args constructor.
+     * @param session Ongoing session
      */
-    String version();
+    public LocalArtifactResolver(final RepositorySystemSession session) {
+        this.session = session;
+    }
+
+    /**
+     * Resolves a given artifact in local repository.
+     * @param artifact The artifact to find.
+     * @return Path to the artifact.
+     */
+    public Path resolve(final Artifact artifact) {
+        final var lrm = this.session.getLocalRepositoryManager();
+        if (lrm == null) {
+            throw new IllegalStateException("LocalRepositoryManager should not be null");
+        }
+        return lrm.getRepository().getBasedir().toPath().resolve(
+            lrm.getPathForLocalArtifact(artifact)
+        );
+    }
 }
