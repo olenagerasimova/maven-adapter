@@ -28,6 +28,7 @@ import com.artipie.maven.test.OptionalAssertions;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /**
@@ -84,8 +85,26 @@ public final class FileCoordinatesTest {
     public void testClassifierEmpty() throws Exception {
         OptionalAssertions.empty(
             new FileCoordinates(
-            "group/example/1.0/example-1.0.jar"
+                "group/example/1.0/example-1.0.jar"
             ).tryClassifier()
         );
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "'org.group:example:jar:classifier:1.0','org/group/example/1.0/example-1.0-classifier.jar'",
+        "'group:example:pom:1.0','group/example/1.0/example-1.0.pom'"
+    })
+    public void testCoords(final String coords, final String path) throws Exception {
+        Assertions.assertEquals(coords, new FileCoordinates(path).coords());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "org/group/example/2.0/example-2.0-classifier.jar",
+        "group/example/2.0/example-2.0.pom"
+    })
+    public void testPath(final String path) throws Exception {
+        Assertions.assertEquals(path, new FileCoordinates(path).path());
     }
 }
