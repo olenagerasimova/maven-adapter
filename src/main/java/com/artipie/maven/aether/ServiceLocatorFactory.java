@@ -44,16 +44,15 @@ public final class ServiceLocatorFactory {
      * @todo #10:30min Inject a LocalRepository into a ServiceLocator.
      *  Current design made ServiceLocatorFactory and LocalRepository coupled together.
      *  We can retrieve a LocalRepository directly from the ServiceLocator
-     * @todo #10:30min Create a ServiceLocator impl class that validates retrievable services.
-     *  {@link ServiceLocator#getService} returns null if the service was not found.
-     *  In most cases you actually need to throw an exception.
      * @checkstyle NonStaticMethodCheck (2 lines) Introduce class fields in following pull requests
      */
-    public ServiceLocator serviceLocator() {
-        return MavenRepositorySystemUtils.newServiceLocator()
-            .setService(
-                RepositoryConnectorFactory.class,
-                BasicRepositoryConnectorFactory.class
-            );
+    public ValidatingServiceLocator serviceLocator() {
+        return new ValidatingServiceLocator(
+            MavenRepositorySystemUtils.newServiceLocator()
+                .setService(
+                    RepositoryConnectorFactory.class,
+                    BasicRepositoryConnectorFactory.class
+                )
+        );
     }
 }
