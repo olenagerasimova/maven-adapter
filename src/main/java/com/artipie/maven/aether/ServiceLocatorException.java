@@ -32,7 +32,8 @@ package com.artipie.maven.aether;
 public class ServiceLocatorException extends IllegalStateException {
 
     /**
-     * Hardcodes the message.
+     * Constructs a new exception instance with no cause.
+     * Internally it builds its detail message incorporating given service type.
      * @param service Service type
      */
     public ServiceLocatorException(final Class<?> service) {
@@ -40,7 +41,8 @@ public class ServiceLocatorException extends IllegalStateException {
     }
 
     /**
-     * Hardcodes the message.
+     * Constructs a new exception instance.
+     * Internally it builds its detail message incorporating given service type.
      * @param service Service type
      * @param cause The exception cause
      */
