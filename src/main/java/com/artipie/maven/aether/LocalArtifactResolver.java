@@ -31,8 +31,6 @@ import org.eclipse.aether.artifact.Artifact;
 /**
  * Resolves Maven artifacts in local repository.
  * @since 0.1
- * @todo #10:30min LocalResolver unit test.
- *  The class was covered by test to split the original pull request.
  */
 public final class LocalArtifactResolver {
 
@@ -55,6 +53,9 @@ public final class LocalArtifactResolver {
      * @return Path to the artifact.
      */
     public Path resolve(final Artifact artifact) {
+        if (artifact == null) {
+            throw new IllegalArgumentException("artifact should not be null");
+        }
         final var lrm = this.session.getLocalRepositoryManager();
         if (lrm == null) {
             throw new IllegalStateException("LocalRepositoryManager should not be null");
