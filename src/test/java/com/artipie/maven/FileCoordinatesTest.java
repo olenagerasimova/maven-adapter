@@ -97,8 +97,9 @@ public final class FileCoordinatesTest {
         "'org.group:example:jar:classifier:1.0','org/group/example/1.0/example-1.0-classifier.jar'",
         "'group:example:pom:1.0','group/example/1.0/example-1.0.pom'"
     })
-    public void testCoords(final String coords, final String path) throws Exception {
+    public void shouldReturnCoords(final String coords, final String path) throws Exception {
         MatcherAssert.assertThat(
+            "FileCoordinates#coords() should return a valid coords string",
             new FileCoordinates(path).coords(),
             new IsEqual<>(coords)
         );
@@ -109,8 +110,9 @@ public final class FileCoordinatesTest {
         "org/group/example/2.0/example-2.0-classifier.jar",
         "group/example/2.0/example-2.0.pom"
     })
-    public void testPath(final String path) throws Exception {
+    public void shouldReturnPath(final String path) throws Exception {
         MatcherAssert.assertThat(
+            "FileCoordinates#path() should return an original path string",
             new FileCoordinates(path).path(),
             new IsEqual<>(path)
         );
