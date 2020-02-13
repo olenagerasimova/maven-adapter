@@ -25,6 +25,8 @@
 package com.artipie.maven;
 
 import com.artipie.maven.test.OptionalAssertions;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -96,7 +98,10 @@ public final class FileCoordinatesTest {
         "'group:example:pom:1.0','group/example/1.0/example-1.0.pom'"
     })
     public void testCoords(final String coords, final String path) throws Exception {
-        Assertions.assertEquals(coords, new FileCoordinates(path).coords());
+        MatcherAssert.assertThat(
+            new FileCoordinates(path).coords(),
+            CoreMatchers.is(coords)
+        );
     }
 
     @ParameterizedTest
@@ -105,6 +110,9 @@ public final class FileCoordinatesTest {
         "group/example/2.0/example-2.0.pom"
     })
     public void testPath(final String path) throws Exception {
-        Assertions.assertEquals(path, new FileCoordinates(path).path());
+        MatcherAssert.assertThat(
+            new FileCoordinates(path).path(),
+            CoreMatchers.is(path)
+        );
     }
 }
