@@ -24,32 +24,45 @@
 
 package com.artipie.maven.aether;
 
+import com.artipie.asto.blocking.BlockingStorage;
+import com.artipie.asto.fs.FileStorage;
+import java.nio.file.Path;
+import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.spi.connector.transport.Transporter;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.IsNot;
+import org.hamcrest.core.IsNull;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
- * A marker exception indicating that given resource does not exist.
- * Maven relies on exceptions to handle this logic.
- * May be thrown in {@link Transporter#peek(org.eclipse.aether.spi.connector.transport.PeekTask)}
- * And be classified in {@link Transporter#classify(java.lang.Throwable)}
- * as {@link Transporter#ERROR_NOT_FOUND}
+ * Tests for {@link AstoTransporterFactory}.
  * @since 0.1
  */
-public class ResourceNotFoundException extends RuntimeException {
+public final class AstoTransporterFactoryTest {
 
     /**
-     * Super constructor.
-     * @param message Detail message
+     * Test temporary directory.
+     * By JUnit annotation contract it should not be private
+     * @checkstyle VisibilityModifierCheck (3 lines)
      */
-    public ResourceNotFoundException(final String message) {
-        super(message);
-    }
+    @TempDir Path temp;
 
-    /**
-     * Super constructor.
-     * @param message Detail message
-     * @param cause Exception cause
-     */
-    public ResourceNotFoundException(final String message, final Throwable cause) {
-        super(message, cause);
+    @Test
+    void shouldReturnInstance() throws Exception {
+        final Transporter transporter = new AstoTransporterFactory(
+            new BlockingStorage(new FileStorage(this.temp))
+        )
+            .newInstance(
+                MavenRepositorySystemUtils.newSession(),
+                new RemoteRepository.Builder("test", "default", "asto://test")
+                .build()
+            );
+        MatcherAssert.assertThat(
+            "Transporter should be created",
+            transporter,
+            new IsNot<>(new IsNull<>())
+        );
     }
 }

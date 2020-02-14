@@ -71,7 +71,11 @@ public final class AstoTransporterTest {
     public void implPeekShouldThrow() throws Exception {
         Assertions.assertThrows(
             ResourceNotFoundException.class,
-            () -> this.transporter.implPeek(new PeekTask(URI.create(UUID.randomUUID().toString())))
+            () -> this.transporter.implPeek(
+                new PeekTask(
+                    URI.create(this.randomString())
+                )
+            )
         );
     }
 

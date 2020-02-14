@@ -64,8 +64,15 @@ public final class AstoTransporter extends AbstractTransporter {
 
     @Override
     public void implPeek(final PeekTask task) throws Exception {
-        if (!this.asto.exists(new TaskKey(task).key())) {
-            throw new ResourceNotFoundException(task.getLocation().toString());
+        final Key key = new TaskKey(task).key();
+        if (!this.asto.exists(key)) {
+            throw new ResourceNotFoundException(
+                String.format(
+                    "Resource does not exist in Asto: key %s and location %s",
+                    key,
+                    task.getLocation()
+                )
+            );
         }
     }
 
