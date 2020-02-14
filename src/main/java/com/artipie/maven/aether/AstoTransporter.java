@@ -64,20 +64,12 @@ public final class AstoTransporter extends AbstractTransporter {
 
     @Override
     public void implPeek(final PeekTask task) throws Exception {
-        final Key key = new TaskKey(task).key();
-        if (!this.asto.exists(key)) {
-            throw new ResourceNotFoundException(
-                String.format(
-                    "Resource does not exist in Asto: key %s and location %s",
-                    key,
-                    task.getLocation()
-                )
-            );
-        }
+        this.exists(task);
     }
 
     @Override
     public void implGet(final GetTask task) throws Exception {
+        this.exists(task);
         try (var write = task.newOutputStream()) {
             IOUtils.write(this.asto.value(new TaskKey(task).key()), write);
         }
@@ -93,6 +85,24 @@ public final class AstoTransporter extends AbstractTransporter {
     @Override
     public void implClose() {
         // noop
+    }
+
+    /**
+     * Checks if task resource exists.
+     * @param task TransportTask
+     * @throws ResourceNotFoundException if task resource does not exist
+     */
+    private void exists(final TransportTask task) {
+        final Key key = new TaskKey(task).key();
+        if (!this.asto.exists(key)) {
+            throw new ResourceNotFoundException(
+                String.format(
+                    "Resource does not exist in Asto: key %s and location %s",
+                    key,
+                    task.getLocation()
+                )
+            );
+        }
     }
 
     /**

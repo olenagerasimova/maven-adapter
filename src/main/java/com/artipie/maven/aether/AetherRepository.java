@@ -36,14 +36,15 @@ import com.google.common.collect.Iterables;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.deployment.DeployRequest;
 import org.eclipse.aether.deployment.DeployResult;
+import org.eclipse.aether.installation.InstallRequest;
 import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.spi.locator.ServiceLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,10 +52,6 @@ import org.slf4j.LoggerFactory;
 /**
  * Maven library implementation for {@link Repository}.
  * @since 0.1
- * @todo #10:30min AetherRepository unit test.
- *  The implementation of the class is ongoing work.
- *  We should resolve other TODOs before coding AetherRepository unit test
- *  as AetherRepository is top-level class.
  */
 public final class AetherRepository implements Repository {
 
@@ -106,14 +103,13 @@ public final class AetherRepository implements Repository {
         );
         final Path file = new LocalArtifactResolver(session)
             .resolve(deployed);
-        final Map<ChecksumType, String> checksums = new ChecksumAttribute(file)
-            .write();
+        final var checksums = new ChecksumAttribute(file);
         return new DetachedMetadata(
             coords,
             path,
             Files.size(file),
-            checksums.get(ChecksumType.MD5),
-            checksums.get(ChecksumType.SHA1)
+            checksums.readHex(ChecksumType.MD5),
+            checksums.readHex(ChecksumType.SHA1)
         );
     }
 
@@ -122,6 +118,7 @@ public final class AetherRepository implements Repository {
      * @since 0.1
      */
     private final class Deployer {
+
         /**
          * ServiceLocator instance.
          */
@@ -159,15 +156,24 @@ public final class AetherRepository implements Repository {
                 try (var file = Files.newOutputStream(staging.unwrap())) {
                     content.transferTo(file);
                 }
+                final var artifact = new DefaultArtifact(
+                    new FileCoordinates(path).coords()
+                )
+                    .setFile(
+                        staging.unwrap().toFile()
+                    );
+                repositories.install(this.session, new InstallRequest().addArtifact(artifact));
                 result = repositories.deploy(
                     this.session,
                     new DeployRequest()
-                        .addArtifact(
-                            new DefaultArtifact(
-                                new FileCoordinates(path).coords()
-                            ).setFile(
-                                staging.unwrap().toFile()
+                        .addArtifact(artifact)
+                        .setRepository(
+                            new RemoteRepository.Builder(
+                                "asto",
+                                "default",
+                                "asto://storage/maven-adapter"
                             )
+                                .build()
                         )
                 );
             } catch (final FileCleanupException ex) {
