@@ -124,8 +124,7 @@ public final class AetherRepository implements Repository {
                     this.remotes.downloading(path),
                     null
                 )
-        ))
-            .subscribeOn(Schedulers.io())
+        )).subscribeOn(Schedulers.io())
             .map(artifact -> artifact.getArtifact().getFile().toPath())
             .map(RxFile::new)
             .flatMapPublisher(RxFile::flow)
