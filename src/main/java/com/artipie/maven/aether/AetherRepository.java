@@ -24,6 +24,7 @@
 
 package com.artipie.maven.aether;
 
+import com.artipie.asto.fs.RxFile;
 import com.artipie.maven.ArtifactMetadata;
 import com.artipie.maven.ChecksumAttribute;
 import com.artipie.maven.ChecksumType;
@@ -33,10 +34,14 @@ import com.artipie.maven.Repository;
 import com.artipie.maven.util.AutoCloseablePath;
 import com.artipie.maven.util.FileCleanupException;
 import com.google.common.collect.Iterables;
+import io.reactivex.Single;
+import io.reactivex.schedulers.Schedulers;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.concurrent.Flow;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
@@ -44,7 +49,9 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.deployment.DeployRequest;
 import org.eclipse.aether.deployment.DeployResult;
 import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.spi.locator.ServiceLocator;
+import org.reactivestreams.FlowAdapters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +62,7 @@ import org.slf4j.LoggerFactory;
  *  The implementation of the class is ongoing work.
  *  We should resolve other TODOs before coding AetherRepository unit test
  *  as AetherRepository is top-level class.
+ * @checkstyle ClassDataAbstractionCouplingCheck (200 lines)
  */
 public final class AetherRepository implements Repository {
 
@@ -79,19 +87,49 @@ public final class AetherRepository implements Repository {
     private final AutoCloseablePath.Parent dir;
 
     /**
+     * Remote repositories to handle artifacts.
+     */
+    private final RemoteRepositories remotes;
+
+    /**
      * All args constructor.
      * @param locators Creates ServiceLocator instances
      * @param repository Local repository
      * @param dir Staging files root
+     * @param remotes Remote repositories to handle artifacts
+     * @checkstyle ParameterNumberCheck (6 lines)
      */
     public AetherRepository(
         final ServiceLocatorFactory locators,
         final LocalRepository repository,
-        final AutoCloseablePath.Parent dir
-    ) {
+        final AutoCloseablePath.Parent dir,
+        final RemoteRepositories remotes) {
         this.locators = locators;
         this.repository = repository;
         this.dir = dir;
+        this.remotes = remotes;
+    }
+
+    @Override
+    public Flow.Publisher<ByteBuffer> download(final String path) {
+        final var coords = new FileCoordinates(path);
+        final var locator = this.locators.serviceLocator();
+        final var session = new SessionFactory(this.repository, locator).newSession();
+        final var repositories = locator.getService(RepositorySystem.class);
+        return Single.fromCallable(
+            () -> repositories.resolveArtifact(
+                session,
+                new ArtifactRequest(
+                    new DefaultArtifact(coords.coords()),
+                    this.remotes.downloading(path),
+                    null
+                )
+        ))
+            .subscribeOn(Schedulers.io())
+            .map(artifact -> artifact.getArtifact().getFile().toPath())
+            .map(RxFile::new)
+            .flatMapPublisher(RxFile::flow)
+            .to(FlowAdapters::toFlowPublisher);
     }
 
     @Override

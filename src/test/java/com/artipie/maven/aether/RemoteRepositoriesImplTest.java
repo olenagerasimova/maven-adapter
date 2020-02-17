@@ -22,32 +22,35 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven;
+package com.artipie.maven.aether;
 
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.util.concurrent.Flow;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.collection.IsEmptyCollection;
+import org.hamcrest.core.IsNot;
+import org.hamcrest.core.IsNull;
+import org.junit.jupiter.api.Test;
 
 /**
- * General abstraction over Maven (remote) repository.
- *
+ * Tests for {@link RemoteRepositoriesImpl}.
  * @since 0.1
  */
-public interface Repository {
+public final class RemoteRepositoriesImplTest {
 
-    /**
-     * Downloads given artifact.
-     * @param path Artifact URI path
-     * @return File payload
-     */
-    Flow.Publisher<ByteBuffer> download(String path);
+    @Test
+    public void shouldReturnOnUploading() {
+        MatcherAssert.assertThat(
+            "should return value on uploading",
+            new RemoteRepositoriesImpl().uploading(""),
+            new IsNot<>(new IsNull<>())
+        );
+    }
 
-    /**
-     * Uploads given artifact.
-     * @param path Artifact URI path segment
-     * @param content Artifact binary
-     * @return Artifact metadata
-     * @throws Exception Uploading failed
-     */
-    ArtifactMetadata upload(String path, InputStream content) throws Exception;
+    @Test
+    public void shouldReturnOnDownloading() {
+        MatcherAssert.assertThat(
+            "should return value on downloading",
+            new RemoteRepositoriesImpl().downloading(""),
+            new IsNot<>(new IsEmptyCollection<>())
+        );
+    }
 }
