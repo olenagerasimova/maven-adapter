@@ -76,20 +76,32 @@ public final class AetherRepositoryTest {
     }
 
     @Test
-    public void shouldUpload() throws Exception {
-        final var path = "org/example/artifact/1.0/artifact-1.0.jar";
-        final var bytes = new byte[0];
-        final var artifact = this.repository.upload(path, new ByteArrayInputStream(bytes));
+    public void shouldStoreArtifact() throws Exception {
+        final var path = "example/artifact/1.0/artifact-1.0.jar";
+        this.repository.upload(path, new ByteArrayInputStream(new byte[0]));
         MatcherAssert.assertThat(
             "should create the file in Asto",
             this.asto.exists(new Key.From(path)),
             new IsEqual<>(true)
         );
+    }
+
+    @Test
+    public void shouldMatchChecksums() throws Exception {
+        final var path = "example/artifact/1.0/artifact-1.0.pom";
+        final var bytes = new byte[0];
+        final var artifact = this.repository.upload(path, new ByteArrayInputStream(bytes));
         MatcherAssert.assertThat(
             "checksums should match",
             artifact.sha1(),
             new IsEqual<>(DigestUtils.sha1Hex(bytes))
         );
+    }
+
+    @Test
+    public void shouldUpload() throws Exception {
+        final var path = "org/example/artifact/1.0/artifact-1.0.jar";
+        this.repository.upload(path, new ByteArrayInputStream(new byte[0]));
         MatcherAssert.assertThat(
             "should create a metadata file",
             this.asto.exists(

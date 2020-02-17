@@ -158,10 +158,9 @@ public final class AetherRepository implements Repository {
                 }
                 final var artifact = new DefaultArtifact(
                     new FileCoordinates(path).coords()
-                )
-                    .setFile(
-                        staging.unwrap().toFile()
-                    );
+                ).setFile(
+                    staging.unwrap().toFile()
+                );
                 repositories.install(this.session, new InstallRequest().addArtifact(artifact));
                 result = repositories.deploy(
                     this.session,
@@ -172,8 +171,7 @@ public final class AetherRepository implements Repository {
                                 "asto",
                                 "default",
                                 "asto://storage/maven-adapter"
-                            )
-                                .build()
+                            ).build()
                         )
                 );
             } catch (final FileCleanupException ex) {
