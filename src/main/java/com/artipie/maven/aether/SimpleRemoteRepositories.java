@@ -22,31 +22,34 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven;
+package com.artipie.maven.aether;
+
+import com.artipie.maven.RepositoryFile;
+import java.util.List;
+import org.eclipse.aether.repository.RemoteRepository;
 
 /**
- * Artifact coordinates parts split into meaningful parts.
- * All return values should not be null.
- *
+ * Default remotes repositories.
  * @since 0.1
  */
-public interface ArtifactCoordinates extends RepositoryFile {
-    /**
-     * Maven artifact groupId.
-     *
-     * @return Maven artifact groupId
-     */
-    String groupId();
+public final class SimpleRemoteRepositories implements RemoteRepositories {
 
     /**
-     * Maven artifactId.
-     * @return Maven artifactId
+     * A synthetic remote repository instance for asto.
      */
-    String artifactId();
+    public static final RemoteRepository ASTO = new RemoteRepository.Builder(
+        "asto",
+        "default",
+        "asto://artipie.com/maven"
+    ).build();
 
-    /**
-     * Maven artifact version.
-     * @return Maven artifact version
-     */
-    String version();
+    @Override
+    public RemoteRepository uploading(final RepositoryFile path) {
+        return SimpleRemoteRepositories.ASTO;
+    }
+
+    @Override
+    public List<RemoteRepository> downloading(final RepositoryFile path) {
+        return List.of(SimpleRemoteRepositories.ASTO);
+    }
 }

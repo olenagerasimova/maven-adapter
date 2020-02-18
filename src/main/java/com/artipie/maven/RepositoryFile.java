@@ -22,35 +22,11 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven.aether;
-
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.collection.IsEmptyCollection;
-import org.hamcrest.core.IsNot;
-import org.hamcrest.core.IsNull;
-import org.junit.jupiter.api.Test;
+package com.artipie.maven;
 
 /**
- * Tests for {@link RemoteRepositoriesImpl}.
+ * A generic marker interface of any file containing in the Artipie.
  * @since 0.1
  */
-public final class RemoteRepositoriesImplTest {
-
-    @Test
-    public void shouldReturnOnUploading() {
-        MatcherAssert.assertThat(
-            "should return value on uploading",
-            new RemoteRepositoriesImpl().uploading(""),
-            new IsNot<>(new IsNull<>())
-        );
-    }
-
-    @Test
-    public void shouldReturnOnDownloading() {
-        MatcherAssert.assertThat(
-            "should return value on downloading",
-            new RemoteRepositoriesImpl().downloading(""),
-            new IsNot<>(new IsEmptyCollection<>())
-        );
-    }
+public interface RepositoryFile {
 }

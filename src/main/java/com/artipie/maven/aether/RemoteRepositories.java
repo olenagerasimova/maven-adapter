@@ -24,11 +24,13 @@
 
 package com.artipie.maven.aether;
 
+import com.artipie.maven.RepositoryFile;
 import java.util.List;
 import org.eclipse.aether.repository.RemoteRepository;
 
 /**
  * Maps artifact paths to remote repositories.
+ * Configures remotes repositories in runtime like in Maven {@code settings.xml}
  * @since 0.1
  */
 public interface RemoteRepositories {
@@ -39,7 +41,7 @@ public interface RemoteRepositories {
      * @param path Uploading artifact
      * @return A remote repository. Should not be null
      */
-    RemoteRepository uploading(String path);
+    RemoteRepository uploading(RepositoryFile path);
 
     /**
      * Remote repositories to find the artifact in.
@@ -47,5 +49,5 @@ public interface RemoteRepositories {
      * @param path Downloading artifact
      * @return Remote repositories to find the artifact in.
      */
-    List<RemoteRepository> downloading(String path);
+    List<RemoteRepository> downloading(RepositoryFile path);
 }

@@ -121,7 +121,7 @@ public final class AetherRepository implements Repository {
                 session,
                 new ArtifactRequest(
                     new DefaultArtifact(coords.coords()),
-                    this.remotes.downloading(path),
+                    this.remotes.downloading(coords),
                     null
                 )
         )).subscribeOn(Schedulers.io())

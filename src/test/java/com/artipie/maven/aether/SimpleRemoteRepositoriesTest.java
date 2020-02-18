@@ -24,31 +24,38 @@
 
 package com.artipie.maven.aether;
 
-import java.util.List;
-import org.eclipse.aether.repository.RemoteRepository;
+import com.artipie.maven.FileCoordinates;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.collection.IsEmptyCollection;
+import org.hamcrest.core.IsNot;
+import org.hamcrest.core.IsNull;
+import org.junit.jupiter.api.Test;
 
 /**
- * Default remotes repositories.
+ * Tests for {@link SimpleRemoteRepositories}.
  * @since 0.1
  */
-public final class RemoteRepositoriesImpl implements RemoteRepositories {
+public final class SimpleRemoteRepositoriesTest {
 
-    /**
-     * A synthetic remote repository instance for asto.
-     */
-    public static final RemoteRepository ASTO = new RemoteRepository.Builder(
-        "asto",
-        "default",
-        "asto://artipie.com/maven"
-    ).build();
-
-    @Override
-    public RemoteRepository uploading(final String path) {
-        return RemoteRepositoriesImpl.ASTO;
+    @Test
+    public void shouldReturnOnUploading() {
+        MatcherAssert.assertThat(
+            "should return value on uploading",
+            new SimpleRemoteRepositories().uploading(
+                new FileCoordinates("example/artifact/1.0/artifact-1.0.jar")
+            ),
+            new IsNot<>(new IsNull<>())
+        );
     }
 
-    @Override
-    public List<RemoteRepository> downloading(final String path) {
-        return List.of(RemoteRepositoriesImpl.ASTO);
+    @Test
+    public void shouldReturnOnDownloading() {
+        MatcherAssert.assertThat(
+            "should return value on downloading",
+            new SimpleRemoteRepositories().downloading(
+                new FileCoordinates("example/artifact/2.0/artifact-2.0.jar")
+            ),
+            new IsNot<>(new IsEmptyCollection<>())
+        );
     }
 }
