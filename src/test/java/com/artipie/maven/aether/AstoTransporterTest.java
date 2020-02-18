@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.UUID;
+import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.spi.connector.transport.GetTask;
 import org.eclipse.aether.spi.connector.transport.PeekTask;
 import org.eclipse.aether.spi.connector.transport.PutTask;
@@ -74,20 +75,9 @@ public final class AstoTransporterTest {
      * Adding this method for debugging.
      * @throws IOException Failed to walk {@code @TempDir}
      */
-    @SuppressWarnings("PMD.SystemPrintln")
     @AfterEach
     public void after() throws IOException {
-        Files.walk(this.temp).forEachOrdered(
-            path -> System.out.println(
-                String.format(
-                    "%s regular? %b readable? %b writable? %b",
-                    path,
-                    Files.isRegularFile(path),
-                    Files.isReadable(path),
-                    Files.isWritable(path)
-                )
-            )
-        );
+        FileUtils.deleteDirectory(this.temp.toFile());
     }
 
     @Test
