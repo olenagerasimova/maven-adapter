@@ -25,10 +25,13 @@
 package com.artipie.maven.aether;
 
 import com.artipie.maven.FileCoordinates;
+import java.util.List;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.collection.IsEmptyCollection;
-import org.hamcrest.core.IsNot;
-import org.hamcrest.core.IsNull;
+import org.hamcrest.beans.HasPropertyWithValue;
+import org.hamcrest.collection.IsIterableContainingInAnyOrder;
+import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -41,10 +44,11 @@ public final class SimpleRemoteRepositoriesTest {
     public void shouldReturnOnUploading() {
         MatcherAssert.assertThat(
             "should return value on uploading",
-            new SimpleRemoteRepositories().uploading(
-                new FileCoordinates("example/artifact/1.0/artifact-1.0.jar")
-            ),
-            new IsNot<>(new IsNull<>())
+            new SimpleRemoteRepositories()
+                .uploading(
+                    new FileCoordinates("example/artifact/1.0/artifact-1.0.jar")
+                ),
+            this.hasAstoProtocol()
         );
     }
 
@@ -55,7 +59,16 @@ public final class SimpleRemoteRepositoriesTest {
             new SimpleRemoteRepositories().downloading(
                 new FileCoordinates("example/artifact/2.0/artifact-2.0.jar")
             ),
-            new IsNot<>(new IsEmptyCollection<>())
+            new IsIterableContainingInAnyOrder<>(
+                List.of(this.hasAstoProtocol())
+            )
+        );
+    }
+
+    private Matcher<RemoteRepository> hasAstoProtocol() {
+        return new HasPropertyWithValue<>(
+            "protocol",
+            new IsEqual<>("asto")
         );
     }
 }
