@@ -41,7 +41,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
@@ -73,13 +72,13 @@ public final class AstoTransporterTest {
     /**
      * JUnit fails to delete a {@code @TempDir} for unknown reason.
      * Adding this method for debugging.
-     * @param reporter Test printer
      * @throws IOException Failed to walk {@code @TempDir}
      */
+    @SuppressWarnings("PMD.SystemPrintln")
     @AfterEach
-    public void after(final TestReporter reporter) throws IOException {
+    public void after() throws IOException {
         Files.walk(this.temp).forEachOrdered(
-            path -> reporter.publishEntry(
+            path -> System.out.println(
                 String.format(
                     "%s regular? %b readable? %b writable? %b",
                     path,
