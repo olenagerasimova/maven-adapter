@@ -42,21 +42,18 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Tests for {@link AstoTransporter}.
+ *
  * @since 0.1
  */
 public final class AstoTransporterTest {
 
     /**
      * Test temporary directory.
-     * By JUnit annotation contract it should not be private
-     * @checkstyle VisibilityModifierCheck (3 lines)
      */
-    @TempDir
-    Path temp;
+    private Path temp;
 
     /**
      * Test class instance.
@@ -64,20 +61,27 @@ public final class AstoTransporterTest {
     private AstoTransporter transporter;
 
     @BeforeEach
-    public void before() {
+    public void before() throws IOException {
+        this.temp = Files.createTempDirectory("AstoTransporterTest");
         this.transporter = new AstoTransporter(
             new BlockingStorage(new FileStorage(this.temp))
         );
     }
 
     /**
-     * JUnit fails to delete a {@code @TempDir} for unknown reason.
-     * Adding this method for debugging.
-     * @throws IOException Failed to walk {@code @TempDir}
+     * Cleanup.
+     * @todo #37:30min Delete temp directory.
+     *  Because of a bug in Asto,
+     *  the temp directory maybe not deleted and the test would fail.
+     *  Quietly deleting it as a workaround.
      */
+    @SuppressWarnings("PMD.EmptyCatchBlock")
     @AfterEach
     public void after() throws IOException {
-        FileUtils.deleteDirectory(this.temp.toFile());
+        try {
+            FileUtils.deleteDirectory(this.temp.toFile());
+        } catch (final IOException ex) {
+        }
     }
 
     @Test
