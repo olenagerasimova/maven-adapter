@@ -26,19 +26,22 @@ package com.artipie.maven.aether;
 
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
+import java.nio.file.StandardOpenOption;
 import java.util.UUID;
 import org.eclipse.aether.spi.connector.transport.GetTask;
 import org.eclipse.aether.spi.connector.transport.PeekTask;
 import org.eclipse.aether.spi.connector.transport.PutTask;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
@@ -67,6 +70,27 @@ public final class AstoTransporterTest {
         );
     }
 
+    /**
+     * JUnit fails to delete a {@code @TempDir} for unknown reason.
+     * Adding this method for debugging.
+     * @param reporter Test printer
+     * @throws IOException Failed to walk {@code @TempDir}
+     */
+    @AfterEach
+    public void after(final TestReporter reporter) throws IOException {
+        Files.walk(this.temp).forEachOrdered(
+            path -> reporter.publishEntry(
+                String.format(
+                    "%s regular? %b readable? %b writable? %b",
+                    path,
+                    Files.isRegularFile(path),
+                    Files.isReadable(path),
+                    Files.isWritable(path)
+                )
+            )
+        );
+    }
+
     @Test
     public void implPeekShouldThrow() throws Exception {
         Assertions.assertThrows(
@@ -92,7 +116,13 @@ public final class AstoTransporterTest {
     public void implGetShouldRead() throws Exception {
         final var name = this.randomString();
         final var content = this.randomString();
-        Files.write(this.temp.resolve(name), List.of(content));
+        Files.writeString(
+            this.temp.resolve(name),
+            content,
+            StandardOpenOption.WRITE,
+            StandardOpenOption.CREATE,
+            StandardOpenOption.TRUNCATE_EXISTING
+        );
         final var task = new GetTask(URI.create(name));
         this.transporter.implGet(task);
         MatcherAssert.assertThat(
