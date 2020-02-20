@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates checksum file logic.
+ * Checksum files are created by Maven libarary.
  * @since 0.1
  */
 public final class ChecksumAttribute {
@@ -78,28 +79,35 @@ public final class ChecksumAttribute {
 
     /**
      * Reads a checksum for a path.
+     * Tries to find a checksum file and read a checksum from it first,
+     * if it does not exist, calculates checksum from actual artifact.
      * @param type Checksum algorithm
      * @return HEX-encoded checksum
      * @throws NoSuchAlgorithmException Invalid {@link ChecksumType}
      */
     public String readHex(final ChecksumType type) throws NoSuchAlgorithmException {
         final var digest = MessageDigest.getInstance(type.algorithm());
-        return this.readAttribute(type)
+        return this.read(type)
             .orElseGet(() -> this.calcHex(digest));
     }
 
     /**
-     * Tries to read a checksum attribute file.
-     * @param type Checksum file
-     * @return Present hex-encoded checksum if attribute exists.
+     * Tries to read a checksum file.
+     * @param type Checksum type
+     * @return Present hex-encoded checksum if checksum file exists.
+     *  Empty if the checksum file does not exist.
      */
-    private Optional<String> readAttribute(final ChecksumType type) {
+    private Optional<String> read(final ChecksumType type) {
         return Optional.of(this.resolveName(type))
             .filter(
-                file -> {
-                    final var exists = Files.exists(file);
+                checksum -> {
+                    final var exists = Files.exists(checksum);
                     if (!exists) {
-                        LOG.warn("checksum file does not exist {}", file);
+                        LOG.warn(
+                            "checksum file '{}' for artifact '{}' does not exist",
+                            checksum,
+                            this.path
+                        );
                     }
                     return exists;
                 }

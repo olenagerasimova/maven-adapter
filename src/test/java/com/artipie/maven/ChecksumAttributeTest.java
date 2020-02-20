@@ -97,12 +97,13 @@ public final class ChecksumAttributeTest {
 
     @ParameterizedTest
     @EnumSource(ChecksumType.class)
-    public void shouldReadAttributeFile(final ChecksumType type) throws Exception {
+    public void shouldReadChecksumFromFile(final ChecksumType type) throws Exception {
         final var path = this.randomFile();
         final var checksum = new ChecksumAttribute(path);
         final var line = this.randomString();
         Files.writeString(checksum.resolveName(type), line);
         MatcherAssert.assertThat(
+            "should read checksum from checksum file",
             checksum.readHex(type),
             new IsEqual<>(line)
         );
