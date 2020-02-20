@@ -42,6 +42,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Flow;
 import org.eclipse.aether.RepositorySystem;
@@ -55,6 +56,8 @@ import org.eclipse.aether.installation.InstallationException;
 import org.reactivestreams.FlowAdapters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * Performs deployment lifecycle in terms of Maven libraries.
@@ -125,12 +128,13 @@ final class Deployer {
         final String path,
         final Flow.Publisher<ByteBuffer> content
     ) {
+        final var span = MarkerFactory.getMarker(UUID.randomUUID().toString());
         final var coords = new FileCoordinates(path);
-        LOG.debug("deploying coords {}", coords);
-        return this.staging(coords, content)
+        LOG.info(span, "uploading coords {}", coords);
+        return this.staging(coords, content, span)
             .map(file -> new DefaultArtifact(coords.coords()).setFile(file.toFile()))
-            .doOnSuccess(artifact -> this.install(artifact))
-            .doOnSuccess(artifact -> this.deploy(coords, artifact))
+            .doOnSuccess(artifact -> this.install(artifact, span))
+            .doOnSuccess(artifact -> this.deploy(coords, artifact, span))
             .map(artifact -> this.result(coords, artifact));
     }
 
@@ -138,18 +142,37 @@ final class Deployer {
      * Wraps subsequent operators with staging file.
      * @param coords Artifact coords
      * @param content Artifact binary
+     * @param span Logging span
      * @return Staging file path
      */
     private Single<Path> staging(
         final FileCoordinates coords,
-        final Flow.Publisher<ByteBuffer> content
+        final Flow.Publisher<ByteBuffer> content,
+        final Marker span
     ) {
         return Single.using(
-            () -> this.dir.resolve(coords.path()),
+            () -> {
+                final AutoCloseablePath path = this.dir.resolve(coords.path());
+                LOG.debug(
+                    span,
+                    "open AutoCloseablePath '{}' for '{}'",
+                    path.unwrap(),
+                    coords.path()
+                );
+                return path;
+            },
             staging -> new RxFile(staging.unwrap())
                 .save(Flowable.fromPublisher(FlowAdapters.toPublisher(content)))
                 .andThen(Single.defer(() -> Single.just(staging.unwrap()))),
-            AutoCloseablePath::close,
+            path -> {
+                LOG.debug(
+                    span,
+                    "close AutoCloseablePath '{}' for '{}'",
+                    path.unwrap(),
+                    coords.path()
+                );
+                path.close();
+            },
             Deployer.DEFERRED_CLOSE
         );
     }
@@ -157,10 +180,11 @@ final class Deployer {
     /**
      * Installs given artifact to a local repository.
      * @param artifact An artifact to install
+     * @param span Logging span
      * @throws InstallationException Installation failed
      */
-    private void install(final Artifact artifact) throws InstallationException {
-        LOG.debug("installing {}", artifact);
+    private void install(final Artifact artifact, final Marker span) throws InstallationException {
+        LOG.debug(span, "installing {}", artifact);
         this.repositories.install(
             this.session,
             new InstallRequest().addArtifact(artifact)
@@ -171,16 +195,18 @@ final class Deployer {
      * Deploys given artifact from a local repository to a remote repository.
      * @param coords Artifact coordinates
      * @param artifact Artifact itself
+     * @param span Logging span
      * @throws DeploymentException If deployment failed
      */
-    private void deploy(final FileCoordinates coords, final Artifact artifact)
+    private void deploy(final FileCoordinates coords, final Artifact artifact, final Marker span)
         throws DeploymentException {
-        LOG.debug("deploying {}", artifact);
+        final var remote = this.remotes.uploading(coords);
+        LOG.debug(span, "deploying {} to {}", artifact, remote);
         this.repositories.deploy(
             this.session,
             new DeployRequest()
                 .addArtifact(artifact)
-                .setRepository(this.remotes.uploading(coords))
+                .setRepository(remote)
         );
     }
 
