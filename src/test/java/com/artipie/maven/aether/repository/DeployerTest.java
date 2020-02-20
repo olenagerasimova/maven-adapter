@@ -42,6 +42,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 import org.reactivestreams.FlowAdapters;
 
@@ -49,7 +50,9 @@ import org.reactivestreams.FlowAdapters;
  * Tests for {@link Deployer}.
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (60 lines)
+ * @checkstyle MagicNumberCheck (2 lines)
  */
+@Timeout(5)
 public final class DeployerTest {
 
     /**
