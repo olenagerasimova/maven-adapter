@@ -22,32 +22,32 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven;
+package com.artipie.maven.aether;
 
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.util.concurrent.Flow;
+import com.artipie.maven.RepositoryFile;
+import java.util.List;
+import org.eclipse.aether.repository.RemoteRepository;
 
 /**
- * General abstraction over Maven (remote) repository.
- *
+ * Maps artifact paths to remote repositories.
+ * Configures remotes repositories in runtime like in Maven {@code settings.xml}
  * @since 0.1
  */
-public interface Repository {
+public interface RemoteRepositories {
 
     /**
-     * Downloads given artifact.
-     * @param path Artifact URI path
-     * @return File payload
+     * Maps the artifact path to a remote repository to upload to.
+     * It is assumed it should be an Asto instance.
+     * @param path Uploading artifact
+     * @return A remote repository. Should not be null
      */
-    Flow.Publisher<ByteBuffer> download(String path);
+    RemoteRepository uploading(RepositoryFile path);
 
     /**
-     * Uploads given artifact.
-     * @param path Artifact URI path segment
-     * @param content Artifact binary
-     * @return Artifact metadata
-     * @throws Exception Uploading failed
+     * Remote repositories to find the artifact in.
+     * Artifacts are resolved in insertion order.
+     * @param path Downloading artifact
+     * @return Remote repositories to find the artifact in.
      */
-    ArtifactMetadata upload(String path, InputStream content) throws Exception;
+    List<RemoteRepository> downloading(RepositoryFile path);
 }

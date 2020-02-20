@@ -70,7 +70,7 @@ the path would be `org/example/artifact/1.0/artifact-1.0.jar` (and other files).
 ## A developer's entrypoint
 
 `com.artipie.maven.Repository` is central facade for all operations.
-The only implementation is `com.artipie.maven.aether.AetherRepository`.
+The only implementation is `com.artipie.maven.aether.repository.AetherRepository`.
 
 #### `Repository#upload(String path,InputStream content)`
 Uploads a given artifact defined by its path.

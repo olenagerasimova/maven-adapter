@@ -26,34 +26,34 @@ package com.artipie.maven.aether;
 
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
+import java.nio.file.StandardOpenOption;
 import java.util.UUID;
+import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.spi.connector.transport.GetTask;
 import org.eclipse.aether.spi.connector.transport.PeekTask;
 import org.eclipse.aether.spi.connector.transport.PutTask;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Tests for {@link AstoTransporter}.
+ *
  * @since 0.1
  */
 public final class AstoTransporterTest {
 
     /**
      * Test temporary directory.
-     * By JUnit annotation contract it should not be private
-     * @checkstyle VisibilityModifierCheck (3 lines)
      */
-    @TempDir
-    Path temp;
+    private Path temp;
 
     /**
      * Test class instance.
@@ -61,10 +61,27 @@ public final class AstoTransporterTest {
     private AstoTransporter transporter;
 
     @BeforeEach
-    public void before() {
+    public void before() throws IOException {
+        this.temp = Files.createTempDirectory("AstoTransporterTest");
         this.transporter = new AstoTransporter(
             new BlockingStorage(new FileStorage(this.temp))
         );
+    }
+
+    /**
+     * Cleanup.
+     * @todo #37:30min Delete temp directory.
+     *  Because of a bug in Asto,
+     *  the temp directory maybe not deleted and the test would fail.
+     *  Quietly deleting it as a workaround.
+     */
+    @SuppressWarnings("PMD.EmptyCatchBlock")
+    @AfterEach
+    public void after() throws IOException {
+        try {
+            FileUtils.deleteDirectory(this.temp.toFile());
+        } catch (final IOException ex) {
+        }
     }
 
     @Test
@@ -92,7 +109,13 @@ public final class AstoTransporterTest {
     public void implGetShouldRead() throws Exception {
         final var name = this.randomString();
         final var content = this.randomString();
-        Files.write(this.temp.resolve(name), List.of(content));
+        Files.writeString(
+            this.temp.resolve(name),
+            content,
+            StandardOpenOption.WRITE,
+            StandardOpenOption.CREATE,
+            StandardOpenOption.TRUNCATE_EXISTING
+        );
         final var task = new GetTask(URI.create(name));
         this.transporter.implGet(task);
         MatcherAssert.assertThat(

@@ -30,7 +30,7 @@ package com.artipie.maven;
  *
  * @since 0.1
  */
-public interface ArtifactCoordinates {
+public interface ArtifactCoordinates extends RepositoryFile {
     /**
      * Maven artifact groupId.
      *
