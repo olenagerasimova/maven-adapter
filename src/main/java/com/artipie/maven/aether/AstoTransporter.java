@@ -33,12 +33,19 @@ import org.eclipse.aether.spi.connector.transport.PeekTask;
 import org.eclipse.aether.spi.connector.transport.PutTask;
 import org.eclipse.aether.spi.connector.transport.TransportTask;
 import org.eclipse.aether.spi.connector.transport.Transporter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Adapts Asto to {@link Transporter}.
  * @since 0.1
  */
 public final class AstoTransporter extends AbstractTransporter {
+
+    /**
+     * Class logger.
+     */
+    private static final Logger LOG = LoggerFactory.getLogger(AstoTransporter.class);
 
     /**
      * Asto.
@@ -69,17 +76,21 @@ public final class AstoTransporter extends AbstractTransporter {
 
     @Override
     public void implGet(final GetTask task) throws Exception {
+        LOG.debug("implGet start {}", task.getLocation().toString());
         this.exists(task);
         try (var write = task.newOutputStream()) {
             IOUtils.write(this.asto.value(new TaskKey(task).key()), write);
         }
+        LOG.debug("implGet finish {}", task.getLocation().toString());
     }
 
     @Override
     public void implPut(final PutTask task) throws Exception {
+        LOG.debug("implPut start {}", task.getLocation().toString());
         try (var read = task.newInputStream()) {
             this.asto.save(new TaskKey(task).key(), IOUtils.toByteArray(read));
         }
+        LOG.debug("implPut finish {}", task.getLocation().toString());
     }
 
     @Override
@@ -95,6 +106,7 @@ public final class AstoTransporter extends AbstractTransporter {
     private void exists(final TransportTask task) {
         final Key key = new TaskKey(task).key();
         if (!this.asto.exists(key)) {
+            LOG.debug("does not exist {}", task.getLocation().toString());
             throw new ResourceNotFoundException(
                 String.format(
                     "Resource does not exist in Asto: key %s and location %s",

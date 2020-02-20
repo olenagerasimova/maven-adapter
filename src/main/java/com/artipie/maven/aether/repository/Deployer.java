@@ -45,6 +45,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Flow;
+import java.util.stream.Collectors;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
@@ -130,12 +131,12 @@ final class Deployer {
     ) {
         final var span = MarkerFactory.getMarker(UUID.randomUUID().toString());
         final var coords = new FileCoordinates(path);
-        LOG.info(span, "uploading coords {}", coords);
+        LOG.info(span, "uploading coords {}", coords.path());
         return this.staging(coords, content, span)
             .map(file -> new DefaultArtifact(coords.coords()).setFile(file.toFile()))
             .doOnSuccess(artifact -> this.install(artifact, span))
             .doOnSuccess(artifact -> this.deploy(coords, artifact, span))
-            .map(artifact -> this.result(coords, artifact));
+            .map(artifact -> this.result(coords, artifact, span));
     }
 
     /**
@@ -214,14 +215,24 @@ final class Deployer {
      * Creates {@link ArtifactMetadata} instance.
      * @param coords Artifact coordinates
      * @param artifact Artifact instance
+     * @param span Logging span
      * @return Resulting ArtifactMetadata
      * @throws IOException If reading from a local repository failed
      * @throws NoSuchAlgorithmException ChecksumType misconfiguration
      */
-    private ArtifactMetadata result(final FileCoordinates coords, final Artifact artifact)
-        throws IOException, NoSuchAlgorithmException {
+    private ArtifactMetadata result(
+        final FileCoordinates coords,
+        final Artifact artifact,
+        final Marker span
+    ) throws IOException, NoSuchAlgorithmException {
         final Path file = new LocalArtifactResolver(this.session)
             .resolve(artifact);
+        LOG.debug(
+            span,
+            "deployed {} to {}",
+            file,
+            Files.walk(file.getParent().getParent()).collect(Collectors.toList())
+        );
         final var checksums = new ChecksumAttribute(file);
         return new DetachedMetadata(
             coords,
