@@ -30,7 +30,6 @@ import com.artipie.maven.aether.RemoteRepositories;
 import com.artipie.maven.aether.ServiceLocatorFactory;
 import com.artipie.maven.aether.SessionFactory;
 import com.artipie.maven.util.AutoCloseablePath;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Flow;
 import org.eclipse.aether.RepositorySystem;
@@ -41,6 +40,10 @@ import org.reactivestreams.FlowAdapters;
 /**
  * Maven library implementation for {@link Repository}.
  * @since 0.1
+ * @todo #37:30min Inject Deployer (and Resolver) as constructor args.
+ *  Inject other services directly to Deployer.
+ *  Create locator and session in Deployer method call.
+ *  Same for Resolver.
  */
 public final class AetherRepository implements Repository {
 
@@ -96,13 +99,18 @@ public final class AetherRepository implements Repository {
     }
 
     @Override
-    public ArtifactMetadata upload(final String path, final InputStream content) throws Exception {
+    public Flow.Publisher<ArtifactMetadata> deploy(
+        final String path,
+        final Flow.Publisher<ByteBuffer> content
+    ) {
         final var locator = this.locators.serviceLocator();
         return new Deployer(
             this.remotes,
             this.dir,
             locator.getService(RepositorySystem.class),
             new SessionFactory(this.repository, locator).newSession()
-        ).deploy(path, content);
+        ).deploy(path, content)
+            .toFlowable()
+            .to(FlowAdapters::toFlowPublisher);
     }
 }
