@@ -28,6 +28,7 @@ import com.artipie.asto.Key;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.maven.Repository;
+import com.artipie.maven.aether.repository.AetherRepository;
 import com.artipie.maven.util.AutoCloseablePath;
 import java.io.ByteArrayInputStream;
 import java.nio.file.Path;
