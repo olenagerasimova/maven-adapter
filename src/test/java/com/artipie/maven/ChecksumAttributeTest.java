@@ -27,12 +27,16 @@ package com.artipie.maven;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
-import java.util.Locale;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.junit.jupiter.api.Assertions;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.AllOf;
+import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.StringEndsWith;
+import org.hamcrest.core.StringStartsWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -48,55 +52,75 @@ public final class ChecksumAttributeTest {
      */
     private static final int ARRAY_LENGTH = 8192;
 
-    // @checkstyle VisibilityModifierCheck (5 lines)
     /**
-     * Temporary directory.
+     * Test temporary directory.
+     * By JUnit annotation contract it should not be private
+     * @checkstyle VisibilityModifierCheck (3 lines)
      */
     @TempDir
     Path temp;
 
     @ParameterizedTest
     @EnumSource(ChecksumType.class)
-    public void testResolveName(final ChecksumType type) throws Exception {
-        final var path = this.random();
-        Assertions.assertEquals(
-            path.resolveSibling(
-                String.join(
-                    ".",
-                    path.getFileName().toString(),
-                    type.name().toLowerCase(Locale.getDefault())
-                )
-            ),
+    public void shouldResolveName(final ChecksumType type) throws Exception {
+        final var path = this.randomFile();
+        MatcherAssert.assertThat(
+            "ChecksumAttribute should resolve attribute path",
             new ChecksumAttribute(path)
                 .resolveName(type)
+                .toString(),
+            new AllOf<>(
+                List.of(
+                    new StringStartsWith(false, path.toString()),
+                    new StringEndsWith(true, type.toString())
+                )
+            )
         );
     }
 
     @ParameterizedTest
     @EnumSource(ChecksumType.class)
-    public void testReadHex(final ChecksumType type) throws Exception {
-        final var path = this.random();
-        try (var stream = Files.newInputStream(path)) {
-            Assertions.assertEquals(
+    public void shouldCalcChecksum(final ChecksumType type) throws Exception {
+        final var path = this.randomFile();
+        MatcherAssert.assertThat(
+            "checksums should match",
+            new ChecksumAttribute(path).readHex(type),
+            new IsEqual<>(
                 Hex.encodeHexString(
                     DigestUtils.digest(
-                        MessageDigest.getInstance(type.algorithm()),
-                        stream
+                        MessageDigest.getInstance(type.algorithm()), path.toFile()
                     )
-                ),
-                new ChecksumAttribute(path).readHex(type)
-            );
-        }
+                )
+            )
+        );
     }
 
-    private Path random() throws Exception {
+    @ParameterizedTest
+    @EnumSource(ChecksumType.class)
+    public void shouldReadChecksumFromFile(final ChecksumType type) throws Exception {
+        final var path = this.randomFile();
+        final var checksum = new ChecksumAttribute(path);
+        final var line = this.randomString();
+        Files.writeString(checksum.resolveName(type), line);
+        MatcherAssert.assertThat(
+            "should read checksum from checksum file",
+            checksum.readHex(type),
+            new IsEqual<>(line)
+        );
+    }
+
+    private Path randomFile() throws Exception {
         final var bytes = new byte[ChecksumAttributeTest.ARRAY_LENGTH];
         ThreadLocalRandom.current().nextBytes(bytes);
         return Files.write(
             this.temp.resolve(
-                String.format("%s.bin", UUID.randomUUID().toString())
+                String.format("%s.bin", this.randomString())
             ),
             bytes
         );
+    }
+
+    private String randomString() {
+        return UUID.randomUUID().toString();
     }
 }
