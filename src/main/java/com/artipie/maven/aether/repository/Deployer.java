@@ -24,6 +24,7 @@
 
 package com.artipie.maven.aether.repository;
 
+import com.artipie.asto.fs.RxFile;
 import com.artipie.maven.ArtifactMetadata;
 import com.artipie.maven.ChecksumAttribute;
 import com.artipie.maven.ChecksumType;
@@ -32,24 +33,37 @@ import com.artipie.maven.FileCoordinates;
 import com.artipie.maven.aether.LocalArtifactResolver;
 import com.artipie.maven.aether.RemoteRepositories;
 import com.artipie.maven.util.AutoCloseablePath;
-import com.artipie.maven.util.FileCleanupException;
-import com.google.common.collect.Iterables;
-import java.io.InputStream;
+import io.reactivex.Flowable;
+import io.reactivex.Single;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Flow;
+import java.util.stream.Collectors;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.deployment.DeployRequest;
-import org.eclipse.aether.deployment.DeployResult;
+import org.eclipse.aether.deployment.DeploymentException;
 import org.eclipse.aether.installation.InstallRequest;
+import org.eclipse.aether.installation.InstallationException;
+import org.reactivestreams.FlowAdapters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * Performs deployment lifecycle in terms of Maven libraries.
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (200 lines) see {@link AetherRepository} javadoc
  */
 final class Deployer {
 
@@ -57,6 +71,12 @@ final class Deployer {
      * Using another class logger.
      */
     private static final Logger LOG = LoggerFactory.getLogger(AetherRepository.class);
+
+    /**
+     * If false then the resource closing will be deferred until the stream termination.
+     * @see Single#using(Callable, Function, Consumer, boolean)
+     */
+    private static final boolean DEFERRED_CLOSE = false;
 
     /**
      * Remote repositories to handle artifacts.
@@ -105,45 +125,118 @@ final class Deployer {
      * @return DeployResult
      * @throws Exception Deployment failed
      */
-    public ArtifactMetadata deploy(
+    public Single<ArtifactMetadata> deploy(
         final String path,
-        final InputStream content
-    ) throws Exception {
+        final Flow.Publisher<ByteBuffer> content
+    ) {
+        final var span = MarkerFactory.getMarker(UUID.randomUUID().toString());
         final var coords = new FileCoordinates(path);
-        DeployResult result = null;
-        try (var staging = this.dir.resolve(path)) {
-            try (var file = Files.newOutputStream(staging.unwrap())) {
-                content.transferTo(file);
-            }
-            final var artifact = new DefaultArtifact(
-                coords.coords()
-            ).setFile(
-                staging.unwrap().toFile()
-            );
-            this.repositories.install(
-                this.session,
-                new InstallRequest().addArtifact(artifact)
-            );
-            result = this.repositories.deploy(
-                this.session,
-                new DeployRequest()
-                    .addArtifact(artifact)
-                    .setRepository(
-                        this.remotes.uploading(coords)
-                    )
-            );
-        } catch (final FileCleanupException ex) {
-            LOG.warn("on AutoCloseablePath cleanup", ex);
-        }
-        final Artifact deployed = Iterables.getOnlyElement(
-            result.getArtifacts()
+        LOG.info(span, "uploading coords {}", coords.path());
+        return this.staging(coords, content, span)
+            .map(file -> new DefaultArtifact(coords.coords()).setFile(file.toFile()))
+            .doOnSuccess(artifact -> this.install(artifact, span))
+            .doOnSuccess(artifact -> this.deploy(coords, artifact, span))
+            .map(artifact -> this.result(coords, artifact, span));
+    }
+
+    /**
+     * Wraps subsequent operators with staging file.
+     * @param coords Artifact coords
+     * @param content Artifact binary
+     * @param span Logging span
+     * @return Staging file path
+     */
+    private Single<Path> staging(
+        final FileCoordinates coords,
+        final Flow.Publisher<ByteBuffer> content,
+        final Marker span
+    ) {
+        return Single.using(
+            () -> {
+                final AutoCloseablePath path = this.dir.resolve(coords.path());
+                LOG.debug(
+                    span,
+                    "open AutoCloseablePath '{}' for '{}'",
+                    path.unwrap(),
+                    coords.path()
+                );
+                return path;
+            },
+            staging -> new RxFile(staging.unwrap())
+                .save(Flowable.fromPublisher(FlowAdapters.toPublisher(content)))
+                .andThen(Single.defer(() -> Single.just(staging.unwrap()))),
+            path -> {
+                LOG.debug(
+                    span,
+                    "close AutoCloseablePath '{}' for '{}'",
+                    path.unwrap(),
+                    coords.path()
+                );
+                path.close();
+            },
+            Deployer.DEFERRED_CLOSE
         );
+    }
+
+    /**
+     * Installs given artifact to a local repository.
+     * @param artifact An artifact to install
+     * @param span Logging span
+     * @throws InstallationException Installation failed
+     */
+    private void install(final Artifact artifact, final Marker span) throws InstallationException {
+        LOG.debug(span, "installing {}", artifact);
+        this.repositories.install(
+            this.session,
+            new InstallRequest().addArtifact(artifact)
+        );
+    }
+
+    /**
+     * Deploys given artifact from a local repository to a remote repository.
+     * @param coords Artifact coordinates
+     * @param artifact Artifact itself
+     * @param span Logging span
+     * @throws DeploymentException If deployment failed
+     */
+    private void deploy(final FileCoordinates coords, final Artifact artifact, final Marker span)
+        throws DeploymentException {
+        final var remote = this.remotes.uploading(coords);
+        LOG.debug(span, "deploying {} to {}", artifact, remote);
+        this.repositories.deploy(
+            this.session,
+            new DeployRequest()
+                .addArtifact(artifact)
+                .setRepository(remote)
+        );
+    }
+
+    /**
+     * Creates {@link ArtifactMetadata} instance.
+     * @param coords Artifact coordinates
+     * @param artifact Artifact instance
+     * @param span Logging span
+     * @return Resulting ArtifactMetadata
+     * @throws IOException If reading from a local repository failed
+     * @throws NoSuchAlgorithmException ChecksumType misconfiguration
+     */
+    private ArtifactMetadata result(
+        final FileCoordinates coords,
+        final Artifact artifact,
+        final Marker span
+    ) throws IOException, NoSuchAlgorithmException {
         final Path file = new LocalArtifactResolver(this.session)
-            .resolve(deployed);
+            .resolve(artifact);
+        LOG.debug(
+            span,
+            "deployed {} to {}",
+            file,
+            Files.walk(file.getParent().getParent()).collect(Collectors.toList())
+        );
         final var checksums = new ChecksumAttribute(file);
         return new DetachedMetadata(
             coords,
-            path,
+            coords.path(),
             Files.size(file),
             checksums.readHex(ChecksumType.MD5),
             checksums.readHex(ChecksumType.SHA1)

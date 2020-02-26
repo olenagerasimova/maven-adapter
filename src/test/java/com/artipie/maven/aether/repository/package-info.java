@@ -22,30 +22,12 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven;
-
-import java.nio.ByteBuffer;
-import java.util.concurrent.Flow;
-
 /**
- * General abstraction over Maven (remote) repository.
- *
+ * A package for {@link com.artipie.maven.aether.repository.AetherRepository} and related classes.
  * @since 0.1
  */
-public interface Repository {
-
-    /**
-     * Downloads given artifact.
-     * @param path Artifact URI path
-     * @return File payload
-     */
-    Flow.Publisher<ByteBuffer> download(String path);
-
-    /**
-     * Uploads given artifact.
-     * @param path Artifact URI path segment
-     * @param content Artifact binary
-     * @return Artifact metadata
-     */
-    Flow.Publisher<ArtifactMetadata> deploy(String path, Flow.Publisher<ByteBuffer> content);
-}
+/**
+ * Tests for respective package.
+ * @since 0.1
+ */
+package com.artipie.maven.aether.repository;

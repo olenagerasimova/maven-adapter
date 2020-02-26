@@ -22,30 +22,38 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven.aether;
+package com.artipie.maven.aether.repository;
 
 import com.artipie.asto.Key;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
-import com.artipie.maven.Repository;
-import com.artipie.maven.aether.repository.AetherRepository;
+import com.artipie.maven.aether.ServiceLocatorFactory;
+import com.artipie.maven.aether.SessionFactory;
+import com.artipie.maven.aether.SimpleRemoteRepositories;
 import com.artipie.maven.util.AutoCloseablePath;
-import java.io.ByteArrayInputStream;
+import io.reactivex.Flowable;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import java.util.concurrent.Flow;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.repository.LocalRepository;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
+import org.reactivestreams.FlowAdapters;
 
 /**
- * Tests for {@link AetherRepository}.
+ * Tests for {@link Deployer}.
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (60 lines)
+ * @checkstyle MagicNumberCheck (2 lines)
  */
-public final class AetherRepositoryTest {
+@Timeout(5)
+public final class DeployerTest {
 
     /**
      * Test temporary directory.
@@ -61,26 +69,32 @@ public final class AetherRepositoryTest {
     private BlockingStorage asto;
 
     /**
-     * Maven adapter.
+     * The class under test.
      */
-    private Repository repository;
+    private Deployer deployer;
 
     @BeforeEach
     public void before() {
         final FileStorage files = new FileStorage(this.temp.resolve("asto"));
         this.asto = new BlockingStorage(files);
-        this.repository = new AetherRepository(
-            new ServiceLocatorFactory(files),
-            new LocalRepository(this.temp.resolve("local").toFile()),
+        final var locator = new ServiceLocatorFactory(files).serviceLocator();
+        this.deployer = new Deployer(
+            new SimpleRemoteRepositories(),
             new AutoCloseablePath.Parent(this.temp.resolve("staging")),
-            new SimpleRemoteRepositories()
+            locator.getService(RepositorySystem.class),
+            new SessionFactory(
+                new LocalRepository(this.temp.resolve("local").toFile()),
+                locator
+            ).newSession()
         );
     }
 
     @Test
     public void shouldStoreArtifact() throws Exception {
         final var path = "example/artifact/1.0/artifact-1.0.jar";
-        this.repository.upload(path, new ByteArrayInputStream(new byte[0]));
+        this.deployer.deploy(path, this.flow(new byte[0]))
+            .ignoreElement()
+            .blockingAwait();
         MatcherAssert.assertThat(
             "should create the file in Asto",
             this.asto.exists(new Key.From(path)),
@@ -92,7 +106,7 @@ public final class AetherRepositoryTest {
     public void shouldMatchChecksums() throws Exception {
         final var path = "example/artifact/1.0/artifact-1.0.pom";
         final var bytes = new byte[0];
-        final var artifact = this.repository.upload(path, new ByteArrayInputStream(bytes));
+        final var artifact = this.deployer.deploy(path, this.flow(bytes)).blockingGet();
         MatcherAssert.assertThat(
             "checksums should match",
             artifact.sha1(),
@@ -103,7 +117,9 @@ public final class AetherRepositoryTest {
     @Test
     public void shouldUpload() throws Exception {
         final var path = "org/example/artifact/1.0/artifact-1.0.jar";
-        this.repository.upload(path, new ByteArrayInputStream(new byte[0]));
+        this.deployer.deploy(path, this.flow(new byte[0]))
+            .ignoreElement()
+            .blockingAwait();
         MatcherAssert.assertThat(
             "should create a metadata file",
             this.asto.exists(
@@ -115,5 +131,11 @@ public final class AetherRepositoryTest {
             ),
             new IsEqual<>(true)
         );
+    }
+
+    private Flow.Publisher<ByteBuffer> flow(final byte[] bytes) {
+        return Flowable.fromArray(bytes)
+            .map(ByteBuffer::wrap)
+            .to(FlowAdapters::toFlowPublisher);
     }
 }
