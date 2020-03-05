@@ -22,30 +22,26 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven;
+package com.artipie.maven.repository;
 
-import java.nio.ByteBuffer;
-import java.util.concurrent.Flow;
+import com.artipie.maven.artifact.Artifact;
 
 /**
  * General abstraction over Maven (remote) repository.
  *
  * @since 0.1
  */
-public interface Repository {
+public interface Repository extends Iterable<Artifact> {
 
     /**
-     * Downloads given artifact.
-     * @param path Artifact URI path
-     * @return File payload
+     * Repository id.
+     * @return Repository id.
      */
-    Flow.Publisher<ByteBuffer> download(String path);
+    String id();
 
     /**
-     * Uploads given artifact.
-     * @param path Artifact URI path segment
-     * @param content Artifact binary
-     * @return Artifact metadata
+     * Repository url.
+     * @return repository url.
      */
-    Flow.Publisher<ArtifactMetadata> deploy(String path, Flow.Publisher<ByteBuffer> content);
+    String url();
 }
