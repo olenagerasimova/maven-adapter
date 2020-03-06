@@ -22,33 +22,19 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven.repository;
+package com.artipie.maven.artifact.checksum;
 
-import com.artipie.asto.Storage;
 import com.artipie.maven.artifact.Artifact;
 
-/**
- * General abstraction over Maven (remote) repository.
- *
- * @since 0.1
- */
-public interface Repository extends Iterable<Artifact> {
+public class Sha implements Checksum {
+    private final Artifact source;
 
-    /**
-     * Repository abstract storage.
-     * @return Repository abstract storage.
-     */
-    Storage storage();
+    public Sha (final Artifact artifact) {
+        this.source = artifact;
+    }
 
-    /**
-     * Repository id.
-     * @return Repository id.
-     */
-    String id();
-
-    /**
-     * Repository url.
-     * @return repository url.
-     */
-    String url();
+    @Override
+    public String value() {
+        throw new UnsupportedOperationException();
+    }
 }

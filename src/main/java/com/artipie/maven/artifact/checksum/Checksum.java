@@ -22,33 +22,14 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven.repository;
-
-import com.artipie.asto.Storage;
-import com.artipie.maven.artifact.Artifact;
+package com.artipie.maven.artifact.checksum;
 
 /**
- * General abstraction over Maven (remote) repository.
- *
- * @since 0.1
+ * Artifact checksum.
  */
-public interface Repository extends Iterable<Artifact> {
-
+public interface Checksum {
     /**
-     * Repository abstract storage.
-     * @return Repository abstract storage.
+     * Checksum value.
      */
-    Storage storage();
-
-    /**
-     * Repository id.
-     * @return Repository id.
-     */
-    String id();
-
-    /**
-     * Repository url.
-     * @return repository url.
-     */
-    String url();
+    String value();
 }
