@@ -22,9 +22,34 @@
  * SOFTWARE.
  */
 
+package com.artipie.maven.file.checksum;
+
+import com.artipie.maven.artifact.Artifact;
+
 /**
- * Artifact abstractions for maven adapter..
+ * MD5 checksum decorator for artifact. Represents a MD5 checksum for a given
+ * artifact.
  *
- * @since 0.1
+ * @since 0.2
  */
-package com.artipie.maven.artifact.checksum;
+@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
+public final class Md5 implements Checksum {
+
+    /**
+     * Source artifact.
+     */
+    private final Artifact source;
+
+    /**
+     * Constructor.
+     * @param artifact Artifact to have its MD5 checksum calculated.
+     */
+    public Md5(final Artifact artifact) {
+        this.source = artifact;
+    }
+
+    @Override
+    public String value() {
+        throw new UnsupportedOperationException();
+    }
+}

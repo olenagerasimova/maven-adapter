@@ -22,44 +22,24 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven.artifact;
+package com.artipie.maven.file.checksum;
+
+import com.artipie.maven.file.File;
 
 /**
- * Artifact file metadata.
- * @since 0.1
- * @todo #54:30min Implement Metadata generation. Metadata must be generated through the use of `Storage` and `Key`
- *  interfaces from artipie/asto.
+ * File checksum. Decorates a file object and provides the checksum for the file.
+ *
+ * @since 0.2
+ *
+ * @todo #54:30min Implement MD5 and SHA checksums
+ *  Implement checksum using MD5 and SHA algorithms. Don't forget the tests.
+ *  See com.artipie.maven.ChecksumAttribute.java
+ *  After the implementation, remove ChecksumAttribute.java and its tests.
  */
-public interface Metadata {
+public interface Checksum extends File {
     /**
-     * Artifact coordinates.
-     * @return Artifact coordinates
+     * Checksum value.
+     * @return Checksum value of the file.
      */
-    Coordinates coordinates();
-
-    /**
-     * Artifact path.
-     * @return Artifact path
-     */
-    String path();
-
-    /**
-     * Artifact binary size.
-     * @return Artifact binary size
-     */
-    long size();
-
-    /**
-     * MD5 hex-encoded checksum.
-     * @return MD5 hex-encoded checksum
-     * @checkstyle MethodNameCheck (2 lines)
-     */
-    String md5();
-
-    /**
-     * SHA1 hex-encoded checksum.
-     * @return SHA1 hex-encoded checksum
-     * @checkstyle MethodNameCheck (2 lines)
-     */
-    String sha1();
+    String value();
 }

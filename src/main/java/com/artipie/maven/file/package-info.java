@@ -22,34 +22,9 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven.artifact.checksum;
-
-import com.artipie.maven.artifact.Artifact;
-
 /**
- * SHA checksum decorator for artifact. Represents a SHA checksum for a given
- * artifact.
+ * Repository abstract for maven adapter.
  *
- * @since 0.2
+ * @since 0.1
  */
-@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
-public final class Sha implements Checksum {
-
-    /**
-     * Source artifact.
-     */
-    private final Artifact source;
-
-    /**
-     * Constructor.
-     * @param artifact Artifact to have its SHA checksum calculated.
-     */
-    public Sha(final Artifact artifact) {
-        this.source = artifact;
-    }
-
-    @Override
-    public String value() {
-        throw new UnsupportedOperationException();
-    }
-}
+package com.artipie.maven.file;

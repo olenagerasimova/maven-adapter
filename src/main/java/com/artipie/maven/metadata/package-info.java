@@ -22,46 +22,9 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven;
-
-import com.artipie.maven.metadata.Metadata;
-
 /**
- * Artifact file attributes.
+ * Artifact abstractions for maven adapter..
+ *
  * @since 0.1
- * @deprecated Use {@link Metadata} instead.
  */
-@Deprecated
-public interface ArtifactMetadata {
-    /**
-     * Artifact coordinates.
-     * @return Artifact coordinates
-     */
-    ArtifactCoordinates coordinates();
-
-    /**
-     * Artifact path.
-     * @return Artifact path
-     */
-    String path();
-
-    /**
-     * Artifact binary size.
-     * @return Artifact binary size
-     */
-    long size();
-
-    /**
-     * MD5 hex-encoded checksum.
-     * @return MD5 hex-encoded checksum
-     * @checkstyle MethodNameCheck (2 lines)
-     */
-    String md5();
-
-    /**
-     * SHA1 hex-encoded checksum.
-     * @return SHA1 hex-encoded checksum
-     * @checkstyle MethodNameCheck (2 lines)
-     */
-    String sha1();
-}
+package com.artipie.maven.metadata;

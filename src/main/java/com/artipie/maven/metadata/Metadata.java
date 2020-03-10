@@ -22,20 +22,27 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven.artifact.checksum;
+package com.artipie.maven.metadata;
 
 /**
- * Artifact checksum.
- * @since 0.2
- * @todo #54:30min Implement MD5 and SHA checksums
- *  Implement checksum using MD5 and SHA algorithms. Don't forget the tests.
- *  See com.artipie.maven.ChecksumAttribute.java
- *  After the implementation, remove ChecksumAttribute.java and its tests.
+ * Artifact metadata.
+ *
+ * Metadata is information about an artifact. It is a xml described in
+ * http://maven.apache.org/ref/3.3.9/maven-repository-metadata/repository-metadata.html .
+ * @since 0.1
+ *
+ * @todo #54:30min Implement Metadata generation.
+ *  Artifact metadata is generated according to Artifact versions and files. The implementation of metadata must
+ *  read all files from all versions of some artifact and then generate a xml representing it. Please refer to
+ *  http://maven.apache.org/ref/3.3.9/maven-repository-metadata/repository-metadata.html to metadata xml structure.
+ *
  */
-public interface Checksum {
+public interface Metadata {
+
     /**
-     * Checksum value.
-     * @return Checksum value of the artifact.
+     * Artifact metadata value.
+     *
+     * @return Artifact metadata in maven-metadata.xml string format.
      */
     String value();
 }

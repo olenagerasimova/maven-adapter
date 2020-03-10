@@ -26,25 +26,21 @@ package com.artipie.maven.repository;
 
 import com.artipie.asto.Storage;
 import com.artipie.maven.artifact.Artifact;
+import com.artipie.maven.artifact.Library;
 
 /**
  * General abstraction over Maven (remote) repository.
  *
+ * Represents a set of Libraries.
+ *
+ * @todo #54:30min Implement asto backed up repository.
+ *  In this implementation all artifact information will be stored into an
+ *  {@link Storage} object. Cover the implementation with tests and then remove older Repository implementation
+ *  and tests.
+ *
  * @since 0.2
- * @todo #54:30min Implement Repository interface with Aether.
- *  Implement repository interface which will read artifacts from a maven
- *  repository using Aether repository libs. See
- *  com.artipie.maven.aether.repository.AetherRepository. Don't forget the
- *  tests. After implementing the class, remove AetherRepository and related
- *  classes and tests.
  */
-public interface Repository extends Iterable<Artifact> {
-
-    /**
-     * Repository abstract storage.
-     * @return Repository abstract storage.
-     */
-    Storage storage();
+public interface Repository extends Iterable<Library> {
 
     /**
      * Repository id.

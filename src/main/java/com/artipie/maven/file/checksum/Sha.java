@@ -22,46 +22,34 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven;
+package com.artipie.maven.file.checksum;
 
-import com.artipie.maven.metadata.Metadata;
+import com.artipie.maven.artifact.Artifact;
 
 /**
- * Artifact file attributes.
- * @since 0.1
- * @deprecated Use {@link Metadata} instead.
+ * SHA checksum decorator for artifact. Represents a SHA checksum for a given
+ * artifact.
+ *
+ * @since 0.2
  */
-@Deprecated
-public interface ArtifactMetadata {
-    /**
-     * Artifact coordinates.
-     * @return Artifact coordinates
-     */
-    ArtifactCoordinates coordinates();
+@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
+public final class Sha implements Checksum {
 
     /**
-     * Artifact path.
-     * @return Artifact path
+     * Source artifact.
      */
-    String path();
+    private final Artifact source;
 
     /**
-     * Artifact binary size.
-     * @return Artifact binary size
+     * Constructor.
+     * @param artifact Artifact to have its SHA checksum calculated.
      */
-    long size();
+    public Sha(final Artifact artifact) {
+        this.source = artifact;
+    }
 
-    /**
-     * MD5 hex-encoded checksum.
-     * @return MD5 hex-encoded checksum
-     * @checkstyle MethodNameCheck (2 lines)
-     */
-    String md5();
-
-    /**
-     * SHA1 hex-encoded checksum.
-     * @return SHA1 hex-encoded checksum
-     * @checkstyle MethodNameCheck (2 lines)
-     */
-    String sha1();
+    @Override
+    public String value() {
+        throw new UnsupportedOperationException();
+    }
 }

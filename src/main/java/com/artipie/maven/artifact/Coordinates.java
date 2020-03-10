@@ -26,7 +26,6 @@ package com.artipie.maven.artifact;
 
 /**
  * Artifact coordinates parts split into meaningful parts.
- * All return values should not be null.
  *
  * @since 0.1
  */
