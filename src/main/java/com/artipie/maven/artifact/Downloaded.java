@@ -25,9 +25,11 @@
 package com.artipie.maven.artifact;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.Flow;
 
 /**
  * Abstraction for downloaded artifact.
+ * @since 0.2
  */
 public interface Downloaded {
 

@@ -27,7 +27,9 @@ package com.artipie.maven;
 /**
  * Well known checksum algorithms.
  * @since 0.1
+ * @deprecated Outdated due architectural changes in 0.2
  */
+@Deprecated
 public enum ChecksumType {
     /**
      * MD5 algorithm.

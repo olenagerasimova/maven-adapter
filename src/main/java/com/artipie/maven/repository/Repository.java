@@ -30,7 +30,13 @@ import com.artipie.maven.artifact.Artifact;
 /**
  * General abstraction over Maven (remote) repository.
  *
- * @since 0.1
+ * @since 0.2
+ * @todo #54:30min Implement Repository interface with Aether.
+ *  Implement repository interface which will read artifacts from a maven
+ *  repository using Aether repository libs. See
+ *  com.artipie.maven.aether.repository.AetherRepository. Don't forget the
+ *  tests. After implementing the class, remove AetherRepository and related
+ *  classes and tests.
  */
 public interface Repository extends Iterable<Artifact> {
 
@@ -44,11 +50,11 @@ public interface Repository extends Iterable<Artifact> {
      * Repository id.
      * @return Repository id.
      */
-    String id();
+    String repoId();
 
     /**
      * Repository url.
-     * @return repository url.
+     * @return Repository url.
      */
     String url();
 }

@@ -26,11 +26,25 @@ package com.artipie.maven.artifact.checksum;
 
 import com.artipie.maven.artifact.Artifact;
 
-public class Md5 implements Checksum {
+/**
+ * MD5 checksum decorator for artifact. Represents a MD5 checksum for a given
+ * artifact.
+ *
+ * @since 0.2
+ */
+@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
+public final class Md5 implements Checksum {
 
+    /**
+     * Source artifact.
+     */
     private final Artifact source;
 
-    public Md5 (final Artifact artifact) {
+    /**
+     * Constructor.
+     * @param artifact Artifact to have its MD5 checksum calculated.
+     */
+    public Md5(final Artifact artifact) {
         this.source = artifact;
     }
 

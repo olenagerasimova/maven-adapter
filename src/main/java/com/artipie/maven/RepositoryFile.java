@@ -22,46 +22,13 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven.aether;
-
-import com.artipie.asto.blocking.BlockingStorage;
-import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.spi.connector.transport.Transporter;
-import org.eclipse.aether.spi.connector.transport.TransporterFactory;
-import org.eclipse.aether.transfer.NoTransporterException;
+package com.artipie.maven;
 
 /**
- * Adapts Asto to {@link TransporterFactory}.
+ * A generic marker interface of any file containing in the Artipie.
  * @since 0.1
  * @deprecated Outdated due architectural changes in 0.2
  */
 @Deprecated
-public final class AstoTransporterFactory implements TransporterFactory {
-
-    /**
-     * Asto.
-     */
-    private final BlockingStorage asto;
-
-    /**
-     * All args constructor.
-     * @param asto Asto.
-     */
-    public AstoTransporterFactory(final BlockingStorage asto) {
-        this.asto = asto;
-    }
-
-    @Override
-    public Transporter newInstance(
-        final RepositorySystemSession session,
-        final RemoteRepository repository
-    ) throws NoTransporterException {
-        return new AstoTransporter(this.asto);
-    }
-
-    @Override
-    public float getPriority() {
-        return 0;
-    }
+public interface RepositoryFile {
 }

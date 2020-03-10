@@ -24,8 +24,6 @@
 
 package com.artipie.maven.artifact;
 
-import com.artipie.maven.RepositoryFile;
-
 /**
  * Artifact coordinates parts split into meaningful parts.
  * All return values should not be null.

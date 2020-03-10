@@ -39,7 +39,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Adapts Asto to {@link Transporter}.
  * @since 0.1
+ * @deprecated Outdated due architectural changes in 0.2
  */
+@Deprecated
 public final class AstoTransporter extends AbstractTransporter {
 
     /**

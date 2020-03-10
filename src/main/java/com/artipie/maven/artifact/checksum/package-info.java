@@ -22,15 +22,9 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven.artifact;
-
 /**
- * Abstraction for downloaded artifact.
+ * Artifact abstractions for maven adapter..
+ *
+ * @since 0.1
  */
-public interface Uploaded {
-
-    /**
-     *
-     */
-     void
-}
+package com.artipie.maven.artifact.checksum;

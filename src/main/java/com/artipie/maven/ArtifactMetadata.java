@@ -27,7 +27,9 @@ package com.artipie.maven;
 /**
  * Artifact file attributes.
  * @since 0.1
+ * @deprecated Use {@link com.artipie.maven.artifact.Metadata} instead.
  */
+@Deprecated
 public interface ArtifactMetadata {
     /**
      * Artifact coordinates.

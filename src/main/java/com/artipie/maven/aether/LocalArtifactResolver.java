@@ -31,7 +31,9 @@ import org.eclipse.aether.artifact.Artifact;
 /**
  * Resolves Maven artifacts in local repository.
  * @since 0.1
+ * @deprecated Outdated due architectural changes in 0.2
  */
+@Deprecated
 public final class LocalArtifactResolver {
 
     /**

@@ -26,10 +26,16 @@ package com.artipie.maven.artifact.checksum;
 
 /**
  * Artifact checksum.
+ * @since 0.2
+ * @todo #54:30min Implement MD5 and SHA checksums
+ *  Implement checksum using MD5 and SHA algorithms. Don't forget the tests.
+ *  See com.artipie.maven.ChecksumAttribute.java
+ *  After the implementation, remove ChecksumAttribute.java and its tests.
  */
 public interface Checksum {
     /**
      * Checksum value.
+     * @return Checksum value of the artifact.
      */
     String value();
 }

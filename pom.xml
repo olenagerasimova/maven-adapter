@@ -96,6 +96,11 @@
             <version>1.2.3</version>
             <scope>test</scope>
         </dependency>
+        <!-- @todo #54:30min Remove commons usage in favor of cactoos
+              Cactoos provides most of commons libraries functions in a
+              declarative and object-oriented way, and we should try
+              to use it whenever is possible.
+          -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
@@ -110,6 +115,16 @@
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
             <version>1.13</version>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-rx-java2</artifactId>
+            <version>3.8.5</version>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-core</artifactId>
+            <version>3.8.5</version>
         </dependency>
     </dependencies>
     <build>

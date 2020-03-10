@@ -32,7 +32,9 @@ import java.nio.file.Paths;
 /**
  * Adapts {@link Path} to {@link AutoCloseable} interface, quietly deleting on close.
  * @since 0.1
+ * @deprecated Outdated due architectural changes in 0.2
  */
+@Deprecated
 public final class AutoCloseablePath implements AutoCloseable {
 
     /**

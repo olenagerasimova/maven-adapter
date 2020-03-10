@@ -22,46 +22,31 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven.aether;
+package com.artipie.maven;
 
-import com.artipie.asto.blocking.BlockingStorage;
-import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.spi.connector.transport.Transporter;
-import org.eclipse.aether.spi.connector.transport.TransporterFactory;
-import org.eclipse.aether.transfer.NoTransporterException;
+import java.nio.ByteBuffer;
+import java.util.concurrent.Flow;
 
 /**
- * Adapts Asto to {@link TransporterFactory}.
+ * General abstraction over Maven (remote) repository.
+ *
  * @since 0.1
- * @deprecated Outdated due architectural changes in 0.2
+ * @Deprecated Use {@link com.artipie.maven.repository.Repository} instead.
  */
-@Deprecated
-public final class AstoTransporterFactory implements TransporterFactory {
+public interface Repository {
 
     /**
-     * Asto.
+     * Downloads given artifact.
+     * @param path Artifact URI path
+     * @return File payload
      */
-    private final BlockingStorage asto;
+    Flow.Publisher<ByteBuffer> download(String path);
 
     /**
-     * All args constructor.
-     * @param asto Asto.
+     * Uploads given artifact.
+     * @param path Artifact URI path segment
+     * @param content Artifact binary
+     * @return Artifact metadata
      */
-    public AstoTransporterFactory(final BlockingStorage asto) {
-        this.asto = asto;
-    }
-
-    @Override
-    public Transporter newInstance(
-        final RepositorySystemSession session,
-        final RemoteRepository repository
-    ) throws NoTransporterException {
-        return new AstoTransporter(this.asto);
-    }
-
-    @Override
-    public float getPriority() {
-        return 0;
-    }
+    Flow.Publisher<ArtifactMetadata> deploy(String path, Flow.Publisher<ByteBuffer> content);
 }

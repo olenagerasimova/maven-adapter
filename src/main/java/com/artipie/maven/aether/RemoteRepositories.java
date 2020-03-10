@@ -32,7 +32,9 @@ import org.eclipse.aether.repository.RemoteRepository;
  * Maps artifact paths to remote repositories.
  * Configures remotes repositories in runtime like in Maven {@code settings.xml}
  * @since 0.1
+ * @deprecated Outdated due architectural changes in 0.2
  */
+@Deprecated
 public interface RemoteRepositories {
 
     /**

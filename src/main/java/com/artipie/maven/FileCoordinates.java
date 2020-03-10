@@ -33,7 +33,9 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Parses and validates given string.
  * @since 0.1
+ * @deprecated Outdated due architectural changes in 0.2
  */
+@Deprecated
 public final class FileCoordinates implements ArtifactCoordinates {
 
     /**
