@@ -31,8 +31,9 @@ import java.util.concurrent.Flow;
  * General abstraction over Maven (remote) repository.
  *
  * @since 0.1
- * @Deprecated Use {@link com.artipie.maven.repository.Repository} instead.
+ * @deprecated Use {@link com.artipie.maven.repository.Repository} instead.
  */
+@Deprecated
 public interface Repository {
 
     /**

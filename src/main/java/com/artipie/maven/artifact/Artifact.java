@@ -24,6 +24,7 @@
 
 package com.artipie.maven.artifact;
 
+import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 
 /**
@@ -43,6 +44,12 @@ public interface Artifact {
      * @return Artifact coordinates.
      */
     Coordinates coordinates();
+
+    /**
+     * Artifact key in artipie/asto storage
+     * @return Artifact key.
+     */
+     Key key();
 
     /**
      * Artifact metadata.

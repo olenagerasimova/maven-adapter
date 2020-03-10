@@ -27,6 +27,8 @@ package com.artipie.maven.artifact;
 /**
  * Artifact file metadata.
  * @since 0.1
+ * @todo #54:30min Implement Metadata generation. Metadata must be generated through the use of `Storage` and `Key`
+ *  interfaces from artipie/asto.
  */
 public interface Metadata {
     /**
