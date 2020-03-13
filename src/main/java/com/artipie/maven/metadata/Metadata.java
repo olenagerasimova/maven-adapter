@@ -25,6 +25,7 @@
 package com.artipie.maven.metadata;
 
 import com.artipie.maven.artifact.Artifact;
+import org.reactivestreams.Publisher;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Flow;
 
@@ -50,7 +51,7 @@ public interface Metadata {
      *
      * @return Artifact metadata.
      */
-    Flow.Publisher<ByteBuffer> content();
+    Publisher<ByteBuffer> content();
 
     /**
      * Maven metadata implementation.
@@ -73,7 +74,7 @@ public interface Metadata {
         }
 
         @Override
-        public Flow.Publisher<ByteBuffer> content() {
+        public Publisher<ByteBuffer> content() {
             throw new UnsupportedOperationException();
         }
     }
