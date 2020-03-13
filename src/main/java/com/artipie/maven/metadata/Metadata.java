@@ -24,25 +24,57 @@
 
 package com.artipie.maven.metadata;
 
+import com.artipie.maven.artifact.Artifact;
+import java.nio.ByteBuffer;
+import java.util.concurrent.Flow;
+
 /**
  * Artifact metadata.
  *
  * Metadata is information about an artifact. It is a xml described in
  * http://maven.apache.org/ref/3.3.9/maven-repository-metadata/repository-metadata.html .
- * @since 0.1
+ *
+ * @since 0.2
  *
  * @todo #54:30min Implement Metadata generation.
- *  Artifact metadata is generated according to Artifact versions and files. The implementation of metadata must
- *  read all files from all versions of some artifact and then generate a xml representing it. Please refer to
- *  http://maven.apache.org/ref/3.3.9/maven-repository-metadata/repository-metadata.html to metadata xml structure.
- *
+ *  Artifact metadata is generated according to Artifact versions and files.
+ *  The implementation of metadata must read all files from all versions of
+ *  some artifact and then generate a xml representing it. Please refer to
+ *  http://maven.apache.org/ref/3.3.9/maven-repository-metadata/repository-metadata.html
+ *  to metadata xml structure.
  */
 public interface Metadata {
 
     /**
-     * Artifact metadata value.
+     * Artifact metadata content.
      *
-     * @return Artifact metadata in maven-metadata.xml string format.
+     * @return Artifact metadata.
      */
-    String value();
+    Flow.Publisher<ByteBuffer> content();
+
+    /**
+     * Maven metadata implementation.
+     *
+     * @since 0.2
+     */
+    class Maven implements Metadata {
+
+        /**
+         * Artifact for metadata retrieval.
+         */
+        private final Artifact artifact;
+
+        /**
+         * Constructor.
+         * @param artifact Artifact for metadata retrieval.
+         */
+        public Maven(final Artifact artifact) {
+            this.artifact = artifact;
+        }
+
+        @Override
+        public Flow.Publisher<ByteBuffer> content() {
+            throw new UnsupportedOperationException();
+        }
+    }
 }

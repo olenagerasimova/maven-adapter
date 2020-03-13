@@ -22,9 +22,29 @@
  * SOFTWARE.
  */
 
+package com.artipie.maven.file.checksum;
+
+import com.artipie.maven.file.File;
+import org.cactoos.text.TextOf;
+
 /**
- * Repository abstract for maven adapter.
+ * SHA-1 checksum decorator for file. Represents a SHA-1 checksum file for a given
+ * file.
  *
- * @since 0.1
+ * @since 0.2
  */
-package com.artipie.maven.repository;
+public final class Sha1 extends Checksum {
+
+    /**
+     * Constructor.
+     * @param file File to have its MD5 checksum calculated.
+     */
+    public Sha1(final File file) {
+        super(new TextOf("sha1"), file);
+    }
+
+    @Override
+    public byte[] content() {
+        throw new UnsupportedOperationException();
+    }
+}

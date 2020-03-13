@@ -21,35 +21,43 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.artipie.maven;
 
-package com.artipie.maven.file.checksum;
-
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
 import com.artipie.maven.artifact.Artifact;
+import com.artipie.maven.metadata.Metadata;
 
 /**
- * SHA checksum decorator for artifact. Represents a SHA checksum for a given
- * artifact.
+ * Maven front for artipie maven adaptor.
  *
  * @since 0.2
  */
-@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
-public final class Sha implements Checksum {
+public final class Maven {
 
     /**
-     * Source artifact.
+     * Storage for maven artifacts.
      */
-    private final Artifact source;
+    private final Storage storage;
 
     /**
      * Constructor.
-     * @param artifact Artifact to have its SHA checksum calculated.
+     * @param storage Storage used by this class.
      */
-    public Sha(final Artifact artifact) {
-        this.source = artifact;
+    Maven(final Storage storage) {
+        this.storage = storage;
     }
 
-    @Override
-    public String value() {
-        throw new UnsupportedOperationException();
+    /**
+     * Updates the metadata of a maven package.
+     * @param artifact Asto key of maven artifact.
+     */
+    public void update(final Key artifact) {
+        this.storage.save(
+            artifact,
+            new Metadata.Maven(
+                new Artifact.Maven(artifact, this.storage)
+            ).content()
+        );
     }
 }

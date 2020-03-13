@@ -24,32 +24,27 @@
 
 package com.artipie.maven.file.checksum;
 
-import com.artipie.maven.artifact.Artifact;
+import com.artipie.maven.file.File;
+import org.cactoos.text.TextOf;
 
 /**
- * MD5 checksum decorator for artifact. Represents a MD5 checksum for a given
- * artifact.
+ * MD5 checksum decorator for file. Represents a MD5 checksum file for a given
+ * file.
  *
  * @since 0.2
  */
-@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
-public final class Md5 implements Checksum {
-
-    /**
-     * Source artifact.
-     */
-    private final Artifact source;
+public final class Md5 extends Checksum {
 
     /**
      * Constructor.
-     * @param artifact Artifact to have its MD5 checksum calculated.
+     * @param file File to have its MD5 checksum calculated.
      */
-    public Md5(final Artifact artifact) {
-        this.source = artifact;
+    public Md5(final File file) {
+        super(new TextOf("md5"), file);
     }
 
     @Override
-    public String value() {
+    public byte[] content() {
         throw new UnsupportedOperationException();
     }
 }

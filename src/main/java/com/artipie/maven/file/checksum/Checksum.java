@@ -21,25 +21,55 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 package com.artipie.maven.file.checksum;
 
 import com.artipie.maven.file.File;
+import org.cactoos.Text;
+import org.cactoos.text.Joined;
+import org.cactoos.text.TextOf;
 
 /**
- * File checksum. Decorates a file object and provides the checksum for the file.
+ * Checksum abstract decorator for {@link File}.
  *
  * @since 0.2
- *
- * @todo #54:30min Implement MD5 and SHA checksums
- *  Implement checksum using MD5 and SHA algorithms. Don't forget the tests.
- *  See com.artipie.maven.ChecksumAttribute.java
- *  After the implementation, remove ChecksumAttribute.java and its tests.
  */
-public interface Checksum extends File {
+public abstract class Checksum implements File {
+
     /**
-     * Checksum value.
-     * @return Checksum value of the file.
+     * File origin.
      */
-    String value();
+    private final File origin;
+
+    /**
+     * Checksum algorithm name.
+     */
+    private final Text algorithm;
+
+    /**
+     * Constructor.
+     * @param algorithm Algorithm name.
+     * @param origin File origin.
+     */
+    Checksum(final Text algorithm, final File origin) {
+        this.algorithm = algorithm;
+        this.origin = origin;
+    }
+
+    /**
+     * Returns the original file.
+     * @return Origin file.
+     */
+    public File file() {
+        return this.origin;
+    }
+
+    @Override
+    public final Text name() {
+        return
+            new Joined(
+                new TextOf("."),
+                this.origin.name(),
+                this.algorithm
+            );
+    }
 }

@@ -24,34 +24,56 @@
 
 package com.artipie.maven.artifact;
 
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
 import com.artipie.maven.file.File;
-
 import java.util.List;
 
 /**
  * Maven artifact abstraction.
- *
- * A maven artifact is composed by the following elements:
- * - artifact coordinates: groupId, artifactId and version
- * - files: which files this artifact has
- *
- * @todo #54:30min Implement Artifact backed up by asto Storage
- *  Artifacts files are stored in some kind of storage. Implement an Artifact which uses
- *  artipie/asto Storage class for storing them.
  *
  * @since 0.2
  */
 public interface Artifact {
 
     /**
-     * Artifact coordinates.
-     * @return Artifact coordinates.
-     */
-    Coordinates coordinates();
-
-    /**
      * Files which belong to the Artifact.
      * @return Files which belong to artifact.
      */
     List<File> files();
+
+    /**
+     * Artifact implementation.
+     *
+     * @since 0.2
+     */
+    class Maven implements Artifact {
+        /**
+         * Artifact key in Storage.
+         */
+        private final Key key;
+
+        /**
+         * Storage of maven artifacts.
+         */
+        private final Storage storage;
+
+        /**
+         * Constructor.
+         * @param key Artifact key in storage.
+         * @param storage Storage.
+         */
+        public Maven(final Key key, final Storage storage) {
+            this.key = key;
+            this.storage = storage;
+        }
+
+        /**
+         * Obtains Artifact files from storage.
+         * @return Artifact files.
+         */
+        public List<File> files() {
+            throw new UnsupportedOperationException();
+        }
+    }
 }
