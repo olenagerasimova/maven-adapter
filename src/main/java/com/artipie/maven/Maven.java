@@ -23,12 +23,11 @@
  */
 package com.artipie.maven;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.maven.artifact.Artifact;
 import com.artipie.maven.metadata.Metadata;
-import org.reactivestreams.FlowAdapters;
-
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -54,11 +53,12 @@ public final class Maven {
     /**
      * Updates the metadata of a maven package.
      * @param artifact Asto key of maven artifact.
+     * @return Completion stage.
      */
     public CompletionStage update(final Key artifact) {
         return this.storage.save(
             artifact,
-            FlowAdapters.toFlowPublisher(
+            new Content.From(
                 new Metadata.Maven(
                     new Artifact.Maven(artifact, this.storage)
                 ).content()

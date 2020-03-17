@@ -33,8 +33,6 @@
     <url>https://github.com/artipie/maven-adapter</url>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
         <junit-platform.version>5.6.0</junit-platform.version>
     </properties>
     <dependencies>
@@ -63,7 +61,7 @@
         <dependency>
             <groupId>com.artipie</groupId>
             <artifactId>asto</artifactId>
-            <version>0.13.4</version>
+            <version>0.15</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -163,6 +161,31 @@
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.0</version>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                        <excludes>
+                            <exclude>**/com/artipie/maven/util/*.java</exclude>
+                            <exclude>**/com/artipie/maven/aether/*.java</exclude>
+                            <exclude>**/com/artipie/maven/aether/repository/*.java</exclude>
+                            <exclude>**/com/artipie/maven/ArtifactCoordinates.java</exclude>
+                            <exclude>**/com/artipie/maven/ArtifactMetadata.java</exclude>
+                            <exclude>**/com/artipie/maven/ChecksumAttribute.java</exclude>
+                            <exclude>**/com/artipie/maven/ChecksumType.java</exclude>
+                            <exclude>**/com/artipie/maven/DetachedMetadata.java</exclude>
+                            <exclude>**/com/artipie/maven/FileCoordinates.java</exclude>
+                            <exclude>**/com/artipie/maven/Repository.java</exclude>
+                            <exclude>**/com/artipie/maven/RepositoryFile.java</exclude>
+                            <exclude>**/com/artipie/maven/RepositoryFile.java</exclude>
+                        </excludes>
+                        <testExcludes>
+                            <testExclude>**/com/artipie/maven/*.java</testExclude>
+                            <testExclude>**/com/artipie/maven/aether/*.java</testExclude>
+                            <testExclude>**/com/artipie/maven/aether/repository/*.java</testExclude>
+                            <testExclude>**/com/artipie/maven/test/*.java</testExclude>
+                            <testExclude>**/com/artipie/maven/util/*.java</testExclude>
+                        </testExcludes>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>

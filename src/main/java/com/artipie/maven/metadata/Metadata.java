@@ -25,9 +25,8 @@
 package com.artipie.maven.metadata;
 
 import com.artipie.maven.artifact.Artifact;
-import org.reactivestreams.Publisher;
 import java.nio.ByteBuffer;
-import java.util.concurrent.Flow;
+import org.reactivestreams.Publisher;
 
 /**
  * Artifact metadata.
