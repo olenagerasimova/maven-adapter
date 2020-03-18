@@ -22,13 +22,29 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven;
+package com.artipie.maven.file.checksum;
+
+import com.artipie.maven.file.File;
+import org.cactoos.text.TextOf;
 
 /**
- * A generic marker interface of any file containing in the Artipie.
- * @since 0.1
- * @deprecated Outdated due architectural changes in 0.2
+ * MD5 checksum decorator for file. Represents a MD5 checksum file for a given
+ * file.
+ *
+ * @since 0.2
  */
-@Deprecated
-public interface RepositoryFile {
+public final class Md5 extends Checksum {
+
+    /**
+     * Constructor.
+     * @param file File to have its MD5 checksum calculated.
+     */
+    public Md5(final File file) {
+        super(new TextOf("md5"), file);
+    }
+
+    @Override
+    public byte[] content() {
+        throw new UnsupportedOperationException();
+    }
 }

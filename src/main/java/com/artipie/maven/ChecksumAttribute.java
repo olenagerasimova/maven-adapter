@@ -41,7 +41,9 @@ import org.slf4j.LoggerFactory;
  * Encapsulates checksum file logic.
  * Checksum files are created by Maven libarary.
  * @since 0.1
+ * @deprecated Use {@link com.artipie.maven.file.checksum.Checksum} implementations instead
  */
+@Deprecated
 public final class ChecksumAttribute {
 
     /**

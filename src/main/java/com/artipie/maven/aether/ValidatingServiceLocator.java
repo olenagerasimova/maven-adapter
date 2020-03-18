@@ -35,7 +35,9 @@ import org.eclipse.aether.spi.locator.ServiceLocator;
  * It throws {@link ServiceLocatorException} instead.
  * Provides a new method wrapping nullable value with {@link Optional}.
  * @since 0.1
+ * @deprecated Outdated due architectural changes in 0.2
  */
+@Deprecated
 public final class ValidatingServiceLocator implements ServiceLocator {
 
     /**

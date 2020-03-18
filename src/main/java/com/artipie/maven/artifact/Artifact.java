@@ -22,46 +22,58 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven.aether;
+package com.artipie.maven.artifact;
 
-import com.artipie.asto.blocking.BlockingStorage;
-import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.spi.connector.transport.Transporter;
-import org.eclipse.aether.spi.connector.transport.TransporterFactory;
-import org.eclipse.aether.transfer.NoTransporterException;
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
+import com.artipie.maven.file.File;
+import java.util.List;
 
 /**
- * Adapts Asto to {@link TransporterFactory}.
- * @since 0.1
- * @deprecated Outdated due architectural changes in 0.2
+ * Maven artifact abstraction.
+ *
+ * @since 0.2
  */
-@Deprecated
-public final class AstoTransporterFactory implements TransporterFactory {
+public interface Artifact {
 
     /**
-     * Asto.
+     * Files which belong to the Artifact.
+     * @return Files which belong to artifact.
      */
-    private final BlockingStorage asto;
+    List<File> files();
 
     /**
-     * All args constructor.
-     * @param asto Asto.
+     * Artifact implementation.
+     *
+     * @since 0.2
      */
-    public AstoTransporterFactory(final BlockingStorage asto) {
-        this.asto = asto;
-    }
+    class Maven implements Artifact {
+        /**
+         * Artifact key in Storage.
+         */
+        private final Key key;
 
-    @Override
-    public Transporter newInstance(
-        final RepositorySystemSession session,
-        final RemoteRepository repository
-    ) throws NoTransporterException {
-        return new AstoTransporter(this.asto);
-    }
+        /**
+         * Storage of maven artifacts.
+         */
+        private final Storage storage;
 
-    @Override
-    public float getPriority() {
-        return 0;
+        /**
+         * Constructor.
+         * @param key Artifact key in storage.
+         * @param storage Storage.
+         */
+        public Maven(final Key key, final Storage storage) {
+            this.key = key;
+            this.storage = storage;
+        }
+
+        /**
+         * Obtains Artifact files from storage.
+         * @return Artifact files.
+         */
+        public List<File> files() {
+            throw new UnsupportedOperationException();
+        }
     }
 }

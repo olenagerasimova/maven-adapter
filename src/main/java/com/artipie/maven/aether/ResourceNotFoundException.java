@@ -33,7 +33,9 @@ import org.eclipse.aether.spi.connector.transport.Transporter;
  * And be classified in {@link Transporter#classify(java.lang.Throwable)}
  * as {@link Transporter#ERROR_NOT_FOUND}
  * @since 0.1
+ * @deprecated Outdated due architectural changes in 0.2
  */
+@Deprecated
 public class ResourceNotFoundException extends RuntimeException {
 
     /**

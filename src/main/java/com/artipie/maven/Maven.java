@@ -21,14 +21,48 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 package com.artipie.maven;
 
+import com.artipie.asto.Content;
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
+import com.artipie.maven.artifact.Artifact;
+import com.artipie.maven.metadata.Metadata;
+import java.util.concurrent.CompletionStage;
+
 /**
- * A generic marker interface of any file containing in the Artipie.
- * @since 0.1
- * @deprecated Outdated due architectural changes in 0.2
+ * Maven front for artipie maven adaptor.
+ *
+ * @since 0.2
  */
-@Deprecated
-public interface RepositoryFile {
+public final class Maven {
+
+    /**
+     * Storage for maven artifacts.
+     */
+    private final Storage storage;
+
+    /**
+     * Constructor.
+     * @param storage Storage used by this class.
+     */
+    Maven(final Storage storage) {
+        this.storage = storage;
+    }
+
+    /**
+     * Updates the metadata of a maven package.
+     * @param artifact Asto key of maven artifact.
+     * @return Completion stage.
+     */
+    public CompletionStage update(final Key artifact) {
+        return this.storage.save(
+            artifact,
+            new Content.From(
+                new Metadata.Maven(
+                    new Artifact.Maven(artifact, this.storage)
+                ).content()
+            )
+        );
+    }
 }

@@ -44,7 +44,9 @@ import org.reactivestreams.FlowAdapters;
  *  Inject other services directly to Deployer.
  *  Create locator and session in Deployer method call.
  *  Same for Resolver.
+ * @deprecated As per new architecture defined in version 0.2
  */
+@Deprecated
 public final class AetherRepository implements Repository {
 
     /**

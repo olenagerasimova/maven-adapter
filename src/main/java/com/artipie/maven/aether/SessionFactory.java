@@ -34,7 +34,9 @@ import org.eclipse.aether.spi.locator.ServiceLocator;
 /**
  * Configures {@link RepositorySystemSession}.
  * @since 0.1
+ * @deprecated Outdated due architectural changes in 0.2
  */
+@Deprecated
 public class SessionFactory {
 
     /**

@@ -28,7 +28,9 @@ package com.artipie.maven.aether;
  * Represents {@link org.eclipse.aether.spi.locator.ServiceLocator} misconfiguration.
  * The given service cannot be located or initialized.
  * @since 0.1
+ * @deprecated Outdated due architectural changes in 0.2
  */
+@Deprecated
 public class ServiceLocatorException extends IllegalStateException {
 
     /**

@@ -21,14 +21,55 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.artipie.maven.file.checksum;
 
-package com.artipie.maven;
+import com.artipie.maven.file.File;
+import org.cactoos.Text;
+import org.cactoos.text.Joined;
+import org.cactoos.text.TextOf;
 
 /**
- * A generic marker interface of any file containing in the Artipie.
- * @since 0.1
- * @deprecated Outdated due architectural changes in 0.2
+ * Checksum abstract decorator for {@link File}.
+ *
+ * @since 0.2
  */
-@Deprecated
-public interface RepositoryFile {
+public abstract class Checksum implements File {
+
+    /**
+     * File origin.
+     */
+    private final File origin;
+
+    /**
+     * Checksum algorithm name.
+     */
+    private final Text algorithm;
+
+    /**
+     * Constructor.
+     * @param algorithm Algorithm name.
+     * @param origin File origin.
+     */
+    Checksum(final Text algorithm, final File origin) {
+        this.algorithm = algorithm;
+        this.origin = origin;
+    }
+
+    /**
+     * Returns the original file.
+     * @return Origin file.
+     */
+    public File file() {
+        return this.origin;
+    }
+
+    @Override
+    public final Text name() {
+        return
+            new Joined(
+                new TextOf("."),
+                this.origin.name(),
+                this.algorithm
+            );
+    }
 }

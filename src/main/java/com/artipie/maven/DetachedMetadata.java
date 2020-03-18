@@ -27,7 +27,9 @@ package com.artipie.maven;
 /**
  * Default interface impl.
  * @since 0.1
+ * @deprecated Outdated due architectural changes in 0.2
  */
+@Deprecated
 @SuppressWarnings({"PMD.AvoidFieldNameMatchingMethodName", "PMD.DataClass"})
 public final class DetachedMetadata implements ArtifactMetadata {
     /**

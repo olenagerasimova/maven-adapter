@@ -21,8 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 /**
- * General utility classes.
+ * Main Maven adapter package.
+ *
  * @since 0.1
  */
 package com.artipie.maven.util;

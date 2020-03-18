@@ -22,13 +22,9 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven;
-
 /**
- * A generic marker interface of any file containing in the Artipie.
+ * Repository abstract for maven adapter.
+ *
  * @since 0.1
- * @deprecated Outdated due architectural changes in 0.2
  */
-@Deprecated
-public interface RepositoryFile {
-}
+package com.artipie.maven.file;

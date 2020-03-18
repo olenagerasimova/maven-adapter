@@ -39,7 +39,9 @@ import org.eclipse.aether.resolution.ArtifactRequest;
 /**
  * Performs artifact resolution.
  * @since 0.1
+ * @deprecated Outdated due architectural changes in 0.2
  */
+@Deprecated
 final class Resolver {
 
     /**

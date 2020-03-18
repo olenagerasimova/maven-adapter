@@ -38,7 +38,9 @@ import org.eclipse.aether.spi.locator.ServiceLocator;
  * Also it helps wiring services with different lifecycles -
  * it propagates natural singletons inside one-shot instances.
  * @since 0.1
+ * @deprecated Outdated due architectural changes in 0.2
  */
+@Deprecated
 public final class ServiceLocatorFactory {
 
     /**

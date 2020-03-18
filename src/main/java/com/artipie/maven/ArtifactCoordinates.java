@@ -29,7 +29,9 @@ package com.artipie.maven;
  * All return values should not be null.
  *
  * @since 0.1
+ * @deprecated Use {@link com.artipie.maven.artifact.Coordinates} instead.
  */
+@Deprecated
 public interface ArtifactCoordinates extends RepositoryFile {
     /**
      * Maven artifact groupId.

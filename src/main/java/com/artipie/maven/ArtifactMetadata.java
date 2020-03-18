@@ -24,10 +24,14 @@
 
 package com.artipie.maven;
 
+import com.artipie.maven.metadata.Metadata;
+
 /**
  * Artifact file attributes.
  * @since 0.1
+ * @deprecated Use {@link Metadata} instead.
  */
+@Deprecated
 public interface ArtifactMetadata {
     /**
      * Artifact coordinates.

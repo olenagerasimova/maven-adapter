@@ -30,7 +30,9 @@ import java.io.UncheckedIOException;
 /**
  * Marker exception for failure on file deletion.
  * @since 0.1
+ * @deprecated Outdated due architectural changes in 0.2
  */
+@Deprecated
 public class FileCleanupException extends UncheckedIOException {
 
     /**

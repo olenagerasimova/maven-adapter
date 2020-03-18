@@ -64,7 +64,9 @@ import org.slf4j.MarkerFactory;
  * Performs deployment lifecycle in terms of Maven libraries.
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (200 lines) see {@link AetherRepository} javadoc
+ * @deprecated Outdated due the new architecure defined in 0.2
  */
+@Deprecated
 final class Deployer {
 
     /**

@@ -21,14 +21,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.artipie.maven.file;
 
-package com.artipie.maven;
+import org.cactoos.Text;
 
 /**
- * A generic marker interface of any file containing in the Artipie.
- * @since 0.1
- * @deprecated Outdated due architectural changes in 0.2
+ * Maven file abstraction.
+ *
+ * Represents a file into a maven repository.
+ *
+ * @since 0.2
+ * @todo #54:30min Implement file storage using artipie/asto Storage.
+ *  Files must be stored somewhere. Use artipie/asto to provide an storage for
+ *  the repository files.
  */
-@Deprecated
-public interface RepositoryFile {
+public interface File {
+
+    /**
+     * File contents.
+     *
+     * @return File contents.
+     */
+    byte[] content();
+
+    /**
+     * File name.
+     *
+     * @return File name.
+     */
+    Text name();
 }

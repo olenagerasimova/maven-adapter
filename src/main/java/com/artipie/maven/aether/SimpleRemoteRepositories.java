@@ -31,7 +31,9 @@ import org.eclipse.aether.repository.RemoteRepository;
 /**
  * Default remotes repositories.
  * @since 0.1
+ * @deprecated Outdated due architectural changes in 0.2
  */
+@Deprecated
 public final class SimpleRemoteRepositories implements RemoteRepositories {
 
     /**
