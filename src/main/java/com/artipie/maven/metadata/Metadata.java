@@ -36,12 +36,12 @@ import org.reactivestreams.Publisher;
  *
  * @since 0.2
  *
- * @todo #54:30min Implement Metadata generation.
+ * @todo #57:30min Continue to implement metadata generation.
  *  Artifact metadata is generated according to Artifact versions and files.
  *  The implementation of metadata must read all files from all versions of
  *  some artifact and then generate a xml representing it. Please refer to
  *  http://maven.apache.org/ref/3.3.9/maven-repository-metadata/repository-metadata.html
- *  to metadata xml structure.
+ *  to metadata xml structure. Once finished, enable test at Metadata test.
  */
 public interface Metadata {
 
