@@ -26,6 +26,7 @@ package com.artipie.maven.metadata;
 import com.artipie.maven.file.File;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import org.cactoos.Text;
 import org.cactoos.io.BytesOf;
 import org.cactoos.io.UncheckedBytes;
@@ -55,15 +56,15 @@ public class MetadataMavenTest {
                         () -> new ListOf(
                             new FakeFile(
                                 new TextOf("artifact-0.1.jar"),
-                                "jar file 0.1".getBytes()
+                                "jar file 0.1".getBytes(StandardCharsets.UTF_8)
                             ),
                             new FakeFile(
                                 new TextOf("artifact-0.1-source.jar"),
-                                "source file 0.1".getBytes()
+                                "source file 0.1".getBytes(StandardCharsets.UTF_8)
                             ),
                             new FakeFile(
                                 new TextOf("artifact-0.1-javadoc.jar"),
-                                "javadoc file 0.1".getBytes()
+                                "javadoc file 0.1".getBytes(StandardCharsets.UTF_8)
                             ),
                             new FakeFile(
                                 new TextOf("artifact-0.2.jar"),

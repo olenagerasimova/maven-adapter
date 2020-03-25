@@ -23,7 +23,7 @@
  */
 
 /**
- * Artifact abstractions for maven adapter..
+ * Artifact abstractions for maven adapter.
  *
  * @since 0.1
  */
