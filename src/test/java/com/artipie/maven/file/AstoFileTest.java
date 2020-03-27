@@ -27,6 +27,8 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
+import io.reactivex.Flowable;
+import java.nio.ByteBuffer;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Disabled;
@@ -51,7 +53,16 @@ public class AstoFileTest {
         );
         final File file = new File.Asto(key, asto);
         MatcherAssert.assertThat(
-            file.content(),
+            Flowable
+                .fromPublisher(file.content())
+                .concatMap(
+                    buffer -> Flowable.just(buffer.array())
+                ).reduce(
+                    (arr1, arr2) ->
+                        ByteBuffer.wrap(
+                            new byte[arr1.length + arr2.length]
+                        ).put(arr1).put(arr2).array()
+                ).blockingGet(),
             new IsEqual<>(content.getBytes())
         );
     }

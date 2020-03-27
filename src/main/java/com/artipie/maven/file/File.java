@@ -25,7 +25,9 @@ package com.artipie.maven.file;
 
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import java.nio.ByteBuffer;
 import org.cactoos.Text;
+import org.reactivestreams.Publisher;
 
 /**
  * Maven file abstraction.
@@ -44,7 +46,7 @@ public interface File {
      *
      * @return File contents.
      */
-    byte[] content();
+    Publisher<ByteBuffer> content();
 
     /**
      * File name.
@@ -82,7 +84,7 @@ public interface File {
         }
 
         @Override
-        public byte[] content() {
+        public Publisher<ByteBuffer> content() {
             throw new UnsupportedOperationException();
         }
 
