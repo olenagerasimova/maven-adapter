@@ -23,7 +23,11 @@
  */
 package com.artipie.maven.file;
 
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
+import java.nio.ByteBuffer;
 import org.cactoos.Text;
+import org.reactivestreams.Publisher;
 
 /**
  * Maven file abstraction.
@@ -31,9 +35,9 @@ import org.cactoos.Text;
  * Represents a file into a maven repository.
  *
  * @since 0.2
- * @todo #54:30min Implement file storage using artipie/asto Storage.
- *  Files must be stored somewhere. Use artipie/asto to provide an storage for
- *  the repository files.
+ * @todo #58:30min Implement file storage using artipie/asto Storage.
+ *  Finish File.Asto implementation and then remove the disabled
+ *  annotation from the tests in AstoFileTest.
  */
 public interface File {
 
@@ -42,7 +46,7 @@ public interface File {
      *
      * @return File contents.
      */
-    byte[] content();
+    Publisher<ByteBuffer> content();
 
     /**
      * File name.
@@ -50,4 +54,43 @@ public interface File {
      * @return File name.
      */
     Text name();
+
+    /**
+     * File implemented in Asto storage.
+     *
+     * @since 0.2
+     */
+    class Asto implements File {
+
+        /**
+         * Asto key for File.
+         */
+        private final Key key;
+
+        /**
+         * Asto storage.
+         */
+        private final Storage storage;
+
+        /**
+         * Constructor.
+         *
+         * @param key Asto key.
+         * @param storage Asto storage.
+         */
+        Asto(final Key key, final Storage storage) {
+            this.key = key;
+            this.storage = storage;
+        }
+
+        @Override
+        public Publisher<ByteBuffer> content() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Text name() {
+            throw new UnsupportedOperationException();
+        }
+    }
 }

@@ -25,7 +25,9 @@
 package com.artipie.maven.file.checksum;
 
 import com.artipie.maven.file.File;
+import java.nio.ByteBuffer;
 import org.cactoos.text.TextOf;
+import org.reactivestreams.Publisher;
 
 /**
  * SHA-1 checksum decorator for file. Represents a SHA-1 checksum file for a given
@@ -44,7 +46,7 @@ public final class Sha1 extends Checksum {
     }
 
     @Override
-    public byte[] content() {
+    public Publisher<ByteBuffer> content() {
         throw new UnsupportedOperationException();
     }
 }

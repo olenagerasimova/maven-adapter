@@ -37,6 +37,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.reactivestreams.Publisher;
 
 /**
  * Tests for {@link Metadata.Maven}.
@@ -135,7 +136,7 @@ public class MetadataMavenTest {
         /**
          * File content.
          */
-        private final UncheckedBytes bytecontent;
+        private final ByteBuffer bytecontent;
 
         /**
          * File name.
@@ -150,12 +151,12 @@ public class MetadataMavenTest {
          */
         FakeFile(final Text name, final byte[] content) {
             this.filename = name;
-            this.bytecontent = new UncheckedBytes(new BytesOf(content));
+            this.bytecontent = ByteBuffer.wrap(new UncheckedBytes(new BytesOf(content)).asBytes());
         }
 
         @Override
-        public byte[] content() {
-            return this.bytecontent.asBytes();
+        public Publisher<ByteBuffer> content() {
+            return Flowable.just(this.bytecontent);
         }
 
         @Override

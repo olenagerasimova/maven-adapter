@@ -22,31 +22,9 @@
  * SOFTWARE.
  */
 
-package com.artipie.maven.file.checksum;
-
-import com.artipie.maven.file.File;
-import java.nio.ByteBuffer;
-import org.cactoos.text.TextOf;
-import org.reactivestreams.Publisher;
-
 /**
- * MD5 checksum decorator for file. Represents a MD5 checksum file for a given
- * file.
+ * Artifact abstractions for maven adapter..
  *
- * @since 0.2
+ * @since 0.1
  */
-public final class Md5 extends Checksum {
-
-    /**
-     * Constructor.
-     * @param file File to have its MD5 checksum calculated.
-     */
-    public Md5(final File file) {
-        super(new TextOf("md5"), file);
-    }
-
-    @Override
-    public Publisher<ByteBuffer> content() {
-        throw new UnsupportedOperationException();
-    }
-}
+package com.artipie.maven.file;
