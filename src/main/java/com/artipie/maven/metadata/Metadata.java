@@ -25,20 +25,19 @@
 package com.artipie.maven.metadata;
 
 import com.artipie.maven.artifact.Artifact;
+import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
-
-import io.reactivex.Flowable;
-import org.cactoos.Text;
+import org.cactoos.iterable.Reversed;
 import org.cactoos.list.ListOf;
-import org.cactoos.text.*;
+import org.cactoos.text.PrefixOf;
+import org.cactoos.text.Split;
+import org.cactoos.text.TextOf;
+import org.cactoos.text.UncheckedText;
 import org.reactivestreams.Publisher;
-import org.xembly.Directive;
 import org.xembly.Directives;
-import org.xembly.ImpossibleModificationException;
 import org.xembly.Xembler;
 
 /**
@@ -49,12 +48,7 @@ import org.xembly.Xembler;
  *
  * @since 0.2
  *
- * @todo #57:30min Continue to implement metadata generation.
- *  Artifact metadata is generated according to Artifact versions and files.
- *  The implementation of metadata must read all files from all versions of
- *  some artifact and then generate a xml representing it. Please refer to
- *  http://maven.apache.org/ref/3.3.9/maven-repository-metadata/repository-metadata.html
- *  to metadata xml structure. Once finished, enable test at Metadata test.
+ * @checkstyle ClassDataAbstractionCouplingCheck (200 lines)
  */
 public interface Metadata {
 
@@ -73,6 +67,16 @@ public interface Metadata {
     class Maven implements Metadata {
 
         /**
+         * Version tag name.
+         */
+        private static final String VERSION = "version";
+
+        /**
+         * ArtifactIf tag name.
+         */
+        private static final String ARTIFACTID = "artifactId";
+
+        /**
          * Artifact for metadata retrieval.
          */
         private final Artifact artifact;
@@ -87,7 +91,6 @@ public interface Metadata {
 
         @Override
         public Publisher<ByteBuffer> content() {
-
             final List versions = this.artifact.files().stream().map(
                 file ->
                 new UncheckedText(
@@ -101,21 +104,19 @@ public interface Metadata {
                         )
                     ).get(1)
                 ).asString()
-            ).distinct().sorted(Comparator.reverseOrder())
-            .collect(Collectors.toList());
-
+            ).distinct().sorted(Comparator.reverseOrder()).collect(Collectors.toList());
             return Flowable.just(
             ByteBuffer.wrap(
                 new Xembler(
                     new Directives()
-                    .remove()
                     .add("metadata")
                     .attr("xmlns", "http://maven.apache.org/METADATA/1.1.0")
                     .attr("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+                    //@checkstyle LineLengthCheck (1 line)
                     .attr("xsi:schemaLocation", "http://maven.apache.org/METADATA/1.1.0 http://maven.apache.org/xsd/metadata-1.1.0.xsd")
                     .add("groupId").up()
-                    .add("artifactId").up()
-                    .add("version").set(versions.get(0)).up()
+                    .add(Maven.ARTIFACTID).up()
+                    .add(Maven.VERSION).set(versions.get(0)).up()
                     .add("versioning")
                     .add("latest").set(versions.get(0)).up()
                     .add("release").set(versions.get(0)).up()
@@ -127,8 +128,8 @@ public interface Metadata {
                     .append(
                         () -> {
                             final Directives dirs = new Directives();
-                            versions.forEach(
-                                version -> dirs.add("version").set(version).up()
+                            new Reversed<>(versions).forEach(
+                                version -> dirs.add(Maven.VERSION).set(version).up()
                             );
                             return dirs.iterator();
                         }
@@ -139,14 +140,15 @@ public interface Metadata {
                     .add("classifier").up()
                     .add("extension").up()
                     .add("value").up()
-                    .add("updated").up().up().up()
+                    .add("updated").up().up().up().up()
                     .add("plugins")
                     .add("plugin")
                     .add("name").up()
                     .add("prefix").up()
-                    .add("artifactId").up().up()
+                    .add(Maven.ARTIFACTID).up().up()
                 )
-                .xmlQuietly().getBytes()
+                .xmlQuietly().replace("\r\n", "")
+                    .getBytes()
             )
             );
         }

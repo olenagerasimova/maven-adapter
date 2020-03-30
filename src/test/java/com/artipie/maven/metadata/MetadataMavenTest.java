@@ -35,7 +35,6 @@ import org.cactoos.text.Joined;
 import org.cactoos.text.TextOf;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
 
@@ -105,12 +104,13 @@ public class MetadataMavenTest {
                     new BytesOf(
                         new Joined(
                             "",
+                            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>",
                             "<metadata xmlns=\"http://maven.apache.org/METADATA/1.1.0\" ",
                             "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" ",
                             "xsi:schemaLocation=\"http://maven.apache.org/METADATA/1.1.0 ",
                             "http://maven.apache.org/xsd/metadata-1.1.0.xsd\">",
                             "<groupId/><artifactId/><version>1.0</version><versioning>",
-                            "<latest>1.0</version><release>1.0</release><snapshot>",
+                            "<latest>1.0</latest><release>1.0</release><snapshot>",
                             "<timestamp/><buildNumber/><localCopy/></snapshot>",
                             "<versions><version>0.1</version><version>0.2</version>",
                             "<version>1.0</version></versions><lastUpdated/>",
