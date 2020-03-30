@@ -41,6 +41,13 @@
             <artifactId>cactoos</artifactId>
             <version>0.44</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.jcabi.incubator</groupId>
+            <artifactId>xembly</artifactId>
+            <version>0.23.0</version>
+        </dependency>
+
         <!-- maven -->
         <dependency>
             <groupId>org.apache.maven</groupId>

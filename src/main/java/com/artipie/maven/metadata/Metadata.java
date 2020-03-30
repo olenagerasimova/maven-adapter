@@ -26,7 +26,20 @@ package com.artipie.maven.metadata;
 
 import com.artipie.maven.artifact.Artifact;
 import java.nio.ByteBuffer;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import io.reactivex.Flowable;
+import org.cactoos.Text;
+import org.cactoos.list.ListOf;
+import org.cactoos.text.*;
 import org.reactivestreams.Publisher;
+import org.xembly.Directive;
+import org.xembly.Directives;
+import org.xembly.ImpossibleModificationException;
+import org.xembly.Xembler;
 
 /**
  * Artifact metadata.
@@ -74,7 +87,68 @@ public interface Metadata {
 
         @Override
         public Publisher<ByteBuffer> content() {
-            throw new UnsupportedOperationException();
+
+            final List versions = this.artifact.files().stream().map(
+                file ->
+                new UncheckedText(
+                    new ListOf<>(
+                        new Split(
+                            new PrefixOf(
+                                new UncheckedText(file.name()).asString(),
+                                ".jar"
+                            ),
+                            new TextOf("-")
+                        )
+                    ).get(1)
+                ).asString()
+            ).distinct().sorted(Comparator.reverseOrder())
+            .collect(Collectors.toList());
+
+            return Flowable.just(
+            ByteBuffer.wrap(
+                new Xembler(
+                    new Directives()
+                    .remove()
+                    .add("metadata")
+                    .attr("xmlns", "http://maven.apache.org/METADATA/1.1.0")
+                    .attr("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+                    .attr("xsi:schemaLocation", "http://maven.apache.org/METADATA/1.1.0 http://maven.apache.org/xsd/metadata-1.1.0.xsd")
+                    .add("groupId").up()
+                    .add("artifactId").up()
+                    .add("version").set(versions.get(0)).up()
+                    .add("versioning")
+                    .add("latest").set(versions.get(0)).up()
+                    .add("release").set(versions.get(0)).up()
+                    .add("snapshot")
+                    .add("timestamp").up()
+                    .add("buildNumber").up()
+                    .add("localCopy").up().up()
+                    .add("versions")
+                    .append(
+                        () -> {
+                            final Directives dirs = new Directives();
+                            versions.forEach(
+                                version -> dirs.add("version").set(version).up()
+                            );
+                            return dirs.iterator();
+                        }
+                    ).up()
+                    .add("lastUpdated").up()
+                    .add("snapshotVersions")
+                    .add("snapshotVersion")
+                    .add("classifier").up()
+                    .add("extension").up()
+                    .add("value").up()
+                    .add("updated").up().up().up()
+                    .add("plugins")
+                    .add("plugin")
+                    .add("name").up()
+                    .add("prefix").up()
+                    .add("artifactId").up().up()
+                )
+                .xmlQuietly().getBytes()
+            )
+            );
         }
     }
 }

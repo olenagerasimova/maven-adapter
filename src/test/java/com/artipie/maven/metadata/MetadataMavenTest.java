@@ -48,8 +48,7 @@ import org.reactivestreams.Publisher;
 public class MetadataMavenTest {
 
     @Test
-    @Disabled
-    public void createsMetadata() {
+    public void createsMetadata() throws Exception {
         MatcherAssert.assertThat(
             Flowable
                 .fromPublisher(
