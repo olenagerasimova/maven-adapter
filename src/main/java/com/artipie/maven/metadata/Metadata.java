@@ -91,7 +91,7 @@ public interface Metadata {
 
         @Override
         public Publisher<ByteBuffer> content() {
-            final List versions = this.artifact.files().stream().map(
+            final List<String> versions = this.artifact.files().stream().map(
                 file ->
                 new UncheckedText(
                     new ListOf<>(
@@ -105,6 +105,7 @@ public interface Metadata {
                     ).get(1)
                 ).asString()
             ).distinct().sorted(Comparator.reverseOrder()).collect(Collectors.toList());
+            final String latest = versions.get(0);
             return Flowable.just(
             ByteBuffer.wrap(
                 new Xembler(
@@ -116,10 +117,10 @@ public interface Metadata {
                     .attr("xsi:schemaLocation", "http://maven.apache.org/METADATA/1.1.0 http://maven.apache.org/xsd/metadata-1.1.0.xsd")
                     .add("groupId").up()
                     .add(Maven.ARTIFACTID).up()
-                    .add(Maven.VERSION).set(versions.get(0)).up()
+                    .add(Maven.VERSION).set(latest).up()
                     .add("versioning")
-                    .add("latest").set(versions.get(0)).up()
-                    .add("release").set(versions.get(0)).up()
+                    .add("latest").set(latest).up()
+                    .add("release").set(latest).up()
                     .add("snapshot")
                     .add("timestamp").up()
                     .add("buildNumber").up()
