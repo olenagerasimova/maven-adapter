@@ -148,7 +148,7 @@ public interface Metadata {
                     .add("prefix").up()
                     .add(Maven.ARTIFACTID).up().up()
                 )
-                .xmlQuietly().replace("\r\n", "").trim()
+                .xmlQuietly().replace("\r", "").replace("\n", "")
                     .getBytes()
             )
             );
