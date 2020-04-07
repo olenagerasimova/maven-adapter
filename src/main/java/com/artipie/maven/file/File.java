@@ -25,8 +25,10 @@ package com.artipie.maven.file;
 
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.nio.ByteBuffer;
 import org.cactoos.Text;
+import org.cactoos.text.TextOf;
 import org.reactivestreams.Publisher;
 
 /**
@@ -35,9 +37,6 @@ import org.reactivestreams.Publisher;
  * Represents a file into a maven repository.
  *
  * @since 0.2
- * @todo #58:30min Implement file storage using artipie/asto Storage.
- *  Finish File.Asto implementation and then remove the disabled
- *  annotation from the tests in AstoFileTest.
  */
 public interface File {
 
@@ -85,12 +84,14 @@ public interface File {
 
         @Override
         public Publisher<ByteBuffer> content() {
-            throw new UnsupportedOperationException();
+            return SingleInterop
+                .fromFuture(this.storage.value(this.key))
+                .flatMapPublisher(c -> c);
         }
 
         @Override
         public Text name() {
-            throw new UnsupportedOperationException();
+            return new TextOf(this.key.string());
         }
     }
 }
