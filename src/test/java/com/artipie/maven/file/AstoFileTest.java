@@ -31,7 +31,6 @@ import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -42,7 +41,6 @@ import org.junit.jupiter.api.Test;
 public class AstoFileTest {
 
     @Test
-    @Disabled
     public void readContent() {
         final Storage asto = new InMemoryStorage();
         final Key key = new Key.From("key");
@@ -68,7 +66,6 @@ public class AstoFileTest {
     }
 
     @Test
-    @Disabled
     public void readFileName() throws Exception {
         final Storage asto = new InMemoryStorage();
         final Key key = new Key.From("anotherKey");
