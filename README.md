@@ -27,7 +27,30 @@ To avoid build errors use Maven 3.2+.
 
 ## How it works
 
-## Files
+When the Maven client downloads a dependency, it relies on normal HTTP GET based on well-known files (see below for details).
+
+In correspondance with this, Artipie responds to HTTP requests for each of the type of files like a normal HTTP server.
+
+<!--
+@todo #64:30min Continue working in the Maven HTTP API for downloading artifacts: we need to 1) add
+ IT tests that uses a traditional Maven client (investigate for libraries used in the Maven
+ ecosystem to simulate proper Maven client requests), and then 2) implement those HTTP API
+ so that we serve the artifacts according to the layout described below.
+-->
+
+When the Maven client uploads a dependency, it relies on the maven-deploy-plugin being configured, a
+repository being configure in the `distributionManagement` section of the `settings.xml` and authentication
+credentials configured in the `servers` section of the`settings.xml`.
+
+<!--
+@todo #64:30min Continue working in the Maven HTTP API for uploading artifacts: we need to 1) investigate
+ exactly what are the HTTP endpoints needed when using the maven-deploy-plugin with the HTTP Wagon extension,
+ 2) add IT tests that uses a traditional Maven client (investigate for libraries used in the Maven
+ ecosystem to simulate proper Maven client requests), and then 3) implement those HTTP API
+ so that the IT tests pass.
+-->
+
+### Files
 
 A dependency is identified by its _coordinates_ - groupId, artifactId and version.
 JAR files may contain a classifier suffix - `sources` or `javadoc`.
@@ -43,17 +66,19 @@ including snapshot versions.
 File naming convention is:
 `artifactId-version[-classifier]-extension`
 
-## Layout
+### Layout
 
 (Default) naming convention is - in groupId replace all dots with directory separator ('/')
 then put artifactId, version and then go files.
 
-Example layout (not fully exhausting):
+Example layout (not fully exhaustive):
 ```
 $ROOT
 |-- org/
     `-- example/
         `-- artifact/
+            `-- maven-metadata.xml
+            `-- maven-metadata.xml.sha1
             `-- 1.0/
                 |-- artifact-1.0.jar
                 |-- artifact-1.0.jar.sha1
@@ -65,7 +90,6 @@ $ROOT
 
 For example, for an artifact `org.example:artifact:1.0` (Gradle-style notation is used for clarity)
 the path would be `org/example/artifact/1.0/artifact-1.0.jar` (and other files).
-
 
 ## A developer's entrypoint
 
