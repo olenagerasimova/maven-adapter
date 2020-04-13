@@ -1,6 +1,6 @@
 <img src="https://www.artipie.com/logo.svg" width="64px" height="64px"/>
 
-![Maven Build](https://github.com/artipie/maven-adapter/workflows/Maven%20Build/badge.svg)
+[![Maven Build](https://github.com/artipie/maven-adapter/workflows/Maven%20Build/badge.svg)](https://github.com/artipie/maven-adapter/actions?query=workflow%3A%22Maven+Build%22)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/artipie/maven-adapter/blob/master/LICENSE.txt)
 [![Hits-of-Code](https://hitsofcode.com/github/artipie/maven-adapter)](https://hitsofcode.com/view/github/artipie/maven-adapter)
 [![PDD status](http://www.0pdd.com/svg?name=artipie/maven-adapter)](http://www.0pdd.com/p?name=artipie/maven-adapter)
