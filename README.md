@@ -93,33 +93,13 @@ the path would be `org/example/artifact/1.0/artifact-1.0.jar` (and other files).
 
 ## A developer's entrypoint
 
-`com.artipie.maven.Repository` is central facade for all operations.
-The only implementation is `com.artipie.maven.aether.repository.AetherRepository`.
+`com.artipie.maven.Maven` is the central entrypoint for all operations. It uses a
+`com.artipie.asto.Storage` to storage maven artifacts.
 
-#### `Repository#upload(String path,InputStream content)`
-Uploads a given artifact defined by its path.
-A client (mvn) usually makes at least two subsequent requests - for a JAR file and for a POM file
-and maybe more for classifier files.
+Current implementation is focused on generating metadata fopr artifacts on repository.
 
-`path` - is expected to be a HTTP request URI path.
-`content` - an artifact payload.
-
-```$java
-final Repository repository = new AetherRepository(
-    new ServiceLocatorFactory(),
-    new LocalRepository("LOCAL"),
-    new AutoCloseablePath.Parent("STAGING")
-);
-/* an Artipie client (mvn tool) makes a HTTP call like
- * "curl -X PUT -F ‘data=@/artifact-1.0.jar’
- * https://www.artipie.com/maven-adapter/org/example/artifact/1.0/artifact-1.0.jar"
- */
-final String path = /* request path section */
-assert path.contentEquals("org/example/artifact/1.0/artifact-1.0.jar");
-final InputStream content = /* request body */
-final var result = repository.upload(path, content);
-// build a HTTP response
-```
+#### `Maven#update(final Key artifact)`
+Updates the metadata of some artifact on the repository, given its key.
 
 #### Storage lifecycle
 
