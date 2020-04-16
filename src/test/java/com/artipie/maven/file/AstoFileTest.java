@@ -41,14 +41,14 @@ import org.junit.jupiter.api.Test;
 public class AstoFileTest {
 
     @Test
-    public void readContent() {
+    public void readContent() throws Exception {
         final Storage asto = new InMemoryStorage();
         final Key key = new Key.From("key");
         final String content = "a sample content for file";
         asto.save(
             key,
             new Content.From(content.getBytes())
-        );
+        ).get();
         final File file = new File.Asto(key, asto);
         MatcherAssert.assertThat(
             Flowable
@@ -72,7 +72,7 @@ public class AstoFileTest {
         asto.save(
             key,
             new Content.From(new byte[0])
-        );
+        ).get();
         final File file = new File.Asto(key, asto);
         MatcherAssert.assertThat(
             file.name().asString(),
