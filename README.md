@@ -31,13 +31,6 @@ When the Maven client downloads a dependency, it relies on normal HTTP GET based
 
 In correspondance with this, Artipie responds to HTTP requests for each of the type of files like a normal HTTP server.
 
-<!--
-@todo #64:30min Continue working in the Maven HTTP API for downloading artifacts: we need to 1) add
- IT tests that uses a traditional Maven client (investigate for libraries used in the Maven
- ecosystem to simulate proper Maven client requests), and then 2) implement those HTTP API
- so that we serve the artifacts according to the layout described below.
--->
-
 When the Maven client uploads a dependency, it relies on the maven-deploy-plugin being configured, a
 repository being configure in the `distributionManagement` section of the `settings.xml` and authentication
 credentials configured in the `servers` section of the`settings.xml`.
