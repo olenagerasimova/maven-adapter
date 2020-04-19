@@ -96,10 +96,18 @@ the path would be `org/example/artifact/1.0/artifact-1.0.jar` (and other files).
 `com.artipie.maven.Maven` is the central entrypoint for all operations. It uses a
 `com.artipie.asto.Storage` to storage maven artifacts.
 
-Current implementation is focused on generating metadata fopr artifacts on repository.
+Current implementation is focused on generating metadata for artifacts on repository.
 
-#### `Maven#update(final Key artifact)`
-Updates the metadata of some artifact on the repository, given its key.
+Taking the repository described above in Layout section, let's suppose that a new version for the artifact
+was uploaded to the repository (`2.0` for example). We generate the metadata this way: 
+
+```java
+    Metadata updated = new Maven(
+        storage
+    ).update("org.example.artifact");
+```
+
+It will generate the `metadata.xml` with the recently added `2.0` version info.
 
 #### Storage lifecycle
 
