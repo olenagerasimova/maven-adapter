@@ -83,7 +83,7 @@ public final class MavenITCase {
      *
      * @since 1.0
      */
-    private static final class MavenArtifacts {
+    public static final class MavenArtifacts {
 
         /**
          * The system.
