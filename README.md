@@ -94,7 +94,7 @@ the path would be `org/example/artifact/1.0/artifact-1.0.jar` (and other files).
 ## A developer's entrypoint
 
 `com.artipie.maven.Maven` is the central entrypoint for all operations. It uses a
-`com.artipie.asto.Storage` to storage maven artifacts.
+`com.artipie.asto.Storage` to store maven artifacts.
 
 Current implementation is focused on generating metadata for artifacts on repository.
 
