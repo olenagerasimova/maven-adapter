@@ -48,7 +48,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * Tests for {@link Maven}.
+ * Tests for the not-yet implementend Maven HTTP API.
  *
  * @since 1.0
  * @todo #71:30min Continue working on the Maven HTTP API for downloading artifacts: we need to 1)
@@ -59,7 +59,7 @@ import org.junit.jupiter.api.io.TempDir;
  *  in test serveArtifact). Once this is done, then 2) implement those HTTP API so that the test
  *  serveArtifact passes.
  */
-public final class MavenITCase {
+public final class MavenHttpITCase {
 
     @Test
     public void serveArtifact(final @TempDir Path localrepo) throws Exception {
