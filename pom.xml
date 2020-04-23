@@ -56,13 +56,27 @@
         <!-- maven -->
         <dependency>
             <groupId>org.apache.maven</groupId>
-            <artifactId>maven-embedder</artifactId>
+            <artifactId>maven-resolver-provider</artifactId>
             <version>3.6.3</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.resolver</groupId>
             <artifactId>maven-resolver-connector-basic</artifactId>
             <version>1.4.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-transport-file</artifactId>
+            <version>1.4.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-transport-http</artifactId>
+            <version>1.4.1</version>
+            <scope>test</scope>
         </dependency>
         <!-- the rest -->
         <dependency>
@@ -141,7 +155,8 @@
                             <exclude>**/com/artipie/maven/RepositoryFile.java</exclude>
                         </excludes>
                         <testExcludes>
-                            <testExclude>**/com/artipie/maven/*.java</testExclude>
+                            <testExclude>**/com/artipie/maven/ChecksumAttributeTest.java</testExclude>
+                            <testExclude>**/com/artipie/maven/FileCoordinatesTest.java</testExclude>
                             <testExclude>**/com/artipie/maven/aether/*.java</testExclude>
                             <testExclude>**/com/artipie/maven/aether/repository/*.java</testExclude>
                             <testExclude>**/com/artipie/maven/test/*.java</testExclude>
