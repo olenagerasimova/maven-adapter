@@ -23,8 +23,14 @@
  */
 package com.artipie.maven;
 
+import com.artipie.asto.fs.FileStorage;
+import com.artipie.maven.http.MavenSlice;
+import com.artipie.vertx.VertxSliceServer;
+import io.vertx.reactivex.core.Vertx;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -44,6 +50,8 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsNot;
 import org.hamcrest.core.IsNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -51,24 +59,43 @@ import org.junit.jupiter.api.io.TempDir;
  * Tests for the not-yet implementend Maven HTTP API.
  *
  * @since 1.0
- * @todo #71:30min Continue working on the Maven HTTP API for downloading artifacts: we need to 1)
- *  add to the test serveArtifact a) the instantiation of the artipie Maven server with a test
- *  artifact being served via the Maven HTTP API (see README for details) and b) configure the
- *  remote repository in the test serveArtifact to point to the Artipie Maven server and c) verify
- *  the test serveArtifact is able to download the artifact correctly via aether (already setup
- *  in test serveArtifact). Once this is done, then 2) implement those HTTP API so that the test
- *  serveArtifact passes.
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-public final class MavenHttpITCase {
+final class MavenHttpITCase {
+
+    /**
+     * Vertx instance.
+     */
+    private Vertx vertx;
+
+    @BeforeEach
+    void setUp() {
+        this.vertx = Vertx.vertx();
+    }
+
+    @AfterEach
+    void tearDown() {
+        this.vertx.close();
+    }
 
     @Test
-    public void serveArtifact(final @TempDir Path localrepo) throws Exception {
+    void serveArtifact(final @TempDir Path localrepo, final @TempDir Path remote)
+        throws Exception {
+        final FileStorage storage = new FileStorage(remote, this.vertx.fileSystem());
+        final Path artifact = remote.resolve("org").resolve("apache").resolve("maven")
+            .resolve("resolver").resolve("maven-resolver-util").resolve("1.3.3");
+        Files.createDirectories(artifact);
+        Files.write(artifact.resolve("maven-resolver-util-1.3.3.jar"), new byte[]{0});
+        final VertxSliceServer server = new VertxSliceServer(this.vertx, new MavenSlice(storage));
+        final int port = server.start();
         MatcherAssert.assertThat(
             "Must retrieve artifact",
             new MavenArtifacts(
                 new RemoteRepository.Builder(
                     "central", "default",
-                    "https://repo1.maven.org/maven2/"
+                    new URIBuilder("http://localhost/")
+                        .setPort(port)
+                        .toString()
                 ).build(),
                 localrepo
             ).artifact("org.apache.maven.resolver:maven-resolver-util:1.3.3"),

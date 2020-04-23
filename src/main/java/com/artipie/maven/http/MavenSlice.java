@@ -21,14 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.artipie.maven.http;
 
-package com.artipie.maven;
+import com.artipie.asto.Storage;
+import com.artipie.http.Slice;
+import com.artipie.http.rq.RqMethod;
+import com.artipie.http.rs.StandardRs;
+import com.artipie.http.rt.RtRule;
+import com.artipie.http.rt.SliceRoute;
+import com.artipie.http.slice.SliceDownload;
+import com.artipie.http.slice.SliceSimple;
 
 /**
- * A generic marker interface of any file containing in the Artipie.
+ * Maven API entry point.
  * @since 0.1
- * @deprecated Outdated due architectural changes in 0.2
  */
-@Deprecated
-public interface RepositoryFile {
+public final class MavenSlice extends Slice.Wrap {
+
+    /**
+     * API entry point.
+     * @param storage Storage
+     */
+    public MavenSlice(final Storage storage) {
+        super(
+            new SliceRoute(
+                new SliceRoute.Path(
+                    new RtRule.ByMethod(RqMethod.GET),
+                    new SliceDownload(storage)
+                ),
+                new SliceRoute.Path(
+                    RtRule.FALLBACK, new SliceSimple(StandardRs.NOT_FOUND)
+                )
+            )
+        );
+    }
 }
