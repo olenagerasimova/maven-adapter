@@ -52,7 +52,7 @@ public class MetadataMavenTest {
             Flowable
                 .fromPublisher(
                     new Metadata.Maven(
-                        () -> new ListOf(
+                        () -> new ListOf<>(
                             new FakeFile(
                                 new TextOf("artifact-0.1.jar"),
                                 "jar file 0.1".getBytes(StandardCharsets.UTF_8)

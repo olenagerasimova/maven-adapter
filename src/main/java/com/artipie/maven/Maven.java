@@ -55,7 +55,7 @@ public final class Maven {
      * @param artifact Asto key of maven artifact.
      * @return Completion stage.
      */
-    public CompletionStage update(final Key artifact) {
+    public CompletionStage<Void> update(final Key artifact) {
         return this.storage.save(
             artifact,
             new Content.From(

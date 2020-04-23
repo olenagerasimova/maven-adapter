@@ -26,6 +26,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.artipie</groupId>
+        <artifactId>ppom</artifactId>
+        <version>0.3.1</version>
+    </parent>
     <groupId>com.artipie</groupId>
     <artifactId>maven-adapter</artifactId>
     <version>1.0-SNAPSHOT</version>
@@ -228,7 +233,7 @@
                     <artifactId>qulice-maven-plugin</artifactId>
                     <version>0.18.19</version>
                     <configuration>
-                        <license>file:${project.basedir}/LICENSE</license>
+                        <license>file:${project.basedir}/LICENSE.txt</license>
                         <excludes combine.children="append">
                             <exclude>findbugs:.*</exclude>
                             <exclude>duplicatefinder:.*</exclude>
