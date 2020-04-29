@@ -82,7 +82,7 @@ SOFTWARE.
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>http</artifactId>
-      <version>0.8.2</version>
+      <version>0.8.4</version>
     </dependency>
     <!-- @todo #54:30min Remove commons usage in favor of cactoos
           Cactoos provides most of commons libraries functions in a
