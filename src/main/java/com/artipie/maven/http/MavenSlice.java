@@ -55,7 +55,7 @@ public final class MavenSlice extends Slice.Wrap {
 
     /**
      * Ctor used by Artipie server which knows `Authentication` implementation.
-     * @param storage The storage. And default parameters for free access.
+     * @param storage The storage and default parameters for free access.
      * @param perms Access permissions.
      * @param auth Auth details.
      */
