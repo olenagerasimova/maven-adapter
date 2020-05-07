@@ -25,6 +25,12 @@ package com.artipie.maven.http;
 
 import com.artipie.asto.Storage;
 import com.artipie.http.Slice;
+import com.artipie.http.auth.Authentication;
+import com.artipie.http.auth.BasicIdentities;
+import com.artipie.http.auth.Identities;
+import com.artipie.http.auth.Permission;
+import com.artipie.http.auth.Permissions;
+import com.artipie.http.auth.SliceAuth;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.StandardRs;
 import com.artipie.http.rt.RtRule;
@@ -35,19 +41,44 @@ import com.artipie.http.slice.SliceSimple;
 /**
  * Maven API entry point.
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class MavenSlice extends Slice.Wrap {
 
     /**
-     * API entry point.
-     * @param storage Storage
+     * Ctor.
+     * @param storage The storage and default parameters for free access.
      */
     public MavenSlice(final Storage storage) {
+        this(storage, Permissions.FREE, Identities.ANONYMOUS);
+    }
+
+    /**
+     * Ctor used by Artipie server which knows `Authentication` implementation.
+     * @param storage The storage and default parameters for free access.
+     * @param perms Access permissions.
+     * @param auth Auth details.
+     */
+    public MavenSlice(final Storage storage, final Permissions perms, final Authentication auth) {
+        this(storage, perms, new BasicIdentities(auth));
+    }
+
+    /**
+     * Private ctor since Artipie doesn't know about `Identities` implementation.
+     * @param storage The storage.
+     * @param perms Access permissions.
+     * @param users Concrete identities.
+     */
+    private MavenSlice(final Storage storage, final Permissions perms, final Identities users) {
         super(
             new SliceRoute(
                 new SliceRoute.Path(
                     new RtRule.ByMethod(RqMethod.GET),
-                    new SliceDownload(storage)
+                        new SliceAuth(
+                            new SliceDownload(storage),
+                            new Permission.ByName("download", perms),
+                            users
+                        )
                 ),
                 new SliceRoute.Path(
                     RtRule.FALLBACK, new SliceSimple(StandardRs.NOT_FOUND)
