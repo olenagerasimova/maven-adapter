@@ -27,21 +27,13 @@ To avoid build errors use Maven 3.2+.
 
 ## How it works
 
-When the Maven client downloads a dependency, it relies on normal HTTP GET based on well-known files (see below for details).
+When the Maven client downloads a dependency, it relies on normal HTTP GET and PUT on well-known files (see below for details).
 
-In correspondance with this, Artipie responds to HTTP requests for each of the type of files like a normal HTTP server.
+With respect to this, Artipie responds to HTTP requests for each of the type of files like a normal HTTP server.
 
 When the Maven client uploads a dependency, it relies on the maven-deploy-plugin being configured, a
 repository being configure in the `distributionManagement` section of the `settings.xml` and authentication
 credentials configured in the `servers` section of the`settings.xml`.
-
-<!--
-@todo #64:30min Continue working in the Maven HTTP API for uploading artifacts: we need to 1) investigate
- exactly what are the HTTP endpoints needed when using the maven-deploy-plugin with the HTTP Wagon extension,
- 2) add IT tests that uses a traditional Maven client (investigate for libraries used in the Maven
- ecosystem to simulate proper Maven client requests), and then 3) implement those HTTP API
- so that the IT tests pass.
--->
 
 ### Files
 
