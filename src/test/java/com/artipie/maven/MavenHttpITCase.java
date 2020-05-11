@@ -23,10 +23,15 @@
  */
 package com.artipie.maven;
 
+import com.artipie.asto.Concatenation;
+import com.artipie.asto.Key;
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.maven.http.MavenSlice;
 import com.artipie.vertx.VertxSliceServer;
+import com.jcabi.matchers.XhtmlMatchers;
 import io.vertx.reactivex.core.Vertx;
+import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -38,6 +43,8 @@ import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
+import org.eclipse.aether.deployment.DeployRequest;
+import org.eclipse.aether.deployment.DeploymentException;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -47,6 +54,7 @@ import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
+import org.eclipse.aether.util.artifact.SubArtifact;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsNot;
 import org.hamcrest.core.IsNull;
@@ -59,8 +67,12 @@ import org.junit.jupiter.api.io.TempDir;
  * Tests for the not-yet implementend Maven HTTP API.
  *
  * @since 1.0
+ * @todo #72:30min For some unknown reason the two tests involving
+ *  the deployment of files are extremely slow, each upload of empty
+ *  files takes several seconds. Fix this situation.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class MavenHttpITCase {
 
     /**
@@ -79,34 +91,127 @@ final class MavenHttpITCase {
     }
 
     @Test
-    void serveArtifact(final @TempDir Path localrepo, final @TempDir Path remote)
-        throws Exception {
-        final FileStorage storage = new FileStorage(remote, this.vertx.fileSystem());
-        final Path artifact = remote.resolve("org").resolve("apache").resolve("maven")
-            .resolve("resolver").resolve("maven-resolver-util").resolve("1.3.3");
-        Files.createDirectories(artifact);
+    void serveArtifact(final @TempDir Path temp) throws Exception {
+        final Path remote = Files.createDirectories(temp.resolve("remote"));
+        final Path artifact = Files.createDirectories(
+            remote.resolve("org").resolve("apache").resolve("maven").resolve("resolver")
+                .resolve("maven-resolver-util")
+                .resolve("1.3.3")
+        );
         Files.write(artifact.resolve("maven-resolver-util-1.3.3.jar"), new byte[]{0});
-        final VertxSliceServer server = new VertxSliceServer(this.vertx, new MavenSlice(storage));
-        final int port = server.start();
-        MatcherAssert.assertThat(
-            "Must retrieve artifact",
+        final FileStorage storage = new FileStorage(remote, this.vertx.fileSystem());
+        try (VertxSliceServer server = new VertxSliceServer(this.vertx, new MavenSlice(storage))) {
+            final int port = server.start();
+            MatcherAssert.assertThat(
+                "Must retrieve artifact",
+                new MavenArtifacts(
+                    port,
+                    Files.createDirectories(temp.resolve("local"))
+                ).artifact("org.apache.maven.resolver:maven-resolver-util:1.3.3"),
+                new IsNot<>(new IsNull<>())
+            );
+        }
+    }
+
+    @Test
+    void deployOneArtifact(final @TempDir Path temp)
+        throws Exception {
+        final Path jar = temp.resolve("maven-resolver-util-1.3.3.jar");
+        final Path pom = temp.resolve("maven-resolver-util-1.3.3.pom");
+        Files.write(jar, new byte[]{0});
+        Files.write(pom, new byte[]{0});
+        final FileStorage storage = new FileStorage(
+            Files.createDirectories(temp.resolve("remote")),
+            this.vertx.fileSystem()
+        );
+        try (VertxSliceServer server = new VertxSliceServer(this.vertx, new MavenSlice(storage))) {
+            final int port = server.start();
             new MavenArtifacts(
-                new RemoteRepository.Builder(
-                    "central", "default",
-                    new URIBuilder("http://localhost/")
-                        .setPort(port)
-                        .toString()
-                ).build(),
-                localrepo
-            ).artifact("org.apache.maven.resolver:maven-resolver-util:1.3.3"),
-            new IsNot<>(new IsNull<>())
+                port,
+                Files.createDirectories(temp.resolve("local"))
+            ).deploy(
+                "org.apache.maven.resolver:maven-resolver-util:1.3.3",
+                jar, pom
+            );
+        }
+        MatcherAssert.assertThat(
+            new String(
+                new Concatenation(
+                    storage.value(
+                        new Key.From(
+                            "org/apache/maven/resolver/maven-resolver-util/maven-metadata.xml"
+                        )
+                    ).get()
+                )
+                .single().blockingGet().array(),
+                Charset.defaultCharset()
+            ),
+            XhtmlMatchers.hasXPaths(
+                "metadata/groupId[text() = 'org.apache.maven.resolver']",
+                "metadata/artifactId[text() = 'maven-resolver-util']",
+                "metadata/versioning/release[text() = '1.3.3']",
+                "metadata/versioning/versions[count(//version) = 1]"
+            )
+        );
+    }
+
+    // @todo #72:30min For now the generation of artifact and repository metadata
+    //  (e.g. md5 sums, metadata.xml, etc) happens on the client side (in the
+    //  maven-deploy-plugin, simulated by MavenArtifacts here).
+    //  We should decide to either: 1) validate the uploaded artifacts to ensure the
+    //  repository is consistent or 2) to delegate the generation of the metadata to
+    //  the server side. This is not clear if it is feasible with maven-deploy-plugin
+    //  on the client side, see #72 for some details on that.
+    @Test
+    void deployUpdateRepositoryMetadata(final @TempDir Path temp)
+        throws Exception {
+        final Path jar = temp.resolve("maven-resolver-util-1.3.3.jar");
+        final Path pom = temp.resolve("maven-resolver-util-1.3.3.pom");
+        Files.write(jar, new byte[]{0});
+        Files.write(pom, new byte[]{0});
+        final FileStorage storage = new FileStorage(
+            Files.createDirectories(temp.resolve("remote")),
+            this.vertx.fileSystem()
+        );
+        try (VertxSliceServer server = new VertxSliceServer(this.vertx, new MavenSlice(storage))) {
+            final int port = server.start();
+            final MavenArtifacts art = new MavenArtifacts(
+                port,
+                Files.createDirectories(temp.resolve("local"))
+            );
+            art.deploy(
+                "org.apache.maven.resolver:maven-resolver-util:1.3.3",
+                jar, pom
+            );
+            art.deploy(
+                "org.apache.maven.resolver:maven-resolver-util:1.3.4",
+                jar, pom
+            );
+        }
+        MatcherAssert.assertThat(
+            new String(
+                new Concatenation(
+                    storage.value(
+                        new Key.From(
+                            "org/apache/maven/resolver/maven-resolver-util/maven-metadata.xml"
+                        )
+                    ).get()
+                )
+                .single().blockingGet().array(),
+                Charset.defaultCharset()
+            ),
+            XhtmlMatchers.hasXPaths(
+                "metadata/groupId[text() = 'org.apache.maven.resolver']",
+                "metadata/artifactId[text() = 'maven-resolver-util']",
+                "metadata/versioning/release[text() = '1.3.4']",
+                "metadata/versioning/versions[count(//version) = 2]"
+            )
         );
     }
 
     /**
-     * Object to retrieve an artifact from a remote maven
-     * repository using the Maven tooling into a temporary
-     * local repository.
+     * Object to retrieve and upload an artifact from/to a remote maven
+     * repository using the Maven tooling.
      *
      * @since 1.0
      */
@@ -126,6 +231,25 @@ final class MavenHttpITCase {
          * The remote repository.
          */
         private final RemoteRepository repository;
+
+        /**
+         * Ctor.
+         *
+         * @param port The port on localhost for the remote repository.
+         * @param localrepo Path to the local repository.
+         * @throws URISyntaxException in case of problem.
+         */
+        MavenArtifacts(final int port, final Path localrepo) throws URISyntaxException {
+            this(
+                new RemoteRepository.Builder(
+                    "artipie", "default",
+                    new URIBuilder("http://localhost/")
+                        .setPort(port)
+                        .toString()
+                ).build(),
+                localrepo
+            );
+        }
 
         /**
          * Ctor.
@@ -150,12 +274,28 @@ final class MavenHttpITCase {
          * @throws ArtifactResolutionException If there is an error.
          */
         Artifact artifact(final String coords) throws ArtifactResolutionException {
-            final ArtifactRequest request = new ArtifactRequest();
-            request.setArtifact(new DefaultArtifact(coords));
-            request.setRepositories(Arrays.asList(this.repository));
             return this.system.resolveArtifact(
-                this.session, request
+                this.session,
+                new ArtifactRequest()
+                    .setArtifact(new DefaultArtifact(coords))
+                    .setRepositories(Arrays.asList(this.repository))
             ).getArtifact();
+        }
+
+        void deploy(
+            final String coords, final Path jar, final Path pom
+        ) throws DeploymentException {
+            final Artifact jarart = new DefaultArtifact(coords)
+                .setFile(jar.toFile());
+            final Artifact pomart = new SubArtifact(jarart, "", "pom")
+                .setFile(pom.toFile());
+            this.system.deploy(
+                this.session,
+                new DeployRequest()
+                    .setRepository(this.repository)
+                    .addArtifact(jarart)
+                    .addArtifact(pomart)
+            );
         }
 
         private static RepositorySystem newRepositorySystem() {
