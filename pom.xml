@@ -39,11 +39,6 @@ SOFTWARE.
   </properties>
   <dependencies>
     <dependency>
-      <groupId>org.cactoos</groupId>
-      <artifactId>cactoos</artifactId>
-      <version>0.44</version>
-    </dependency>
-    <dependency>
       <groupId>com.jcabi.incubator</groupId>
       <artifactId>xembly</artifactId>
       <version>0.23.0</version>
@@ -56,7 +51,6 @@ SOFTWARE.
     <dependency>
       <groupId>com.jcabi</groupId>
       <artifactId>jcabi-xml</artifactId>
-      <scope>test</scope>
     </dependency>
     <!-- maven -->
     <dependency>
@@ -87,7 +81,7 @@ SOFTWARE.
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>asto</artifactId>
-      <version>0.18</version>
+      <version>0.20.3</version>
     </dependency>
     <dependency>
       <groupId>com.artipie</groupId>
@@ -119,6 +113,16 @@ SOFTWARE.
     </dependency>
   </dependencies>
   <build>
+    <testResources>
+      <testResource>
+        <directory>${basedir}/src/test/resources</directory>
+        <filtering>true</filtering>
+      </testResource>
+      <testResource>
+        <directory>${basedir}/src/test/resources-binary</directory>
+        <filtering>false</filtering>
+      </testResource>
+    </testResources>
     <plugins>
       <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
@@ -136,5 +140,21 @@ SOFTWARE.
         </configuration>
       </plugin>
     </plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>com.qulice</groupId>
+          <artifactId>qulice-maven-plugin</artifactId>
+          <configuration>
+            <excludes combine.children="append">
+              <exclude>checkstyle:.*/src/test/resources-binary/.*</exclude>
+              <exclude>findbugs:.*</exclude>
+              <exclude>duplicatefinder:.*</exclude>
+            </excludes>
+            <license>file:${basedir}/LICENSE.txt</license>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
   </build>
 </project>
