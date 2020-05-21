@@ -82,7 +82,11 @@ public final class MavenSlice extends Slice.Wrap {
                 ),
                 new SliceRoute.Path(
                     new RtRule.ByMethod(RqMethod.PUT),
-                    new UpdateMavenSlice(storage)
+                    new SliceAuth(
+                        new UpdateMavenSlice(storage),
+                        new Permission.ByName("upload", perms),
+                        users
+                    )
                 ),
                 new SliceRoute.Path(
                     RtRule.FALLBACK, new SliceSimple(StandardRs.NOT_FOUND)
