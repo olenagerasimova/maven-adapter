@@ -26,6 +26,7 @@ package com.artipie.maven;
 import com.artipie.asto.Key;
 import com.artipie.asto.fs.FileStorage;
 import com.jcabi.matchers.XhtmlMatchers;
+import com.jcabi.xml.XML;
 import com.jcabi.xml.XMLDocument;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -48,6 +49,7 @@ import org.cactoos.list.Mapped;
 import org.cactoos.scalar.LengthOf;
 import org.cactoos.text.Split;
 import org.cactoos.text.TextOf;
+import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.AllOf;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,7 +111,7 @@ public final class MavenITCase {
                 )
             ),
             new AllOf<>(
-                new ListOf<>(
+                new ListOf<Matcher<? super XML>>(
                     // @checkstyle LineLengthCheck (20 lines)
                     XhtmlMatchers.hasXPath("/metadata/groupId[text() = 'com.artipie']"),
                     XhtmlMatchers.hasXPath("/metadata/artifactId[text() = 'asto']"),
