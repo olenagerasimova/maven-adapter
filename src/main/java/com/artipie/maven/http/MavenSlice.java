@@ -37,14 +37,10 @@ import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.SliceRoute;
 import com.artipie.http.slice.SliceDownload;
 import com.artipie.http.slice.SliceSimple;
-import com.artipie.http.slice.SliceUpload;
 
 /**
  * Maven API entry point.
  * @since 0.1
- * @todo #72:30min Continue working on the Maven HTTP API for uploading artifacts:
- *  we need to protect the upload of files using some kind of authentication similar
- *  to what is used for downloads.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class MavenSlice extends Slice.Wrap {
@@ -87,7 +83,7 @@ public final class MavenSlice extends Slice.Wrap {
                 new SliceRoute.Path(
                     new RtRule.ByMethod(RqMethod.PUT),
                     new SliceAuth(
-                        new SliceUpload(storage),
+                        new UpdateMavenSlice(storage),
                         new Permission.ByName("upload", perms),
                         users
                     )

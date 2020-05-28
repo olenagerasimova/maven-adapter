@@ -99,7 +99,7 @@ final class MavenHttpITCase {
                 .resolve("1.3.3")
         );
         Files.write(artifact.resolve("maven-resolver-util-1.3.3.jar"), new byte[]{0});
-        final FileStorage storage = new FileStorage(remote, this.vertx.fileSystem());
+        final FileStorage storage = new FileStorage(remote);
         try (VertxSliceServer server = new VertxSliceServer(this.vertx, new MavenSlice(storage))) {
             final int port = server.start();
             MatcherAssert.assertThat(
@@ -121,8 +121,7 @@ final class MavenHttpITCase {
         Files.write(jar, new byte[]{0});
         Files.write(pom, new byte[]{0});
         final FileStorage storage = new FileStorage(
-            Files.createDirectories(temp.resolve("remote")),
-            this.vertx.fileSystem()
+            Files.createDirectories(temp.resolve("remote"))
         );
         try (VertxSliceServer server = new VertxSliceServer(this.vertx, new MavenSlice(storage))) {
             final int port = server.start();
@@ -143,7 +142,7 @@ final class MavenHttpITCase {
                         )
                     ).get()
                 )
-                .single().blockingGet().array(),
+                    .single().blockingGet().array(),
                 Charset.defaultCharset()
             ),
             XhtmlMatchers.hasXPaths(
@@ -155,13 +154,6 @@ final class MavenHttpITCase {
         );
     }
 
-    // @todo #72:30min For now the generation of artifact and repository metadata
-    //  (e.g. md5 sums, metadata.xml, etc) happens on the client side (in the
-    //  maven-deploy-plugin, simulated by MavenArtifacts here).
-    //  We should decide to either: 1) validate the uploaded artifacts to ensure the
-    //  repository is consistent or 2) to delegate the generation of the metadata to
-    //  the server side. This is not clear if it is feasible with maven-deploy-plugin
-    //  on the client side, see #72 for some details on that.
     @Test
     void deployUpdateRepositoryMetadata(final @TempDir Path temp)
         throws Exception {
@@ -170,8 +162,7 @@ final class MavenHttpITCase {
         Files.write(jar, new byte[]{0});
         Files.write(pom, new byte[]{0});
         final FileStorage storage = new FileStorage(
-            Files.createDirectories(temp.resolve("remote")),
-            this.vertx.fileSystem()
+            Files.createDirectories(temp.resolve("remote"))
         );
         try (VertxSliceServer server = new VertxSliceServer(this.vertx, new MavenSlice(storage))) {
             final int port = server.start();
@@ -197,7 +188,7 @@ final class MavenHttpITCase {
                         )
                     ).get()
                 )
-                .single().blockingGet().array(),
+                    .single().blockingGet().array(),
                 Charset.defaultCharset()
             ),
             XhtmlMatchers.hasXPaths(
