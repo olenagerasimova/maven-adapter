@@ -7,33 +7,25 @@
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/artipie/maven-adapter?style=plastic)
 
 # maven-adapter
-Maven (remote) repository adapter
+Maven repository adapter
 
-The basic premise is - adapting official Maven libraries
-(`org.apache.maven` and `org.eclipse.aether` packages)
-to Artipie API.
+`com.artipie.maven.Maven` is the central entrypoint for all operations. It uses a
+`com.artipie.asto.Storage` to store maven artifacts.
 
-## How to contribute
+Current implementation is focused on generating metadata for artifacts on repository.
 
-Fork repository, make changes, send us a pull request. We will review
-your changes and apply them to the `master` branch shortly, provided
-they don't violate our quality standards. To avoid frustration, before
-sending us your pull request please run full Maven build:
+Taking the repository described above in Layout section, let's suppose that a new version for the artifact
+was uploaded to the repository (`2.0` for example). We generate the metadata this way: 
 
+```java
+    Metadata updated = new Maven(
+        storage
+    ).update("org.example.artifact");
 ```
-$ mvn clean install -Pqulice
-```
-To avoid build errors use Maven 3.2+.
 
-## How it works
+It will generate the `metadata.xml` with the recently added `2.0` version info.
 
-When the Maven client downloads a dependency, it relies on normal HTTP GET and PUT on well-known files (see below for details).
-
-With respect to this, Artipie responds to HTTP requests for each of the type of files like a normal HTTP server.
-
-When the Maven client uploads a dependency, it relies on the maven-deploy-plugin being configured, a
-repository being configure in the `distributionManagement` section of the `settings.xml` and authentication
-credentials configured in the `servers` section of the`settings.xml`.
+## Maven concepts
 
 ### Files
 
@@ -76,57 +68,14 @@ $ROOT
 For example, for an artifact `org.example:artifact:1.0` (Gradle-style notation is used for clarity)
 the path would be `org/example/artifact/1.0/artifact-1.0.jar` (and other files).
 
-## A developer's entrypoint
+## How to contribute
 
-`com.artipie.maven.Maven` is the central entrypoint for all operations. It uses a
-`com.artipie.asto.Storage` to store maven artifacts.
+Fork repository, make changes, send us a pull request. We will review
+your changes and apply them to the `master` branch shortly, provided
+they don't violate our quality standards. To avoid frustration, before
+sending us your pull request please run full Maven build:
 
-Current implementation is focused on generating metadata for artifacts on repository.
-
-Taking the repository described above in Layout section, let's suppose that a new version for the artifact
-was uploaded to the repository (`2.0` for example). We generate the metadata this way: 
-
-```java
-    Metadata updated = new Maven(
-        storage
-    ).update("org.example.artifact");
 ```
-
-It will generate the `metadata.xml` with the recently added `2.0` version info.
-
-#### Storage lifecycle
-
-Before starting you need to defined _three_ storages:
-
-- __Staging directory__ (`com.artipie.maven.util.AutoCloseablePath`) -
-a transient local file storage where uploading artifacts should be placed
-right after starting to handle the incoming request.
-The analog to your project's `target` or `build` directories.
-- __Local repository__ - (`org.eclipse.aether.repository.LocalRepository`) -
-yet another intermediate local file storage, like `~/.m2/repository` after `mvn install`.
-You may consider to refactor it to omit the staging directory and
-use the local repository instead of it, though in my opinion it's not _"Maven way"_.
-You have to work with local file system anyway as Maven is strongly tied to file system.
-- __Asto__ (`com.artipie.asto.blocking.BlockingStorage`) - final destination like a remote repository
-where your `mvn deploy` ends. It is _blocking_ because
-it is deeply integrated in Maven framework which is not really reactive-friendly.
-
-Uploading artifacts pass from one storage to another sequentially:
+$ mvn clean install -Pqulice
 ```
->--(receive)--> [Staging] >--(install)--> [LocalRepository] >--(deploy)--> [Asto]
-```
-
-## Maven library abstract
-
-See [Maven architectural diagram](https://maven.apache.org/ref/3.6.3/)
-
-Library classes are defined in packages `org.apache.maven` and `org.eclipse.aether`.
-
-Internal services are wired by a dependency injector implementation `Plexus`
-or by a _Service Locator_ pattern implementation `org.eclipse.aether.spi.locator.ServiceLocator`.
-This `maven-adapter` uses the latter for easier debugging.
-
-See also `org.apache.maven.repository.internal.MavenRepositorySystemUtils`
-for convenient static factory methods creating services.
-
-`org.eclipse.aether.RepositorySystem` is a general facade for all operations.
+To avoid build errors use Maven 3.2+.
