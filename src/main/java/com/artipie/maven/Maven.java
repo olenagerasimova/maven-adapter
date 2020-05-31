@@ -40,14 +40,15 @@ import org.xembly.Directives;
  * Maven front for artipie maven adaptor.
  *
  * @since 0.2
- * @todo #85:30min Generate valid checksums on metadata update.
+ * @todo #91:30min Generate valid checksums on metadata update.
  *  When updating the maven-metadata.xml, then we should find all checksum files in the root of
  *  repository by prefix maven-metadata.xml (it can be done using storage.list), there will be
  *  few checksum files like `maven-metadata.xml.md5`, `maven-metadata.xml.sha1`,
  *  `maven-metadata.xml.sha256`, `maven-metadata.xml.sha512`. We need to update all these files
  *  with checksums of `maven-metadata.xml` data using checksum file extension as digest algorithm.
  *  If we found some unsupported algorithm, then delete checksum file. I'd start with
- *  `MD5`, `SHA-256`, `SHA-1` and `SHA-512`.
+ *  `MD5`, `SHA-256`, `SHA-1` and `SHA-512`. After this, enable testes in
+ *  MavenTest.
  */
 public final class Maven {
 
