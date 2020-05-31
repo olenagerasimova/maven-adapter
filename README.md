@@ -10,12 +10,12 @@
 Maven repository adapter
 
 `com.artipie.maven.Maven` is the central entrypoint for all operations. It uses a
-`com.artipie.asto.Storage` to store maven artifacts.
+`com.artipie.asto.Storage` to store Maven artifacts.
 
 Current implementation is focused on generating metadata for artifacts on repository.
 
-Taking the repository described above in Layout section, let's suppose that a new version for the artifact
-was uploaded to the repository (`2.0` for example). We generate the metadata this way: 
+Taking the repository described above in Layout section, for example, let's suppose that a new version, 
+`2.0` was uploaded to the repository. We generate the metadata this way: 
 
 ```java
     Metadata updated = new Maven(
@@ -23,7 +23,7 @@ was uploaded to the repository (`2.0` for example). We generate the metadata thi
     ).update("org.example.artifact");
 ```
 
-It will generate the `metadata.xml` with the recently added `2.0` version info.
+The `metadata.xml` file will be generated with the recently added data pertaining to version `2.0`.
 
 ## Maven concepts
 
