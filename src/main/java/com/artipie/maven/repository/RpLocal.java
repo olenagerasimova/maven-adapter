@@ -21,25 +21,51 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.maven.http;
+package com.artipie.maven.repository;
 
+import com.artipie.asto.Storage;
+import com.artipie.http.Response;
 import com.artipie.http.Slice;
-import com.artipie.maven.repository.RpRemote;
+import com.artipie.http.rq.RequestLine;
+import com.artipie.http.slice.SliceDownload;
+import io.reactivex.Flowable;
 import java.net.URI;
+import java.util.Collections;
 
 /**
- * Maven proxy repository slice.
+ * {@link Repository} getting artifacts from a local {@link Storage}.
+ *
  * @since 0.5
- * @deprecated Use {@link RepositorySlice} with {@link RpRemote} instead.
  */
-@Deprecated
-public final class MavenProxySlice extends Slice.Wrap {
+public final class RpLocal implements Repository {
 
     /**
-     * Proxy for URI.
-     * @param uri URI
+     * Delegated Slice.
      */
-    public MavenProxySlice(final URI uri) {
-        super(new RepositorySlice(new RpRemote(uri)));
+    private final Slice wrapped;
+
+    /**
+     * Ctor.
+     * @param storage Storage
+     */
+    public RpLocal(final Storage storage) {
+        this(new SliceDownload(storage));
+    }
+
+    /**
+     * Ctor.
+     * @param wrapped Delegated Slice
+     */
+    private RpLocal(final Slice wrapped) {
+        this.wrapped = wrapped;
+    }
+
+    @Override
+    public Response response(final URI uri) {
+        return this.wrapped.response(
+            new RequestLine("GET", uri.toString(), "HTTP/1.1").toString(),
+            Collections.emptySet(),
+            Flowable.empty()
+        );
     }
 }

@@ -21,25 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.maven.http;
-
-import com.artipie.http.Slice;
-import com.artipie.maven.repository.RpRemote;
-import java.net.URI;
-
 /**
- * Maven proxy repository slice.
- * @since 0.5
- * @deprecated Use {@link RepositorySlice} with {@link RpRemote} instead.
+ * Maven repository API.
+ *
+ * @since 0.1
  */
-@Deprecated
-public final class MavenProxySlice extends Slice.Wrap {
-
-    /**
-     * Proxy for URI.
-     * @param uri URI
-     */
-    public MavenProxySlice(final URI uri) {
-        super(new RepositorySlice(new RpRemote(uri)));
-    }
-}
+package com.artipie.maven.repository;
