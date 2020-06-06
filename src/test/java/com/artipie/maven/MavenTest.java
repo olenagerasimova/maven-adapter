@@ -26,6 +26,7 @@ package com.artipie.maven;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
@@ -63,7 +64,11 @@ public class MavenTest {
     @Test
     @Disabled
     public void generateValidMd5Checksum() throws Exception {
-        final InMemoryStorage storage = new InMemoryStorage();
+        final Storage storage = new InMemoryStorage();
+        storage.save(
+            new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN, "Md5Pack.jar"),
+            new Content.From("md5-package-content".getBytes())
+        ).toCompletableFuture().get();
         new Maven(storage)
             .update(new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN))
             .toCompletableFuture()
@@ -76,7 +81,7 @@ public class MavenTest {
                     MavenTest.MAVEN,
                     "maven-metadata.xml.md5"
                 )
-            ),
+            ).toCompletableFuture().get(),
             new IsEqual<>(true)
         );
     }
@@ -85,12 +90,14 @@ public class MavenTest {
     @Disabled
     public void generateValidSha1Checksum() throws Exception {
         final InMemoryStorage storage = new InMemoryStorage();
+        storage.save(
+            new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN, "Sha1Pack.jar"),
+            new Content.From("sha1-package-content".getBytes())
+        ).toCompletableFuture().get();
         new Maven(storage)
             .update(
                 new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN)
-            )
-            .toCompletableFuture()
-            .get();
+            ).toCompletableFuture().get();
         MatcherAssert.assertThat(
             storage.exists(
                 new Key.From(
@@ -99,7 +106,7 @@ public class MavenTest {
                     MavenTest.MAVEN,
                     "maven-metadata.xml.sha1"
                 )
-            ),
+            ).toCompletableFuture().get(),
             new IsEqual<>(true)
         );
     }
@@ -108,12 +115,14 @@ public class MavenTest {
     @Disabled
     public void generateValidSha256Checksum() throws Exception {
         final InMemoryStorage storage = new InMemoryStorage();
+        storage.save(
+            new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN, "Sha256Pack.jar"),
+            new Content.From("sha256-package-content".getBytes())
+        ).toCompletableFuture().get();
         new Maven(storage)
             .update(
                 new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN)
-            )
-            .toCompletableFuture()
-            .get();
+            ).toCompletableFuture().get();
         MatcherAssert.assertThat(
             storage.exists(
                 new Key.From(
@@ -122,7 +131,7 @@ public class MavenTest {
                     MavenTest.MAVEN,
                     "maven-metadata.xml.sha256"
                 )
-            ),
+            ).toCompletableFuture().get(),
             new IsEqual<>(true)
         );
     }
@@ -131,6 +140,12 @@ public class MavenTest {
     @Disabled
     public void generateValidSha512Checksum() throws Exception {
         final InMemoryStorage storage = new InMemoryStorage();
+        storage.save(
+            new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN, "Sha512Pack.jar"),
+            new Content.From("sha512-package-content".getBytes())
+        )
+            .toCompletableFuture()
+            .get();
         new Maven(storage)
             .update(
                 new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN)
@@ -145,7 +160,7 @@ public class MavenTest {
                     MavenTest.MAVEN,
                     "maven-metadata.xml.sha512"
                 )
-            ),
+            ).toCompletableFuture().get(),
             new IsEqual<>(true)
         );
     }
@@ -159,7 +174,7 @@ public class MavenTest {
                 MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN, MavenTest.UNSUPPORTED
             ),
             new Content.From("anything".getBytes())
-        );
+        ).toCompletableFuture().get();
         new Maven(storage)
             .update(new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN))
             .toCompletableFuture()
@@ -172,7 +187,7 @@ public class MavenTest {
                     MavenTest.MAVEN,
                     MavenTest.UNSUPPORTED
                 )
-            ),
+            ).toCompletableFuture().get(),
             new IsEqual<>(false)
         );
     }
