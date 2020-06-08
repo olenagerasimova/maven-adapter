@@ -30,9 +30,7 @@ import java.net.URI;
 /**
  * Maven proxy repository slice.
  * @since 0.5
- * @deprecated Use {@link RepositorySlice} with {@link RpRemote} instead.
  */
-@Deprecated
 public final class MavenProxySlice extends Slice.Wrap {
 
     /**
@@ -40,6 +38,6 @@ public final class MavenProxySlice extends Slice.Wrap {
      * @param uri URI
      */
     public MavenProxySlice(final URI uri) {
-        super(new RepositorySlice(new RpRemote(uri)));
+        super(new DownloadMavenSlice(new RpRemote(uri)));
     }
 }
