@@ -39,7 +39,7 @@ import org.reactivestreams.Publisher;
  * @see Repository
  * @since 0.5
  */
-public final class RepositorySlice implements Slice {
+public final class DownloadMavenSlice implements Slice {
 
     /**
      * Maven Repository.
@@ -51,7 +51,7 @@ public final class RepositorySlice implements Slice {
      *
      * @param repo Maven Repository.
      */
-    public RepositorySlice(final Repository repo) {
+    public DownloadMavenSlice(final Repository repo) {
         this.repo = repo;
     }
 

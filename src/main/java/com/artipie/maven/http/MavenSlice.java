@@ -75,7 +75,7 @@ public final class MavenSlice extends Slice.Wrap {
                 new SliceRoute.Path(
                     new RtRule.ByMethod(RqMethod.GET),
                     new SliceAuth(
-                        new RepositorySlice(new RpLocal(storage)),
+                        new DownloadMavenSlice(new RpLocal(storage)),
                         new Permission.ByName("download", perms),
                         users
                     )
