@@ -23,21 +23,43 @@
  */
 package com.artipie.maven.http;
 
+import com.artipie.http.Response;
 import com.artipie.http.Slice;
-import com.artipie.maven.repository.RpRemote;
-import java.net.URI;
+import com.artipie.http.rq.RequestLineFrom;
+import com.artipie.maven.repository.Repository;
+import java.nio.ByteBuffer;
+import java.util.Map.Entry;
+import org.reactivestreams.Publisher;
 
 /**
- * Maven proxy repository slice.
+ * A {@link Slice} based on a {@link Repository}. This is the main entrypoint
+ * for dispatching GET requests for artifacts to the various {@link Repository}
+ * implementations.
+ *
+ * @see Repository
  * @since 0.5
  */
-public final class MavenProxySlice extends Slice.Wrap {
+public final class DownloadMavenSlice implements Slice {
 
     /**
-     * Proxy for URI.
-     * @param uri URI
+     * Maven Repository.
      */
-    public MavenProxySlice(final URI uri) {
-        super(new DownloadMavenSlice(new RpRemote(uri)));
+    private final Repository repo;
+
+    /**
+     * Ctor.
+     *
+     * @param repo Maven Repository.
+     */
+    public DownloadMavenSlice(final Repository repo) {
+        this.repo = repo;
+    }
+
+    @Override
+    public Response response(
+        final String line, final Iterable<Entry<String, String>> headers,
+        final Publisher<ByteBuffer> body
+    ) {
+        return this.repo.response(new RequestLineFrom(line).uri());
     }
 }

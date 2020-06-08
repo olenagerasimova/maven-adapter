@@ -21,23 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.maven.http;
-
-import com.artipie.http.Slice;
-import com.artipie.maven.repository.RpRemote;
-import java.net.URI;
-
 /**
- * Maven proxy repository slice.
- * @since 0.5
+ * Maven repository API.
+ *
+ * @since 0.1
  */
-public final class MavenProxySlice extends Slice.Wrap {
-
-    /**
-     * Proxy for URI.
-     * @param uri URI
-     */
-    public MavenProxySlice(final URI uri) {
-        super(new DownloadMavenSlice(new RpRemote(uri)));
-    }
-}
+package com.artipie.maven.repository;
