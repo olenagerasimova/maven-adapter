@@ -23,8 +23,10 @@
  */
 package com.artipie.maven.repository;
 
+import com.artipie.asto.Content;
 import com.artipie.http.Response;
 import java.net.URI;
+import java.util.concurrent.CompletionStage;
 
 /**
  * A Maven repository that abstracts over local, remote, etc, types of repository.
@@ -42,10 +44,6 @@ import java.net.URI;
  *  should ultimately be a configuration file as explained in #92 for instantiating
  *  Repositories. See #92 for more details on this. Don't hesitate to ask ARC about
  *  it since this todo is quite complex.
- * @todo #92:30min For now this interface returns a Response but it should instead
- *  only answer with the ByteBuffer of the artifact found in the repository. The challenge
- *  here is that some of the current implementations of Repository takes care of answering
- *  404 when the artifact is not present: this responsibility should be moved to RepositorySlice.
  */
 public interface Repository {
 
@@ -53,7 +51,7 @@ public interface Repository {
      * Build a {@link Response} for a GET request to serve a Maven artifact.
      *
      * @param uri The requested artifact
-     * @return The response.
+     * @return Artifact data content future
      */
-    Response response(URI uri);
+    CompletionStage<Content> artifact(URI uri);
 }

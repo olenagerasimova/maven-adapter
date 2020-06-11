@@ -86,7 +86,7 @@ SOFTWARE.
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>http</artifactId>
-      <version>0.8.4</version>
+      <version>0.9.7</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
