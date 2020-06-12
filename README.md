@@ -68,6 +68,28 @@ $ROOT
 For example, for an artifact `org.example:artifact:1.0` (Gradle-style notation is used for clarity)
 the path would be `org/example/artifact/1.0/artifact-1.0.jar` (and other files).
 
+###Snapshot repositories
+Maven supports the use of `snapshot` repositories. These repositories are used only when resolving `SNAPSHOT` dependencies.
+`SNAPSHOT` dependencies are just like regular dependencies, with `-SNAPSHOT` appended to it:
+
+```xml
+<dependency>
+    <groupId>com.artipie</groupId>
+    <artifactId>maven-adapter</artifactId>
+    <version>2.0-SNAPSHOT</version>
+</dependency>
+```
+
+This feature allows anyone which depends on the `SNAPSHOT` version get the latest changes on every build.
+
+<!--
+@todo #81:30min Snapshot repository support
+ Add snapshot repository support to maven adapter. Snapshot repositories allows the download of the latest 
+ dependency version with the `SNAPSHOT` tag. See 
+ https://blog.packagecloud.io/eng/2017/03/09/how-does-a-maven-repository-work/#release-and-snapshot-repositories
+ for how snapshot repositories work
+-->  
+
 ## How to contribute
 
 Fork repository, make changes, send us a pull request. We will review
