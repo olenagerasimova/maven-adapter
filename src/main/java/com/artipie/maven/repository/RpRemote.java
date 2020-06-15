@@ -23,19 +23,15 @@
  */
 package com.artipie.maven.repository;
 
-import com.artipie.http.Headers;
-import com.artipie.http.Response;
-import com.artipie.http.rs.RsStatus;
-import com.artipie.http.rs.RsWithStatus;
-import com.jcabi.log.Logger;
-import hu.akarnokd.rxjava2.interop.CompletableInterop;
-import io.reactivex.Completable;
+import com.artipie.asto.Content;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
+import io.reactivex.Single;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 import org.apache.http.client.utils.URIBuilder;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.Request;
@@ -67,60 +63,43 @@ public final class RpRemote implements Repository {
 
     /**
      * Proxy for URI.
+     * @param http Http client
      * @param uri URI
      */
-    public RpRemote(final URI uri) {
+    public RpRemote(final HttpClient http, final URI uri) {
         this.remote = uri;
-        this.http = new HttpClient();
+        this.http = http;
     }
 
     @Override
-    @SuppressWarnings({"PMD.AvoidCatchingGenericException", "PMD.OnlyOneReturn"})
-    public Response response(final URI uri) {
-        if (!this.http.isRunning()) {
-            try {
-                this.http.start();
-                // @checkstyle IllegalCatchCheck (1 line)
-            } catch (final Exception err) {
-                Logger.error(this, "Failed to start jetty client: %[exception]s", err);
-                return new RsWithStatus(RsStatus.INTERNAL_ERROR);
-            }
-        }
+    public CompletionStage<Content> artifact(final URI uri) {
         final URIBuilder builder = new URIBuilder(this.remote);
         builder.setPath(Paths.get(builder.getPath(), uri.getPath()).normalize().toString());
-        return connection -> {
-            final Request request = this.http.newRequest(builder.toString());
-            return Flowable.fromPublisher(
-                ReactiveRequest.newBuilder(request).build().response(
-                    (rsp, content) -> {
-                        final Completable res;
-                        if (rsp.getStatus() == HttpURLConnection.HTTP_OK) {
-                            res = Completable.defer(
-                                () -> CompletableInterop.fromFuture(
-                                    connection.accept(
-                                        RsStatus.OK, Headers.EMPTY,
-                                        Flowable.fromPublisher(content).map(chunk -> chunk.buffer)
-                                    )
-                                )
-                            );
-                        } else {
-                            res = Completable.defer(
-                                () -> CompletableInterop.fromFuture(
-                                    connection.accept(
-                                        RsStatus.INTERNAL_ERROR, Headers.EMPTY,
-                                        Flowable.just(
-                                            ByteBuffer.wrap(
-                                                rsp.toString().getBytes(StandardCharsets.UTF_8)
-                                            )
-                                        )
-                                    )
-                                )
-                            );
-                        }
-                        return res.toFlowable();
+        final Request request = this.http.newRequest(builder.toString());
+        return Flowable.fromPublisher(
+            ReactiveRequest.newBuilder(request).build().response(
+                (rsp, body) -> {
+                    final Single<Content> res;
+                    if (rsp.getStatus() == HttpURLConnection.HTTP_OK) {
+                        res = Single.just(
+                            new Content.From(
+                                Optional.ofNullable(rsp.getHeaders().get("Content-Size"))
+                                    .map(Long::parseLong),
+                                Flowable.fromPublisher(body).map(chunk -> chunk.buffer)
+                            )
+                        );
+                    } else if (rsp.getStatus() == HttpURLConnection.HTTP_NOT_FOUND) {
+                        res = Single.error(new ArtifactNotFoundException(builder.getPath()));
+                    } else {
+                        res = Single.error(
+                            new Exception(
+                                String.format("Failed to fetch remote repo: %d", rsp.getStatus())
+                            )
+                        );
                     }
-                )
-            ).ignoreElements().to(CompletableInterop.await());
-        };
+                    return res.toFlowable();
+                }
+            )
+        ).singleOrError().to(SingleInterop.get());
     }
 }

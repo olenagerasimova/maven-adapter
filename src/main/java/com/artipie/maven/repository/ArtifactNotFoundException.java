@@ -21,25 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.maven.http;
+package com.artipie.maven.repository;
 
-import com.artipie.http.Slice;
-import com.artipie.maven.repository.RpRemote;
-import java.net.URI;
-import org.eclipse.jetty.client.HttpClient;
+import com.artipie.asto.Key;
 
 /**
- * Maven proxy repository slice.
+ * This exception can be thrown when artifact was not found.
  * @since 0.5
  */
-public final class MavenProxySlice extends Slice.Wrap {
+@SuppressWarnings("serial")
+public final class ArtifactNotFoundException extends IllegalStateException {
 
     /**
-     * Proxy for URI.
-     * @param http Http client
-     * @param uri URI
+     * New exception with artifact key.
+     * @param artifact Artifact key
      */
-    public MavenProxySlice(final HttpClient http, final URI uri) {
-        super(new DownloadMavenSlice(new RpRemote(http, uri)));
+    public ArtifactNotFoundException(final Key artifact) {
+        this(String.format("Artifact '%s' was not found", artifact.string()));
+    }
+
+    /**
+     * New exception with message.
+     * @param msg Message
+     */
+    public ArtifactNotFoundException(final String msg) {
+        super(msg);
     }
 }

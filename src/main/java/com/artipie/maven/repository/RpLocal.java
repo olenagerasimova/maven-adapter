@@ -23,14 +23,14 @@
  */
 package com.artipie.maven.repository;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Storage;
-import com.artipie.http.Response;
-import com.artipie.http.Slice;
-import com.artipie.http.rq.RequestLine;
-import com.artipie.http.slice.SliceDownload;
-import io.reactivex.Flowable;
+import com.artipie.asto.rx.RxStorageWrapper;
+import com.artipie.http.slice.KeyFromPath;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
+import io.reactivex.Single;
 import java.net.URI;
-import java.util.Collections;
+import java.util.concurrent.CompletionStage;
 
 /**
  * {@link Repository} getting artifacts from a local {@link Storage}.
@@ -40,32 +40,26 @@ import java.util.Collections;
 public final class RpLocal implements Repository {
 
     /**
-     * Delegated Slice.
+     * Storage.
      */
-    private final Slice wrapped;
+    private final Storage storage;
 
     /**
      * Ctor.
      * @param storage Storage
      */
     public RpLocal(final Storage storage) {
-        this(new SliceDownload(storage));
-    }
-
-    /**
-     * Ctor.
-     * @param wrapped Delegated Slice
-     */
-    private RpLocal(final Slice wrapped) {
-        this.wrapped = wrapped;
+        this.storage = storage;
     }
 
     @Override
-    public Response response(final URI uri) {
-        return this.wrapped.response(
-            new RequestLine("GET", uri.toString(), "HTTP/1.1").toString(),
-            Collections.emptySet(),
-            Flowable.empty()
-        );
+    public CompletionStage<Content> artifact(final URI uri) {
+        final KeyFromPath key = new KeyFromPath(uri.getPath());
+        return Single.just(new RxStorageWrapper(this.storage)).flatMapMaybe(
+            rxsto -> rxsto.exists(key)
+                .filter(exists -> exists)
+                .flatMapSingleElement(ignore -> rxsto.value(key))
+        ).switchIfEmpty(Single.error(() -> new ArtifactNotFoundException(key)))
+            .to(SingleInterop.get());
     }
 }
