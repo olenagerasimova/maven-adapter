@@ -87,7 +87,8 @@ This feature allows anyone which depends on the `SNAPSHOT` version get the lates
  Add snapshot repository support to maven adapter. Snapshot repositories allows the download of the latest 
  dependency version with the `SNAPSHOT` tag. See 
  https://blog.packagecloud.io/eng/2017/03/09/how-does-a-maven-repository-work/#release-and-snapshot-repositories
- for how snapshot repositories work
+ for how snapshot repositories work. Start by creating an interface for snapshot repositories and implementing
+ unit and integration tests, then implement the snapshot feature itself.
 -->  
 
 ## How to contribute
