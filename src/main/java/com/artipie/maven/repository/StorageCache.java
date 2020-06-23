@@ -26,6 +26,7 @@ package com.artipie.maven.repository;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.rx.RxStorage;
 import com.artipie.asto.rx.RxStorageWrapper;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.BackpressureStrategy;
@@ -47,28 +48,27 @@ public final class StorageCache implements ProxyCache {
     /**
      * Cache storage.
      */
-    private final Storage storage;
+    private final RxStorage storage;
 
     /**
      * New cache.
      * @param storage Cache storage
      */
     public StorageCache(final Storage storage) {
-        this.storage = storage;
+        this.storage = new RxStorageWrapper(storage);
     }
 
     @Override
     public CompletionStage<? extends Content> load(
         final Key key, final Supplier<? extends CompletionStage<? extends Content>> remote
     ) {
-        final RxStorageWrapper rxsto = new RxStorageWrapper(this.storage);
-        return rxsto.exists(key).filter(exists -> exists)
-            .flatMapSingleElement(ignore -> rxsto.value(key))
+        return this.storage.exists(key).filter(exists -> exists)
+            .flatMapSingleElement(ignore -> this.storage.value(key))
             .switchIfEmpty(
                 SingleInterop.fromFuture(remote.get()).map(
                     content -> {
                         final PublishSubject<ByteBuffer> subj = PublishSubject.create();
-                        rxsto.save(
+                        this.storage.save(
                             key,
                             new Content.From(
                                 content.size(), subj.toFlowable(BackpressureStrategy.ERROR)

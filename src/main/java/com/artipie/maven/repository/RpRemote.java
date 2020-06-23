@@ -30,6 +30,7 @@ import io.reactivex.Flowable;
 import io.reactivex.Single;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
@@ -93,49 +94,54 @@ public final class RpRemote implements Repository {
         final URIBuilder builder = new URIBuilder(this.remote);
         builder.setPath(Paths.get(builder.getPath(), uri.getPath()).normalize().toString());
         final Request request = this.http.newRequest(builder.toString());
-        return Single.fromCallable(
-            () -> new Key.From(
-                new URI(
-                    uri.getScheme(), null, uri.getHost(), uri.getPort(),
-                    null, null, null
-                ).relativize(uri).getPath()
-            )
-        ).flatMap(
-            key -> SingleInterop.fromFuture(
-                this.cache.load(
-                    key,
-                    () -> Flowable.fromPublisher(
-                        ReactiveRequest.newBuilder(request).build().response(
-                            (rsp, body) -> {
-                                final Single<Content> res;
-                                if (rsp.getStatus() == HttpURLConnection.HTTP_OK) {
-                                    res = Single.just(
-                                        new Content.From(
-                                            Optional.ofNullable(
-                                                rsp.getHeaders().get("Content-Size")
-                                            ).map(Long::parseLong),
-                                            Flowable.fromPublisher(body).map(chunk -> chunk.buffer)
-                                        )
-                                    );
-                                } else if (rsp.getStatus() == HttpURLConnection.HTTP_NOT_FOUND) {
-                                    res = Single.error(
-                                        new ArtifactNotFoundException(builder.getPath())
-                                    );
-                                } else {
-                                    res = Single.error(
-                                        new Exception(
-                                            String.format(
-                                                "Failed to fetch remote repo: %d", rsp.getStatus()
-                                            )
-                                        )
-                                    );
-                                }
-                                return res.toFlowable();
-                            }
-                        )
-                    ).singleOrError().to(SingleInterop.get())
+        return this.cache.load(
+            new Key.From(relativePath(uri)),
+            () -> Flowable.fromPublisher(
+                ReactiveRequest.newBuilder(request).build().response(
+                    (rsp, body) -> {
+                        final Single<Content> res;
+                        if (rsp.getStatus() == HttpURLConnection.HTTP_OK) {
+                            res = Single.just(
+                                new Content.From(
+                                    Optional.ofNullable(
+                                        rsp.getHeaders().get("Content-Size")
+                                    ).map(Long::parseLong),
+                                    Flowable.fromPublisher(body).map(chunk -> chunk.buffer)
+                                )
+                            );
+                        } else if (rsp.getStatus() == HttpURLConnection.HTTP_NOT_FOUND) {
+                            res = Single.error(
+                                new ArtifactNotFoundException(builder.getPath())
+                            );
+                        } else {
+                            res = Single.error(
+                                new Exception(
+                                    String.format(
+                                        "Failed to fetch remote repo: %d", rsp.getStatus()
+                                    )
+                                )
+                            );
+                        }
+                        return res.toFlowable();
+                    }
                 )
-            )
-        ).to(SingleInterop.get());
+            ).singleOrError().to(SingleInterop.get())
+        );
+    }
+
+    /**
+     * Relative normalized path or provided URI.
+     * @param uri URI with path to relativize
+     * @return Relative path
+     */
+    private static String relativePath(final URI uri) {
+        try {
+            return new URI(
+                uri.getScheme(), null, uri.getHost(), uri.getPort(),
+                null, null, null
+            ).relativize(uri).getPath();
+        } catch (final URISyntaxException err) {
+            throw new IllegalStateException("Invalid URI", err);
+        }
     }
 }
