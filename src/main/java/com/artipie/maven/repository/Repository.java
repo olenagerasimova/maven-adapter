@@ -53,5 +53,5 @@ public interface Repository {
      * @param uri The requested artifact
      * @return Artifact data content future
      */
-    CompletionStage<Content> artifact(URI uri);
+    CompletionStage<? extends Content> artifact(URI uri);
 }

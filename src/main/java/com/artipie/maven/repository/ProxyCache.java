@@ -21,27 +21,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.maven.http;
+package com.artipie.maven.repository;
 
-import com.artipie.http.Slice;
-import com.artipie.maven.repository.ProxyCache;
-import com.artipie.maven.repository.RpRemote;
-import java.net.URI;
-import org.eclipse.jetty.client.HttpClient;
+import com.artipie.asto.Content;
+import com.artipie.asto.Key;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 
 /**
- * Maven proxy repository slice.
+ * Maven proxy cache.
  * @since 0.5
  */
-public final class MavenProxySlice extends Slice.Wrap {
+public interface ProxyCache {
 
     /**
-     * Proxy for URI.
-     * @param http Http client
-     * @param uri URI
-     * @param cache Proxy cache
+     * Cache that does nothing.
      */
-    public MavenProxySlice(final HttpClient http, final URI uri, final ProxyCache cache) {
-        super(new DownloadMavenSlice(new RpRemote(http, uri, cache)));
-    }
+    ProxyCache NOP = (key, remote) -> remote.get();
+
+    /**
+     * Try to load content from cache or fallback to remote publisher if cached key doesn't exist.
+     * When loading remote item, the cache may save its content to the cache storage.
+     * @param key Cached item key
+     * @param remote Remote source
+     * @return Content for key
+     */
+    CompletionStage<? extends Content> load(
+        Key key, Supplier<? extends CompletionStage<? extends Content>> remote
+    );
 }
