@@ -46,9 +46,6 @@ import org.eclipse.jetty.reactive.client.ReactiveRequest;
  * @todo #92:30min Introduce constructor parameters to configure the
  *  auth credentials necessary to contact the remote URI. See #92 for details
  *  of the required information.
- * @todo #92:30min Add support for caching the downloaded artifacts locally. See #92
- *  for the required parameters that should be passed to the constructor of this cache.
- *  A good idea would be to implement this cache as a decorator of the Repository interface.
  * @checkstyle ReturnCountCheck (500 lines)
  */
 public final class RpRemote implements Repository {
