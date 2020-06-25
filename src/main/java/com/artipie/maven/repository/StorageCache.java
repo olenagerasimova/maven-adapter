@@ -29,10 +29,6 @@ import com.artipie.asto.Storage;
 import com.artipie.asto.rx.RxStorage;
 import com.artipie.asto.rx.RxStorageWrapper;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
-import io.reactivex.subjects.PublishSubject;
-import java.nio.ByteBuffer;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
@@ -65,23 +61,11 @@ public final class StorageCache implements ProxyCache {
         return this.storage.exists(key).filter(exists -> exists)
             .flatMapSingleElement(ignore -> this.storage.value(key))
             .switchIfEmpty(
-                SingleInterop.fromFuture(remote.get()).map(
-                    content -> {
-                        final PublishSubject<ByteBuffer> subj = PublishSubject.create();
-                        this.storage.save(
-                            key,
-                            new Content.From(
-                                content.size(), subj.toFlowable(BackpressureStrategy.ERROR)
-                            )
-                        ).subscribe();
-                        final Flowable<ByteBuffer> flow = Flowable.fromPublisher(content);
-                        return new Content.From(
-                            content.size(),
-                            flow.doOnNext(subj::onNext).doOnError(subj::onError)
-                                .doOnComplete(subj::onComplete)
-                        );
-                    }
-                )
+                SingleInterop.fromFuture(remote.get()).flatMapCompletable(
+                    content -> this.storage.save(
+                        key, new Content.From(content.size(), content)
+                    )
+                ).andThen(this.storage.value(key))
             ).to(SingleInterop.get());
     }
 }
