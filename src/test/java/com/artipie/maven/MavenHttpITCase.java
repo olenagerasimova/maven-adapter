@@ -23,15 +23,15 @@
  */
 package com.artipie.maven;
 
-import com.artipie.asto.Concatenation;
 import com.artipie.asto.Key;
+import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.maven.http.MavenSlice;
 import com.artipie.vertx.VertxSliceServer;
 import com.jcabi.matchers.XhtmlMatchers;
 import io.vertx.reactivex.core.Vertx;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -135,15 +135,12 @@ final class MavenHttpITCase {
         }
         MatcherAssert.assertThat(
             new String(
-                new Concatenation(
-                    storage.value(
-                        new Key.From(
-                            "org/apache/maven/resolver/maven-resolver-util/maven-metadata.xml"
-                        )
-                    ).get()
-                )
-                    .single().blockingGet().array(),
-                Charset.defaultCharset()
+                new BlockingStorage(storage).value(
+                    new Key.From(
+                        "org/apache/maven/resolver/maven-resolver-util/maven-metadata.xml"
+                    )
+                ),
+                StandardCharsets.UTF_8
             ),
             XhtmlMatchers.hasXPaths(
                 "metadata/groupId[text() = 'org.apache.maven.resolver']",
@@ -167,29 +164,23 @@ final class MavenHttpITCase {
         try (VertxSliceServer server = new VertxSliceServer(this.vertx, new MavenSlice(storage))) {
             final int port = server.start();
             final MavenArtifacts art = new MavenArtifacts(
-                port,
-                Files.createDirectories(temp.resolve("local"))
+                port, Files.createDirectories(temp.resolve("local"))
             );
             art.deploy(
-                "org.apache.maven.resolver:maven-resolver-util:1.3.3",
-                jar, pom
+                "org.apache.maven.resolver:maven-resolver-util:1.3.3", jar, pom
             );
             art.deploy(
-                "org.apache.maven.resolver:maven-resolver-util:1.3.4",
-                jar, pom
+                "org.apache.maven.resolver:maven-resolver-util:1.3.4", jar, pom
             );
         }
         MatcherAssert.assertThat(
             new String(
-                new Concatenation(
-                    storage.value(
-                        new Key.From(
-                            "org/apache/maven/resolver/maven-resolver-util/maven-metadata.xml"
-                        )
-                    ).get()
-                )
-                    .single().blockingGet().array(),
-                Charset.defaultCharset()
+                new BlockingStorage(storage).value(
+                    new Key.From(
+                        "org/apache/maven/resolver/maven-resolver-util/maven-metadata.xml"
+                    )
+                ),
+                StandardCharsets.UTF_8
             ),
             XhtmlMatchers.hasXPaths(
                 "metadata/groupId[text() = 'org.apache.maven.resolver']",
