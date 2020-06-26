@@ -30,6 +30,7 @@ import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
+import com.artipie.asto.memory.InMemoryStorage;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
@@ -81,8 +82,8 @@ final class StorageCacheTest {
 
     @Test
     @Disabled
-    void doesntSaveFailedPublisher(@TempDir final Path tmp) throws Exception {
-        final Storage storage = new FileStorage(tmp);
+    void doesntSaveFailedPublisher() throws Exception {
+        final Storage storage = new InMemoryStorage();
         final Key key = new Key.From("failed");
         MatcherAssert.assertThat(
             "Cached didn't throw an exception",
