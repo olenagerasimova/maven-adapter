@@ -90,11 +90,9 @@ final class MavenMetadata {
         return CompletableFuture.supplyAsync(
             () -> new Xembler(this.dirs).xmlQuietly().getBytes(StandardCharsets.UTF_8)
         ).thenCompose(
-            data -> CompletableFuture.allOf(
-                storage.save(
-                    new Key.From(base, "maven-metadata.xml"),
-                    new Content.From(data)
-                )
+            data -> storage.save(
+                new Key.From(base, "maven-metadata.xml"),
+                new Content.From(data)
             )
         );
     }
