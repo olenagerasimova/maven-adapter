@@ -34,6 +34,7 @@ import com.artipie.http.auth.SliceAuth;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.StandardRs;
 import com.artipie.http.rt.RtRule;
+import com.artipie.http.rt.RtRulePath;
 import com.artipie.http.rt.SliceRoute;
 import com.artipie.http.slice.SliceSimple;
 import com.artipie.maven.repository.RpLocal;
@@ -72,7 +73,7 @@ public final class MavenSlice extends Slice.Wrap {
     private MavenSlice(final Storage storage, final Permissions perms, final Identities users) {
         super(
             new SliceRoute(
-                new SliceRoute.Path(
+                new RtRulePath(
                     new RtRule.ByMethod(RqMethod.GET),
                     new SliceAuth(
                         new DownloadMavenSlice(new RpLocal(storage)),
@@ -80,7 +81,7 @@ public final class MavenSlice extends Slice.Wrap {
                         users
                     )
                 ),
-                new SliceRoute.Path(
+                new RtRulePath(
                     new RtRule.ByMethod(RqMethod.PUT),
                     new SliceAuth(
                         new UpdateMavenSlice(storage),
@@ -88,7 +89,7 @@ public final class MavenSlice extends Slice.Wrap {
                         users
                     )
                 ),
-                new SliceRoute.Path(
+                new RtRulePath(
                     RtRule.FALLBACK, new SliceSimple(StandardRs.NOT_FOUND)
                 )
             )
