@@ -5,6 +5,7 @@
 [![Hits-of-Code](https://hitsofcode.com/github/artipie/maven-adapter)](https://hitsofcode.com/view/github/artipie/maven-adapter)
 [![PDD status](http://www.0pdd.com/svg?name=artipie/maven-adapter)](http://www.0pdd.com/p?name=artipie/maven-adapter)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/artipie/maven-adapter?style=plastic)
+![Codecov](https://github.com/artipie/maven-adapter/workflows/Codecov/badge.svg?branch=master)
 
 # maven-adapter
 Maven repository adapter
