@@ -103,18 +103,37 @@ public final class RpRemote implements Repository {
                                     Optional.ofNullable(
                                         rsp.getHeaders().get("Content-Size")
                                     ).map(Long::parseLong),
-                                    Flowable.fromPublisher(body).map(chunk -> chunk.buffer)
+                                    Flowable.fromPublisher(body).map(
+                                        chunk -> {
+                                            chunk.callback.succeeded();
+                                            return chunk.buffer;
+                                        }
+                                    )
                                 )
                             );
                         } else if (rsp.getStatus() == HttpURLConnection.HTTP_NOT_FOUND) {
-                            res = Single.error(
-                                new ArtifactNotFoundException(builder.getPath())
+                            res = Flowable.fromPublisher(body).filter(
+                                chunk -> {
+                                    chunk.callback.succeeded();
+                                    return false;
+                                }
+                            ).ignoreElements().andThen(
+                                Single.error(
+                                    new ArtifactNotFoundException(builder.getPath())
+                                )
                             );
                         } else {
-                            res = Single.error(
-                                new Exception(
-                                    String.format(
-                                        "Failed to fetch remote repo: %d", rsp.getStatus()
+                            res = Flowable.fromPublisher(body).filter(
+                                chunk -> {
+                                    chunk.callback.succeeded();
+                                    return false;
+                                }
+                            ).ignoreElements().andThen(
+                                Single.error(
+                                    new Exception(
+                                        String.format(
+                                            "Failed to fetch remote repo: %d", rsp.getStatus()
+                                        )
                                     )
                                 )
                             );
