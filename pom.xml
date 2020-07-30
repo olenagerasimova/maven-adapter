@@ -27,10 +27,10 @@ SOFTWARE.
   <parent>
     <groupId>com.artipie</groupId>
     <artifactId>ppom</artifactId>
-    <version>0.3.1</version>
+    <version>0.3.8</version>
   </parent>
   <artifactId>maven-adapter</artifactId>
-  <version>0.0.1</version>
+  <version>1.0-SNAPSHOT</version>
   <name>maven-adapter</name>
   <url>https://github.com/artipie/maven-adapter</url>
   <properties>
