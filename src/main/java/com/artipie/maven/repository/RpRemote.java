@@ -103,12 +103,7 @@ public final class RpRemote implements Repository {
                                     Optional.ofNullable(
                                         rsp.getHeaders().get("Content-Size")
                                     ).map(Long::parseLong),
-                                    Flowable.fromPublisher(body).map(
-                                        chunk -> {
-                                            chunk.callback.succeeded();
-                                            return chunk.buffer;
-                                        }
-                                    )
+                                    Flowable.fromPublisher(body).map(chunk -> chunk.buffer)
                                 )
                             );
                         } else if (rsp.getStatus() == HttpURLConnection.HTTP_NOT_FOUND) {
