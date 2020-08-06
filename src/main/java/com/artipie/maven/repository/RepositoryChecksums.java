@@ -23,14 +23,12 @@
  */
 package com.artipie.maven.repository;
 
-import com.artipie.asto.Concatenation;
 import com.artipie.asto.Key;
-import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
+import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.rx.RxStorageWrapper;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Observable;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -77,16 +75,11 @@ public final class RepositoryChecksums {
         return rxsto.list(artifact).flatMapObservable(Observable::fromIterable)
             .filter(key -> SUPPORTED_ALGS.contains(extension(key)))
             .flatMapSingle(
-                item -> rxsto.value(item)
-                    .flatMap(pub -> new Concatenation(pub).single())
-                    .map(buf -> new Remaining(buf).bytes())
-                    .map(
-                        bytes -> new MapEntry<>(
-                            extension(item), new String(bytes, StandardCharsets.UTF_8)
-                        )
-                    )
-            )
-            .reduce(
+                item -> SingleInterop.fromFuture(
+                    this.repo.value(item).thenCompose(pub -> new PublisherAs(pub).asciiString())
+                        .thenApply(hash -> new MapEntry<>(extension(item), hash))
+                )
+            ).reduce(
                 new HashMap<String, String>(),
                 (map, hash) -> {
                     map.put(hash.getKey(), hash.getValue());
