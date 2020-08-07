@@ -23,20 +23,22 @@
  */
 package com.artipie.maven.http;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
-import com.artipie.http.Connection;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
+import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.rq.RequestLineFrom;
-import com.artipie.http.slice.SliceUpload;
+import com.artipie.http.rs.RsStatus;
+import com.artipie.http.rs.RsWithStatus;
+import com.artipie.http.slice.KeyFromPath;
 import com.artipie.maven.Maven;
 import com.artipie.maven.repository.ValidUpload;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
@@ -47,6 +49,7 @@ import org.reactivestreams.Publisher;
  * Starts metadata update after {@code maven-metadata.xml} upload.
  * </p>
  * @since 0.4
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class UpdateMavenSlice implements Slice {
 
@@ -96,65 +99,39 @@ final class UpdateMavenSlice implements Slice {
         final RequestLineFrom reqline = new RequestLineFrom(line);
         final String path = reqline.uri().getPath();
         final Matcher matcher = PTN_META.matcher(path);
-        return new ResponseWrap(
-            new SliceUpload(this.storage).response(line, head, body),
-            () -> {
-                final CompletionStage<Void> res;
-                if (matcher.matches()) {
-                    final Key location = new Key.From(matcher.group("pkg"));
-                    res = this.validator.validate(location).thenCompose(
-                        valid -> {
-                            final CompletionStage<Void> upd;
-                            if (valid) {
-                                upd = this.maven.update(location);
-                            } else {
-                                upd = this.storage.list(location).thenCompose(
-                                    items -> CompletableFuture.allOf(
-                                        items.stream().map(this.storage::delete)
-                                            .toArray(CompletableFuture[]::new)
-                                    )
-                                );
+        return new AsyncResponse(
+            this.storage.save(
+                new KeyFromPath(new RequestLineFrom(line).uri().getPath()), new Content.From(body)
+            ).thenCompose(
+                ignored -> {
+                    final CompletionStage<Response> res;
+                    if (matcher.matches()) {
+                        final Key location = new Key.From(matcher.group("pkg"));
+                        res = this.validator.validate(location).thenCompose(
+                            valid -> {
+                                final CompletionStage<Response> upd;
+                                if (valid) {
+                                    upd = this.maven.update(location)
+                                        .thenApply(nothing -> new RsWithStatus(RsStatus.CREATED));
+                                } else {
+                                    upd = this.storage.list(location).thenCompose(
+                                        items -> CompletableFuture.allOf(
+                                            items.stream().map(this.storage::delete)
+                                                .toArray(CompletableFuture[]::new)
+                                        )
+                                    ).thenApply(
+                                        nothing -> new RsWithStatus(RsStatus.BAD_REQUEST)
+                                    );
+                                }
+                                return upd;
                             }
-                            return upd;
-                        }
-                    );
-                } else {
-                    res = CompletableFuture.completedFuture(null);
+                        );
+                    } else {
+                        res = CompletableFuture.completedFuture(new RsWithStatus(RsStatus.CREATED));
+                    }
+                    return res;
                 }
-                return res;
-            }
+            )
         );
-    }
-
-    /**
-     * Response decorator which starts task after response.
-     * @since 0.4
-     */
-    private static final class ResponseWrap implements Response {
-
-        /**
-         * Origin response.
-         */
-        private final Response origin;
-
-        /**
-         * Update task.
-         */
-        private final Supplier<CompletionStage<Void>> update;
-
-        /**
-         * Ctor.
-         * @param response Origin response
-         * @param update Update task
-         */
-        ResponseWrap(final Response response, final Supplier<CompletionStage<Void>> update) {
-            this.origin = response;
-            this.update = update;
-        }
-
-        @Override
-        public CompletionStage<Void> send(final Connection connection) {
-            return this.origin.send(connection).thenCompose(none -> this.update.get());
-        }
     }
 }

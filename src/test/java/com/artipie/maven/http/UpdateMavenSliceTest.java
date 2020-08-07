@@ -75,13 +75,13 @@ class UpdateMavenSliceTest {
         final byte[] body = "java metadata".getBytes();
         final String location = "org/example/artifact/0.1/maven-metadata.xml";
         MatcherAssert.assertThat(
-            "Returns CREATED status",
+            "Returns BAD_REQUEST status",
             new UpdateMavenSlice(storage, new ValidUpload.Dummy(false)).response(
                 new RequestLine("PUT", String.format("/%s", location)).toString(),
                 Collections.emptyList(),
                 Flowable.fromArray(ByteBuffer.wrap(body))
             ),
-            new RsHasStatus(RsStatus.CREATED)
+            new RsHasStatus(RsStatus.BAD_REQUEST)
         );
         MatcherAssert.assertThat(
             "Storage is empty",
