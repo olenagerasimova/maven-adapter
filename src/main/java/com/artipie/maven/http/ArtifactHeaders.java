@@ -24,6 +24,7 @@
 package com.artipie.maven.http;
 
 import com.artipie.asto.Key;
+import com.artipie.asto.ext.KeyLastPart;
 import com.artipie.http.Headers;
 import com.artipie.http.headers.Header;
 import java.util.ArrayList;
@@ -63,11 +64,9 @@ final class ArtifactHeaders extends Headers.Wrap {
      * @return Headers with content disposition
      */
     private static Header contentDisposition(final Key location) {
-        final String string = location.string();
-        final String name = string.substring(string.lastIndexOf('/') + 1);
         return new Header(
             "Content-Disposition",
-            String.format("attachment; filename=\"%s\"", name)
+            String.format("attachment; filename=\"%s\"", new KeyLastPart(location).get())
         );
     }
 
@@ -108,7 +107,7 @@ final class ArtifactHeaders extends Headers.Wrap {
                 type = MimeTypes.getDefaultMimeByExtension(src);
                 break;
         }
-        return new Header("Content-Type", type);
+        return new Header("Content-Type", Optional.ofNullable(type).orElse("*"));
     }
 
     /**
