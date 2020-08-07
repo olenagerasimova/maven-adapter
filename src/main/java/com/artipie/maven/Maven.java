@@ -49,6 +49,9 @@ import org.xembly.Directives;
  *  If we found some unsupported algorithm, then delete checksum file. I'd start with
  *  `MD5`, `SHA-256`, `SHA-1` and `SHA-512`. After this, enable testes in
  *  MavenTest.
+ * @todo #113:30min Extract interface from this class, this class should become main implementation.
+ *  Also create `Fake` implementation for test purposes and add test method to
+ *  `UpdateMavenSliceTest` to verify that UpdateMavenSlice calls `Maven#update` on update.
  */
 public final class Maven {
 
