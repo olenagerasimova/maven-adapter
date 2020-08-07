@@ -31,6 +31,7 @@ import com.artipie.http.Slice;
 import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.slice.SliceUpload;
 import com.artipie.maven.Maven;
+import com.artipie.maven.repository.ValidUpload;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -56,9 +57,9 @@ final class UpdateMavenSlice implements Slice {
         Pattern.compile("^/(?<pkg>.+)/maven-metadata.xml$");
 
     /**
-     * Origin upload slice.
+     * Storage.
      */
-    private final Slice origin;
+    private final Storage storage;
 
     /**
      * Maven repo.
@@ -66,12 +67,27 @@ final class UpdateMavenSlice implements Slice {
     private final Maven maven;
 
     /**
+     * Upload validation.
+     */
+    private final ValidUpload validator;
+
+    /**
+     * Ctor.
+     * @param storage Storage
+     * @param validator Upload validation
+     */
+    UpdateMavenSlice(final Storage storage, final ValidUpload validator) {
+        this.storage = storage;
+        this.maven = new Maven(storage);
+        this.validator = validator;
+    }
+
+    /**
      * Ctor.
      * @param storage Storage
      */
     UpdateMavenSlice(final Storage storage) {
-        this.origin = new SliceUpload(storage);
-        this.maven = new Maven(storage);
+        this(storage, new ValidUpload.Dummy());
     }
 
     @Override
@@ -81,11 +97,27 @@ final class UpdateMavenSlice implements Slice {
         final String path = reqline.uri().getPath();
         final Matcher matcher = PTN_META.matcher(path);
         return new ResponseWrap(
-            this.origin.response(line, head, body),
+            new SliceUpload(this.storage).response(line, head, body),
             () -> {
                 final CompletionStage<Void> res;
                 if (matcher.matches()) {
-                    res = this.maven.update(new Key.From(matcher.group("pkg")));
+                    final Key location = new Key.From(matcher.group("pkg"));
+                    res = this.validator.validate(location).thenCompose(
+                        valid -> {
+                            final CompletionStage<Void> upd;
+                            if (valid) {
+                                upd = this.maven.update(location);
+                            } else {
+                                upd = this.storage.list(location).thenCompose(
+                                    items -> CompletableFuture.allOf(
+                                        items.stream().map(this.storage::delete)
+                                            .toArray(CompletableFuture[]::new)
+                                    )
+                                );
+                            }
+                            return upd;
+                        }
+                    );
                 } else {
                     res = CompletableFuture.completedFuture(null);
                 }
