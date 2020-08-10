@@ -33,6 +33,7 @@ import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.slice.KeyFromPath;
+import com.artipie.maven.AstoMaven;
 import com.artipie.maven.Maven;
 import com.artipie.maven.repository.ValidUpload;
 import java.nio.ByteBuffer;
@@ -77,11 +78,12 @@ final class UpdateMavenSlice implements Slice {
     /**
      * Ctor.
      * @param storage Storage
+     * @param maven Maven repo
      * @param validator Upload validation
      */
-    UpdateMavenSlice(final Storage storage, final ValidUpload validator) {
+    UpdateMavenSlice(final Storage storage, final Maven maven, final ValidUpload validator) {
         this.storage = storage;
-        this.maven = new Maven(storage);
+        this.maven = maven;
         this.validator = validator;
     }
 
@@ -90,7 +92,7 @@ final class UpdateMavenSlice implements Slice {
      * @param storage Storage
      */
     UpdateMavenSlice(final Storage storage) {
-        this(storage, new ValidUpload.Dummy());
+        this(storage, new AstoMaven(storage), new ValidUpload.Dummy());
     }
 
     @Override
