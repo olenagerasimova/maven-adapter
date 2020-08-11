@@ -57,13 +57,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * Test case for {@link Maven}.
+ * Test case for {@link AstoMaven}.
  *
  * @since 0.3
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-public final class MavenITCase {
+public final class AstoMavenITCase {
 
     /**
      * Temporary directory with repository data.
@@ -96,17 +96,15 @@ public final class MavenITCase {
     @Test
     void generatesMetadata() throws Exception {
         final FileStorage storage = new FileStorage(this.repo);
-        new Maven(storage)
+        new AstoMaven(storage)
             .update(new Key.From("com", "artipie", "asto"))
             .toCompletableFuture()
             .get();
         MatcherAssert.assertThat(
             new XMLDocument(
-                new String(
-                    Files.readAllBytes(
-                        this.repo.resolve("com").resolve("artipie").resolve("asto")
-                            .resolve("maven-metadata.xml")
-                    ),
+                Files.readString(
+                    this.repo.resolve("com").resolve("artipie").resolve("asto")
+                        .resolve("maven-metadata.xml"),
                     StandardCharsets.UTF_8
                 )
             ),
