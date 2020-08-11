@@ -90,7 +90,7 @@ public class ValidUploadAstoTest {
      * @param data Data to calc checksums from
      * @param key Data key
      * @throws InterruptedException On error
-     * @todo 125:30min Move this method to class RepositoryChecksums: create new method in
+     * @todo #125:30min Move this method to class RepositoryChecksums: create new method in
      *  RepositoryChecksums to calculate checksums from content by provided key.
      */
     private void addChecksums(final BlockingStorage bsto, final byte[] data, final String key)
