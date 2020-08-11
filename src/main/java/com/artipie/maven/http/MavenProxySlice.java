@@ -42,6 +42,6 @@ public final class MavenProxySlice extends Slice.Wrap {
      * @param cache Proxy cache
      */
     public MavenProxySlice(final HttpClient http, final URI uri, final ProxyCache cache) {
-        super(new DownloadMavenSlice(new RpRemote(http, uri, cache)));
+        super(new RemoteDownloadSlice(new RpRemote(http, uri, cache)));
     }
 }

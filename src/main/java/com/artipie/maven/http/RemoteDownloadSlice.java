@@ -51,19 +51,19 @@ import org.reactivestreams.Publisher;
  * @see Repository
  * @since 0.5
  */
-public final class DownloadMavenSlice implements Slice {
+public final class RemoteDownloadSlice implements Slice {
 
     /**
-     * Maven Repository.
+     * Repository.
      */
     private final Repository repo;
 
     /**
      * Ctor.
      *
-     * @param repo Maven Repository.
+     * @param repo Repository
      */
-    public DownloadMavenSlice(final Repository repo) {
+    public RemoteDownloadSlice(final Repository repo) {
         this.repo = repo;
     }
 

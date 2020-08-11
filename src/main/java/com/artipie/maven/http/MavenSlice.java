@@ -37,7 +37,6 @@ import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.RtRulePath;
 import com.artipie.http.rt.SliceRoute;
 import com.artipie.http.slice.SliceSimple;
-import com.artipie.maven.repository.RpLocal;
 
 /**
  * Maven API entry point.
@@ -74,9 +73,12 @@ public final class MavenSlice extends Slice.Wrap {
         super(
             new SliceRoute(
                 new RtRulePath(
-                    new RtRule.ByMethod(RqMethod.GET),
+                    new RtRule.Any(
+                        new RtRule.ByMethod(RqMethod.GET),
+                        new RtRule.ByMethod(RqMethod.HEAD)
+                    ),
                     new SliceAuth(
-                        new DownloadMavenSlice(new RpLocal(storage)),
+                        new LocalMavenSlice(storage),
                         new Permission.ByName("download", perms),
                         users
                     )
