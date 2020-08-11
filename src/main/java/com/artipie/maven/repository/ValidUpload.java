@@ -24,14 +24,25 @@
 package com.artipie.maven.repository;
 
 import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
+import com.artipie.asto.ext.ContentDigest;
+import com.artipie.asto.ext.Digests;
+import com.artipie.asto.rx.RxStorage;
+import com.artipie.asto.rx.RxStorageWrapper;
+import com.artipie.maven.metadata.FromMetadata;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
+import io.reactivex.Observable;
+import java.util.ArrayList;
+import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.regex.Pattern;
 
 /**
  * Valid upload to maven repository.
  * @since 0.5
- * @todo #113:30min Implement this interface: proper implementation should validate artifact being
- *  uploaded to storage by checking checksums and metadata file. Do not forget about test.
+ * @checkstyle MagicNumberCheck (500 lines)
  */
 public interface ValidUpload {
 
@@ -45,6 +56,95 @@ public interface ValidUpload {
      *  false otherwise
      */
     CompletionStage<Boolean> validate(Key location);
+
+    /**
+     * Asto {@link ValidUpload} implementation validates upload from abstract storage.
+     * @since 0.5
+     * @todo #125:30min Implement maven-metadata.xml validation: check metadata group and id are
+     *  the same as in repository metadata, metadata versions are correct, metadata checksums are
+     *  correct. Do not forget about tests.
+     */
+    final class Asto implements ValidUpload {
+
+        /**
+         * All supported Maven artifacts according to
+         * <a href="https://maven.apache.org/ref/3.6.3/maven-core/artifact-handlers.html">Artifact
+         * handlers</a> by maven-core, and additionally {@code xml} metadata files are
+         * also artifacts.
+         */
+        private static final Pattern PTN_ARTIFACT =
+            Pattern.compile(".+\\.(?:pom|jar|war|ear|rar|aar)");
+
+        /**
+         * Storage.
+         */
+        private final Storage storage;
+
+        /**
+         * Ctor.
+         * @param storage Abstact storage
+         */
+        public Asto(final Storage storage) {
+            this.storage = storage;
+        }
+
+        @Override
+        public CompletionStage<Boolean> validate(final Key location) {
+            return this.validateChecksums(location);
+        }
+
+        /**
+         * Validate artifact checksums.
+         * @param location Artifact location
+         * @return Completable validation action: true if checksums are correct, false otherwise
+         */
+        private CompletionStage<Boolean> validateChecksums(final Key location) {
+            final RxStorage rxsto = new RxStorageWrapper(this.storage);
+            return new FromMetadata(this.storage).version(location).thenCompose(
+                version -> {
+                    final Key pckg = new Key.From(location, version);
+                    return rxsto.list(pckg)
+                        .flatMapObservable(Observable::fromIterable)
+                        .filter(key -> PTN_ARTIFACT.matcher(key.string()).matches())
+                        .flatMapSingle(
+                            artifact -> SingleInterop.fromFuture(
+                                new RepositoryChecksums(this.storage).checksums(artifact)
+                            ).map(Map::entrySet)
+                                .flatMapObservable(Observable::fromIterable)
+                                .flatMapSingle(
+                                    entry ->
+                                        SingleInterop.fromFuture(
+                                            this.storage.value(artifact).thenCompose(
+                                                content -> new ContentDigest(
+                                                    content,
+                                                    Digests.valueOf(
+                                                        entry.getKey().toUpperCase(Locale.US)
+                                                    )
+                                                ).hex().thenApply(
+                                                    hex -> hex.equals(entry.getValue())
+                                                )
+                                        )
+                                    )
+                                ).reduce(
+                                    new ArrayList<>(5),
+                                    (list, equals) -> {
+                                        list.add(equals);
+                                        return list;
+                                    }
+                                )
+                        ).reduce(
+                            new ArrayList<>(5),
+                            (list, res) -> {
+                                list.add(!res.contains(false));
+                                return list;
+                            }
+                        ).map(
+                            array -> !array.contains(false)
+                        ).to(SingleInterop.get());
+                }
+            );
+        }
+    }
 
     /**
      * Dummy {@link ValidUpload} implementation.
