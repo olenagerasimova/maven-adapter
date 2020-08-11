@@ -30,6 +30,7 @@ import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rs.RsStatus;
+import com.artipie.maven.Maven;
 import com.artipie.maven.repository.ValidUpload;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
@@ -76,7 +77,7 @@ class UpdateMavenSliceTest {
         final String location = "org/example/artifact/0.1/maven-metadata.xml";
         MatcherAssert.assertThat(
             "Returns BAD_REQUEST status",
-            new UpdateMavenSlice(storage, new ValidUpload.Dummy(false)).response(
+            new UpdateMavenSlice(storage, new Maven.Fake(), new ValidUpload.Dummy(false)).response(
                 new RequestLine("PUT", String.format("/%s", location)).toString(),
                 Collections.emptyList(),
                 Flowable.fromArray(ByteBuffer.wrap(body))
@@ -87,6 +88,28 @@ class UpdateMavenSliceTest {
             "Storage is empty",
             storage.list(Key.ROOT).join(),
             new IsEmptyIterable<>()
+        );
+    }
+
+    @Test
+    void updatesRepoIsMetadataIsValid() {
+        final Storage storage = new InMemoryStorage();
+        final byte[] body = "java metadata".getBytes();
+        final String location = "org/example/artifact/0.1/maven-metadata.xml";
+        final Maven.Fake maven = new Maven.Fake();
+        MatcherAssert.assertThat(
+            "Returns CREATED status",
+            new UpdateMavenSlice(storage, maven, new ValidUpload.Dummy(true)).response(
+                new RequestLine("PUT", String.format("/%s", location)).toString(),
+                Collections.emptyList(),
+                Flowable.fromArray(ByteBuffer.wrap(body))
+            ),
+            new RsHasStatus(RsStatus.CREATED)
+        );
+        MatcherAssert.assertThat(
+            "Updates maven repo",
+            maven.wasUpdated(),
+            new IsEqual<>(true)
         );
     }
 

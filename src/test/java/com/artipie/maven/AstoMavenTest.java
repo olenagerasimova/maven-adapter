@@ -34,12 +34,12 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for {@link Maven} class.
+ * Unit tests for {@link AstoMaven} class.
  *
  * @since 0.4
  * @checkstyle MethodNameCheck (500 lines)
  */
-public class MavenTest {
+public class AstoMavenTest {
 
     /**
      * Com name.
@@ -66,19 +66,21 @@ public class MavenTest {
     public void generateValidMd5Checksum() throws Exception {
         final Storage storage = new InMemoryStorage();
         storage.save(
-            new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN, "Md5Pack.jar"),
+            new Key.From(
+                AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN, "Md5Pack.jar"
+            ),
             new Content.From("md5-package-content".getBytes())
         ).toCompletableFuture().get();
-        new Maven(storage)
-            .update(new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN))
+        new AstoMaven(storage)
+            .update(new Key.From(AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN))
             .toCompletableFuture()
             .get();
         MatcherAssert.assertThat(
             storage.exists(
                 new Key.From(
-                    MavenTest.COM,
-                    MavenTest.ARTIPIE,
-                    MavenTest.MAVEN,
+                    AstoMavenTest.COM,
+                    AstoMavenTest.ARTIPIE,
+                    AstoMavenTest.MAVEN,
                     "maven-metadata.xml.md5"
                 )
             ).toCompletableFuture().get(),
@@ -91,19 +93,21 @@ public class MavenTest {
     public void generateValidSha1Checksum() throws Exception {
         final InMemoryStorage storage = new InMemoryStorage();
         storage.save(
-            new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN, "Sha1Pack.jar"),
+            new Key.From(
+                AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN, "Sha1Pack.jar"
+            ),
             new Content.From("sha1-package-content".getBytes())
         ).toCompletableFuture().get();
-        new Maven(storage)
+        new AstoMaven(storage)
             .update(
-                new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN)
+                new Key.From(AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN)
             ).toCompletableFuture().get();
         MatcherAssert.assertThat(
             storage.exists(
                 new Key.From(
-                    MavenTest.COM,
-                    MavenTest.ARTIPIE,
-                    MavenTest.MAVEN,
+                    AstoMavenTest.COM,
+                    AstoMavenTest.ARTIPIE,
+                    AstoMavenTest.MAVEN,
                     "maven-metadata.xml.sha1"
                 )
             ).toCompletableFuture().get(),
@@ -116,19 +120,21 @@ public class MavenTest {
     public void generateValidSha256Checksum() throws Exception {
         final InMemoryStorage storage = new InMemoryStorage();
         storage.save(
-            new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN, "Sha256Pack.jar"),
+            new Key.From(
+                AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN, "Sha256Pack.jar"
+            ),
             new Content.From("sha256-package-content".getBytes())
         ).toCompletableFuture().get();
-        new Maven(storage)
+        new AstoMaven(storage)
             .update(
-                new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN)
+                new Key.From(AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN)
             ).toCompletableFuture().get();
         MatcherAssert.assertThat(
             storage.exists(
                 new Key.From(
-                    MavenTest.COM,
-                    MavenTest.ARTIPIE,
-                    MavenTest.MAVEN,
+                    AstoMavenTest.COM,
+                    AstoMavenTest.ARTIPIE,
+                    AstoMavenTest.MAVEN,
                     "maven-metadata.xml.sha256"
                 )
             ).toCompletableFuture().get(),
@@ -141,23 +147,25 @@ public class MavenTest {
     public void generateValidSha512Checksum() throws Exception {
         final InMemoryStorage storage = new InMemoryStorage();
         storage.save(
-            new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN, "Sha512Pack.jar"),
+            new Key.From(
+                AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN, "Sha512Pack.jar"
+            ),
             new Content.From("sha512-package-content".getBytes())
         )
             .toCompletableFuture()
             .get();
-        new Maven(storage)
+        new AstoMaven(storage)
             .update(
-                new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN)
+                new Key.From(AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN)
             )
             .toCompletableFuture()
             .get();
         MatcherAssert.assertThat(
             storage.exists(
                 new Key.From(
-                    MavenTest.COM,
-                    MavenTest.ARTIPIE,
-                    MavenTest.MAVEN,
+                    AstoMavenTest.COM,
+                    AstoMavenTest.ARTIPIE,
+                    AstoMavenTest.MAVEN,
                     "maven-metadata.xml.sha512"
                 )
             ).toCompletableFuture().get(),
@@ -171,21 +179,22 @@ public class MavenTest {
         final InMemoryStorage storage = new InMemoryStorage();
         storage.save(
             new Key.From(
-                MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN, MavenTest.UNSUPPORTED
+                AstoMavenTest.COM, AstoMavenTest.ARTIPIE,
+                AstoMavenTest.MAVEN, AstoMavenTest.UNSUPPORTED
             ),
             new Content.From("anything".getBytes())
         ).toCompletableFuture().get();
-        new Maven(storage)
-            .update(new Key.From(MavenTest.COM, MavenTest.ARTIPIE, MavenTest.MAVEN))
+        new AstoMaven(storage)
+            .update(new Key.From(AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN))
             .toCompletableFuture()
             .get();
         MatcherAssert.assertThat(
             storage.exists(
                 new Key.From(
-                    MavenTest.COM,
-                    MavenTest.ARTIPIE,
-                    MavenTest.MAVEN,
-                    MavenTest.UNSUPPORTED
+                    AstoMavenTest.COM,
+                    AstoMavenTest.ARTIPIE,
+                    AstoMavenTest.MAVEN,
+                    AstoMavenTest.UNSUPPORTED
                 )
             ).toCompletableFuture().get(),
             new IsEqual<>(false)

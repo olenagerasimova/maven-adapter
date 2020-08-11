@@ -23,90 +23,46 @@
  */
 package com.artipie.maven;
 
-import com.artipie.asto.Concatenation;
 import com.artipie.asto.Key;
-import com.artipie.asto.Remaining;
-import com.artipie.asto.Storage;
-import com.jcabi.xml.XMLDocument;
-import hu.akarnokd.rxjava2.interop.SingleInterop;
-import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
-import org.xembly.Directives;
 
 /**
  * Maven front for artipie maven adaptor.
- *
- * @since 0.2
- * @todo #91:30min Generate valid checksums on metadata update.
- *  When updating the maven-metadata.xml, then we should find all checksum files in the root of
- *  repository by prefix maven-metadata.xml (it can be done using storage.list), there will be
- *  few checksum files like `maven-metadata.xml.md5`, `maven-metadata.xml.sha1`,
- *  `maven-metadata.xml.sha256`, `maven-metadata.xml.sha512`. We need to update all these files
- *  with checksums of `maven-metadata.xml` data using checksum file extension as digest algorithm.
- *  If we found some unsupported algorithm, then delete checksum file. I'd start with
- *  `MD5`, `SHA-256`, `SHA-1` and `SHA-512`. After this, enable testes in
- *  MavenTest.
- * @todo #113:30min Extract interface from this class, this class should become main implementation.
- *  Also create `Fake` implementation for test purposes and add test method to
- *  `UpdateMavenSliceTest` to verify that UpdateMavenSlice calls `Maven#update` on update.
+ * @since 0.5
  */
-public final class Maven {
-
-    /**
-     * Repository storage.
-     */
-    private final Storage storage;
-
-    /**
-     * Update metadata executor.
-     */
-    private final Executor exec;
-
-    /**
-     * Ctor.
-     * @param storage Maven repo storage
-     */
-    public Maven(final Storage storage) {
-        this(storage, Executors.newSingleThreadExecutor());
-    }
-
-    /**
-     * Constructor.
-     * @param storage Storage used by this class.
-     * @param exec Executor
-     */
-    public Maven(final Storage storage, final Executor exec) {
-        this.storage = storage;
-        this.exec = exec;
-    }
+public interface Maven {
 
     /**
      * Updates the metadata of a maven package.
      * @param pkg Maven package key
      * @return Completion stage
      */
-    public CompletionStage<Void> update(final Key pkg) {
-        return this.storage.value(new Key.From(pkg, "maven-metadata.xml"))
-            .thenComposeAsync(
-                pub -> new Concatenation(pub).single().to(SingleInterop.get()), this.exec
-            )
-            .thenApplyAsync(buf -> new String(new Remaining(buf).bytes(), StandardCharsets.UTF_8))
-            .thenApply(XMLDocument::new)
-            .thenApply(doc -> new MavenMetadata(Directives.copyOf(doc.node())))
-            .thenCompose(
-                doc -> this.storage.list(pkg).thenApply(
-                    items -> items.stream()
-                        .map(
-                            item -> item.string()
-                                .replaceAll(String.format("%s/", pkg.string()), "")
-                                .split("/")[0]
-                        )
-                        .filter(item -> !item.startsWith("maven-metadata"))
-                        .collect(Collectors.toSet())
-                ).thenApply(doc::versions)
-            ).thenCompose(doc -> doc.save(this.storage, pkg));
+    CompletionStage<Void> update(Key pkg);
+
+    /**
+     * Fake {@link Maven} implementation.
+     * @since 0.5
+     */
+    class Fake implements Maven {
+
+        /**
+         * Was maven updated?
+         */
+        private boolean updated;
+
+        @Override
+        public CompletionStage<Void> update(final Key pkg) {
+            this.updated = true;
+            return CompletableFuture.allOf();
+        }
+
+        /**
+         * Was maven updated?
+         * @return True is was, false - otherwise
+         */
+        public boolean wasUpdated() {
+            return this.updated;
+        }
     }
 }
