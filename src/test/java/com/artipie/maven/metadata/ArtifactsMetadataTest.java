@@ -23,51 +23,29 @@
  */
 package com.artipie.maven.metadata;
 
-import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
-import java.nio.charset.StandardCharsets;
+import com.artipie.asto.test.TestResource;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test for {@link FromMetadata}.
+ * Test for {@link ArtifactsMetadata}.
  * @since 0.5
  */
-class FromMetadataTest {
+class ArtifactsMetadataTest {
 
     @Test
     void readsVersion() {
         final Storage storage = new InMemoryStorage();
         final Key key = new Key.From("com/artipie/example");
-        storage.save(
-            new Key.From(key, "maven-metadata.xml"),
-            new Content.From(
-                String.join(
-                    "\n",
-                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-                    "<metadata modelVersion=\"1.1.0\">",
-                    "  <groupId>com.test</groupId>",
-                    "  <artifactId>logger</artifactId>",
-                    "  <version>1.1</version>",
-                    "  <versioning>",
-                    "    <latest>1.1</latest>",
-                    "    <release>1.1</release>",
-                    "    <versions>",
-                    "      <version>0.9</version>",
-                    "      <version>0.8</version>",
-                    "    </versions>",
-                    "    <lastUpdated>20200804141715</lastUpdated>",
-                    "  </versioning>",
-                    "</metadata>"
-                ).getBytes(StandardCharsets.UTF_8)
-            )
-        ).join();
+        new TestResource("maven-metadata.xml.example")
+            .saveTo(storage, new Key.From(key, "maven-metadata.xml"));
         MatcherAssert.assertThat(
-            new FromMetadata(storage).version(key).toCompletableFuture().join(),
-            new IsEqual<>("1.1")
+            new ArtifactsMetadata(storage).latest(key).toCompletableFuture().join(),
+            new IsEqual<>("1.0")
         );
     }
 

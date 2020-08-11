@@ -27,6 +27,7 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.asto.test.TestResource;
 import java.nio.charset.StandardCharsets;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.hamcrest.MatcherAssert;
@@ -51,7 +52,8 @@ public class ValidUploadAstoTest {
         final byte[] wbytes = "war artifact".getBytes();
         bsto.save(jar, jbytes);
         bsto.save(war, wbytes);
-        this.addMetadata(bsto, artifact);
+        new TestResource("maven-metadata.xml.example")
+            .saveTo(storage, new Key.From(artifact, "maven-metadata.xml"));
         this.addChecksums(bsto, jbytes, jar.string());
         this.addChecksums(bsto, wbytes, war.string());
         MatcherAssert.assertThat(
@@ -72,7 +74,8 @@ public class ValidUploadAstoTest {
         bsto.save(jar, bytes);
         bsto.save(war, "war artifact".getBytes());
         bsto.save(new Key.From(String.format("%s.sha256", war.string())), "123".getBytes());
-        this.addMetadata(bsto, key);
+        new TestResource("maven-metadata.xml.example")
+            .saveTo(storage, new Key.From(key, "maven-metadata.xml"));
         this.addChecksums(bsto, bytes, jar.string());
         MatcherAssert.assertThat(
             new ValidUpload.Asto(storage).validate(key)
@@ -81,6 +84,15 @@ public class ValidUploadAstoTest {
         );
     }
 
+    /**
+     * Adds data checksums to storage by provided key.
+     * @param bsto Blocking storage
+     * @param data Data to calc checksums from
+     * @param key Data key
+     * @throws InterruptedException On error
+     * @todo 125:30min Move this method to class RepositoryChecksums: create new method in
+     *  RepositoryChecksums to calculate checksums from content by provided key.
+     */
     private void addChecksums(final BlockingStorage bsto, final byte[] data, final String key)
         throws InterruptedException {
         bsto.save(
@@ -99,22 +111,6 @@ public class ValidUploadAstoTest {
         bsto.save(
             new Key.From(String.format("%s.md5", key)),
             DigestUtils.md5Hex(data).getBytes(StandardCharsets.US_ASCII)
-        );
-    }
-
-    private void addMetadata(final BlockingStorage bsto, final Key key)
-        throws InterruptedException {
-        bsto.save(
-            new Key.From(key, "maven-metadata.xml"),
-            String.join(
-                "\n",
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-                "<metadata modelVersion=\"1.1.0\">",
-                "  <groupId>com.test</groupId>",
-                "  <artifactId>logger</artifactId>",
-                "  <version>1.0</version>",
-                "</metadata>"
-            ).getBytes(StandardCharsets.UTF_8)
         );
     }
 }

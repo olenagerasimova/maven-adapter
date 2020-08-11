@@ -29,7 +29,7 @@ import com.artipie.asto.ext.ContentDigest;
 import com.artipie.asto.ext.Digests;
 import com.artipie.asto.rx.RxStorage;
 import com.artipie.asto.rx.RxStorageWrapper;
-import com.artipie.maven.metadata.FromMetadata;
+import com.artipie.maven.metadata.ArtifactsMetadata;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Observable;
 import java.util.ArrayList;
@@ -100,7 +100,7 @@ public interface ValidUpload {
          */
         private CompletionStage<Boolean> validateChecksums(final Key location) {
             final RxStorage rxsto = new RxStorageWrapper(this.storage);
-            return new FromMetadata(this.storage).version(location).thenCompose(
+            return new ArtifactsMetadata(this.storage).latest(location).thenCompose(
                 version -> {
                     final Key pckg = new Key.From(location, version);
                     return rxsto.list(pckg)

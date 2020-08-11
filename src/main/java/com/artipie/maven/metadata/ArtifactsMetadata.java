@@ -34,7 +34,7 @@ import java.util.concurrent.CompletionStage;
  * Read information from metadata file.
  * @since 0.5
  */
-public final class FromMetadata {
+public final class ArtifactsMetadata {
 
     /**
      * Storage.
@@ -45,7 +45,7 @@ public final class FromMetadata {
      * Ctor.
      * @param storage Storage
      */
-    public FromMetadata(final Storage storage) {
+    public ArtifactsMetadata(final Storage storage) {
         this.storage = storage;
     }
 
@@ -54,11 +54,11 @@ public final class FromMetadata {
      * @param location Package location
      * @return Version as completed stage
      */
-    public CompletionStage<String> version(final Key location) {
+    public CompletionStage<String> latest(final Key location) {
         return this.storage.value(new Key.From(location, "maven-metadata.xml"))
             .thenCompose(
                 content -> new PublisherAs(content).string(StandardCharsets.UTF_8)
-                .thenApply(metadata -> new XMLDocument(metadata).xpath("//version/text()").get(0))
+                .thenApply(metadata -> new XMLDocument(metadata).xpath("//latest/text()").get(0))
             );
     }
 }
