@@ -36,6 +36,7 @@ import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.collection.IsEmptyCollection;
 import org.hamcrest.collection.IsEmptyIterable;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
@@ -49,7 +50,7 @@ import org.junit.jupiter.api.Test;
 class UpdateMavenSliceTest {
 
     @Test
-    void uploadsFile() {
+    void uploadsFileToTempLocation() {
         final Storage storage = new InMemoryStorage();
         final byte[] body = "java code".getBytes();
         final String location = "org/example/artifact/0.1/artifact-1.0.jar";
@@ -64,9 +65,56 @@ class UpdateMavenSliceTest {
         );
         MatcherAssert.assertThat(
             "Puts file to storage",
-            new PublisherAs(storage.value(new Key.From(location)).join())
+            new PublisherAs(storage.value(new Key.From(UpdateMavenSlice.TEMP, location)).join())
                 .bytes().toCompletableFuture().join(),
             new IsEqual<>(body)
+        );
+    }
+
+    @Test
+    void movesFilesToMainStorageAfterUpdate() {
+        final Storage storage = new InMemoryStorage();
+        final byte[] jar = "java code".getBytes();
+        final String jlocation = "org/example/artifact/0.1/artifact-1.0.jar";
+        final byte[] meta = "java metadata".getBytes();
+        final String mlocation = "org/example/artifact/0.1/maven-metadata.xml";
+        final UpdateMavenSlice update = new UpdateMavenSlice(
+            storage, new Maven.Fake(), new ValidUpload.Dummy()
+        );
+        MatcherAssert.assertThat(
+            "Returns CREATED status for jar",
+            update.response(
+                new RequestLine("PUT", String.format("/%s", jlocation)).toString(),
+                Collections.emptyList(),
+                Flowable.fromArray(ByteBuffer.wrap(jar))
+            ),
+            new RsHasStatus(RsStatus.CREATED)
+        );
+        MatcherAssert.assertThat(
+            "Returns CREATED status for metadata",
+            update.response(
+                new RequestLine("PUT", String.format("/%s", mlocation)).toString(),
+                Collections.emptyList(),
+                Flowable.fromArray(ByteBuffer.wrap(meta))
+            ),
+            new RsHasStatus(RsStatus.CREATED)
+        );
+        MatcherAssert.assertThat(
+            "Puts jar to main storage",
+            new PublisherAs(storage.value(new Key.From(jlocation)).join())
+                .bytes().toCompletableFuture().join(),
+            new IsEqual<>(jar)
+        );
+        MatcherAssert.assertThat(
+            "Puts meta to main storage",
+            new PublisherAs(storage.value(new Key.From(mlocation)).join())
+                .bytes().toCompletableFuture().join(),
+            new IsEqual<>(meta)
+        );
+        MatcherAssert.assertThat(
+            "Removes files from temp location",
+            storage.list(UpdateMavenSlice.TEMP).join(),
+            new IsEmptyCollection<>()
         );
     }
 
