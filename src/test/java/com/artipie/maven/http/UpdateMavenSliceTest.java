@@ -23,18 +23,18 @@
  */
 package com.artipie.maven.http;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.http.Headers;
 import com.artipie.http.hm.RsHasStatus;
+import com.artipie.http.hm.SliceHasResponse;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.maven.Maven;
 import com.artipie.maven.repository.ValidUpload;
-import io.reactivex.Flowable;
-import java.nio.ByteBuffer;
-import java.util.Collections;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.collection.IsEmptyCollection;
 import org.hamcrest.collection.IsEmptyIterable;
@@ -56,12 +56,12 @@ class UpdateMavenSliceTest {
         final String location = "org/example/artifact/0.1/artifact-1.0.jar";
         MatcherAssert.assertThat(
             "Returns CREATED status",
-            new UpdateMavenSlice(storage).response(
-                new RequestLine("PUT", String.format("/%s", location)).toString(),
-                Collections.emptyList(),
-                Flowable.fromArray(ByteBuffer.wrap(body))
-            ),
-            new RsHasStatus(RsStatus.CREATED)
+            new UpdateMavenSlice(storage),
+            new SliceHasResponse(
+                new RsHasStatus(RsStatus.CREATED),
+                new RequestLine("PUT", String.format("/%s", location)),
+                Headers.EMPTY, new Content.From(body)
+            )
         );
         MatcherAssert.assertThat(
             "Puts file to storage",
@@ -83,21 +83,21 @@ class UpdateMavenSliceTest {
         );
         MatcherAssert.assertThat(
             "Returns CREATED status for jar",
-            update.response(
-                new RequestLine("PUT", String.format("/%s", jlocation)).toString(),
-                Collections.emptyList(),
-                Flowable.fromArray(ByteBuffer.wrap(jar))
-            ),
-            new RsHasStatus(RsStatus.CREATED)
+            update,
+            new SliceHasResponse(
+                new RsHasStatus(RsStatus.CREATED),
+                new RequestLine("PUT", String.format("/%s", jlocation)),
+                Headers.EMPTY, new Content.From(jar)
+            )
         );
         MatcherAssert.assertThat(
             "Returns CREATED status for metadata",
-            update.response(
-                new RequestLine("PUT", String.format("/%s", mlocation)).toString(),
-                Collections.emptyList(),
-                Flowable.fromArray(ByteBuffer.wrap(meta))
-            ),
-            new RsHasStatus(RsStatus.CREATED)
+            update,
+            new SliceHasResponse(
+                new RsHasStatus(RsStatus.CREATED),
+                new RequestLine("PUT", String.format("/%s", mlocation)),
+                Headers.EMPTY, new Content.From(meta)
+            )
         );
         MatcherAssert.assertThat(
             "Puts jar to main storage",
@@ -125,12 +125,12 @@ class UpdateMavenSliceTest {
         final String location = "org/example/artifact/0.1/maven-metadata.xml";
         MatcherAssert.assertThat(
             "Returns BAD_REQUEST status",
-            new UpdateMavenSlice(storage, new Maven.Fake(), new ValidUpload.Dummy(false)).response(
-                new RequestLine("PUT", String.format("/%s", location)).toString(),
-                Collections.emptyList(),
-                Flowable.fromArray(ByteBuffer.wrap(body))
-            ),
-            new RsHasStatus(RsStatus.BAD_REQUEST)
+            new UpdateMavenSlice(storage, new Maven.Fake(), new ValidUpload.Dummy(false)),
+            new SliceHasResponse(
+                new RsHasStatus(RsStatus.BAD_REQUEST),
+                new RequestLine("PUT", String.format("/%s", location)),
+                Headers.EMPTY, new Content.From(body)
+            )
         );
         MatcherAssert.assertThat(
             "Storage is empty",
@@ -147,12 +147,12 @@ class UpdateMavenSliceTest {
         final Maven.Fake maven = new Maven.Fake();
         MatcherAssert.assertThat(
             "Returns CREATED status",
-            new UpdateMavenSlice(storage, maven, new ValidUpload.Dummy(true)).response(
-                new RequestLine("PUT", String.format("/%s", location)).toString(),
-                Collections.emptyList(),
-                Flowable.fromArray(ByteBuffer.wrap(body))
-            ),
-            new RsHasStatus(RsStatus.CREATED)
+            new UpdateMavenSlice(storage, maven, new ValidUpload.Dummy(true)),
+            new SliceHasResponse(
+                new RsHasStatus(RsStatus.CREATED),
+                new RequestLine("PUT", String.format("/%s", location)),
+                Headers.EMPTY, new Content.From(body)
+            )
         );
         MatcherAssert.assertThat(
             "Updates maven repo",

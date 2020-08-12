@@ -45,7 +45,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.cactoos.list.ListOf;
 import org.reactivestreams.Publisher;
 
@@ -62,7 +61,7 @@ final class UpdateMavenSlice implements Slice {
     /**
      * Temp storage key.
      */
-    static final Key TEMP = new Key.From(DigestUtils.md5Hex("upload".getBytes()));
+    static final Key TEMP = new Key.From(".upload");
 
     /**
      * Metadata pattern.
