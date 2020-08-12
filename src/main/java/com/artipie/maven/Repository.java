@@ -21,45 +21,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.maven.repository;
+package com.artipie.maven;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.Storage;
-import com.artipie.asto.rx.RxStorageWrapper;
-import com.artipie.http.slice.KeyFromPath;
-import hu.akarnokd.rxjava2.interop.SingleInterop;
-import io.reactivex.Single;
+import com.artipie.http.Response;
 import java.net.URI;
 import java.util.concurrent.CompletionStage;
 
 /**
- * {@link Repository} getting artifacts from a local {@link Storage}.
+ * A Maven repository that abstracts over local, remote, etc, types of repository.
+ *
+ * Its responsibility is to serve GET requests for Maven artifacts.
  *
  * @since 0.5
+ * @todo #92:30min Continue working on implementing a Maven proxy repository
+ *  by introducing a new class Repositories that wraps an ordered list of
+ *  Repository and tries them one by one to retrieve maven artifacts. Keep in mind
+ *  the following points: 1) Repositories should at one point be able to serve all
+ *  the related files (metadatas) of a given maven coordinates from the same Repository
+ *  to avoid incoherent states, 2) Repositories should be responsible of maintaining
+ *  an aggregated view of all the metadatas of the Repository it wraps, 3) There
+ *  should ultimately be a configuration file as explained in #92 for instantiating
+ *  Repositories. See #92 for more details on this. Don't hesitate to ask ARC about
+ *  it since this todo is quite complex.
  */
-public final class RpLocal implements Repository {
+public interface Repository {
 
     /**
-     * Storage.
+     * Build a {@link Response} for a GET request to serve a Maven artifact.
+     *
+     * @param uri The requested artifact
+     * @return Artifact data content future
      */
-    private final Storage storage;
-
-    /**
-     * Ctor.
-     * @param storage Storage
-     */
-    public RpLocal(final Storage storage) {
-        this.storage = storage;
-    }
-
-    @Override
-    public CompletionStage<Content> artifact(final URI uri) {
-        final KeyFromPath key = new KeyFromPath(uri.getPath());
-        return Single.just(new RxStorageWrapper(this.storage)).flatMapMaybe(
-            rxsto -> rxsto.exists(key)
-                .filter(exists -> exists)
-                .flatMapSingleElement(ignore -> rxsto.value(key))
-        ).switchIfEmpty(Single.error(() -> new ArtifactNotFoundException(key)))
-            .to(SingleInterop.get());
-    }
+    CompletionStage<? extends Content> artifact(URI uri);
 }

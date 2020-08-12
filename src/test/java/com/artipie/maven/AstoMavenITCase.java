@@ -25,6 +25,7 @@ package com.artipie.maven;
 
 import com.artipie.asto.Key;
 import com.artipie.asto.fs.FileStorage;
+import com.artipie.maven.asto.AstoMaven;
 import com.jcabi.matchers.XhtmlMatchers;
 import com.jcabi.xml.XML;
 import com.jcabi.xml.XMLDocument;

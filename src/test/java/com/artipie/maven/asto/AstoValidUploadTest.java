@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.maven.repository;
+package com.artipie.maven.asto;
 
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
@@ -35,11 +35,11 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test for {@link ValidUpload.Asto}.
+ * Test for {@link AstoValidUpload}.
  * @since 0.5
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-public class ValidUploadAstoTest {
+public class AstoValidUploadTest {
 
     @Test
     void returnsTrueWhenAllChecksumsAreValid() throws InterruptedException {
@@ -57,7 +57,7 @@ public class ValidUploadAstoTest {
         this.addChecksums(bsto, jbytes, jar.string());
         this.addChecksums(bsto, wbytes, war.string());
         MatcherAssert.assertThat(
-            new ValidUpload.Asto(storage).validate(artifact)
+            new AstoValidUpload(storage).validate(artifact)
                 .toCompletableFuture().join(),
             new IsEqual<>(true)
         );
@@ -78,7 +78,7 @@ public class ValidUploadAstoTest {
             .saveTo(storage, new Key.From(key, "maven-metadata.xml"));
         this.addChecksums(bsto, bytes, jar.string());
         MatcherAssert.assertThat(
-            new ValidUpload.Asto(storage).validate(key)
+            new AstoValidUpload(storage).validate(key)
                 .toCompletableFuture().join(),
             new IsEqual<>(false)
         );

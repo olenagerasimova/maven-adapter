@@ -31,7 +31,7 @@ import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.maven.Maven;
-import com.artipie.maven.repository.ValidUpload;
+import com.artipie.maven.ValidUpload;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Collections;

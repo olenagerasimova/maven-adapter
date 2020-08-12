@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.maven;
+package com.artipie.maven.metadata;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
@@ -41,7 +41,7 @@ import org.xembly.Xembler;
  * @since 0.3
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-final class MavenMetadata {
+public final class MavenMetadata {
 
     /**
      * Current Xembler state.
@@ -52,7 +52,7 @@ final class MavenMetadata {
      * Ctor.
      * @param source Source xembler directives
      */
-    MavenMetadata(final Iterable<Directive> source) {
+    public MavenMetadata(final Iterable<Directive> source) {
         this.dirs = new Directives(source);
     }
 

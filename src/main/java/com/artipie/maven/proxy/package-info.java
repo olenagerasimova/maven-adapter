@@ -23,8 +23,8 @@
  */
 
 /**
- * Tests for Maven repositories.
+ * Proxy maven adapter package.
  *
  * @since 0.5
  */
-package com.artipie.maven.repository;
+package com.artipie.maven.proxy;
