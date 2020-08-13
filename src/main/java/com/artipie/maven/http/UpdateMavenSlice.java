@@ -24,8 +24,10 @@
 package com.artipie.maven.http;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.Copy;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.SubStorage;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
@@ -37,11 +39,13 @@ import com.artipie.maven.AstoMaven;
 import com.artipie.maven.Maven;
 import com.artipie.maven.repository.ValidUpload;
 import java.nio.ByteBuffer;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.cactoos.list.ListOf;
 import org.reactivestreams.Publisher;
 
 /**
@@ -53,6 +57,11 @@ import org.reactivestreams.Publisher;
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class UpdateMavenSlice implements Slice {
+
+    /**
+     * Temp storage key.
+     */
+    static final Key TEMP = new Key.From(".upload");
 
     /**
      * Metadata pattern.
@@ -101,32 +110,41 @@ final class UpdateMavenSlice implements Slice {
         final RequestLineFrom reqline = new RequestLineFrom(line);
         final String path = reqline.uri().getPath();
         final Matcher matcher = PTN_META.matcher(path);
+        final Storage temp = new SubStorage(UpdateMavenSlice.TEMP, this.storage);
         return new AsyncResponse(
-            this.storage.save(
+            temp.save(
                 new KeyFromPath(new RequestLineFrom(line).uri().getPath()), new Content.From(body)
             ).thenCompose(
                 ignored -> {
                     final CompletionStage<Response> res;
                     if (matcher.matches()) {
                         final Key location = new Key.From(matcher.group("pkg"));
-                        res = this.validator.validate(location).thenCompose(
-                            valid -> {
-                                final CompletionStage<Response> upd;
-                                if (valid) {
-                                    upd = this.maven.update(location)
-                                        .thenApply(nothing -> new RsWithStatus(RsStatus.CREATED));
-                                } else {
-                                    upd = this.storage.list(location).thenCompose(
-                                        items -> CompletableFuture.allOf(
-                                            items.stream().map(this.storage::delete)
-                                                .toArray(CompletableFuture[]::new)
-                                        )
-                                    ).thenApply(
-                                        nothing -> new RsWithStatus(RsStatus.BAD_REQUEST)
-                                    );
+                        res = this.validator.validate(new Key.From(UpdateMavenSlice.TEMP, location))
+                            .thenCompose(
+                                valid -> {
+                                    final CompletionStage<Response> upd;
+                                    if (valid) {
+                                        upd = temp.list(location).thenCompose(
+                                            list -> new Copy(temp, new ListOf<>(list))
+                                                .copy(this.storage).thenCompose(
+                                                    nothing -> CompletableFuture.allOf(
+                                                        this.maven.update(location)
+                                                            .toCompletableFuture(),
+                                                        UpdateMavenSlice.remove(temp, list)
+                                                    ).thenApply(
+                                                        any -> new RsWithStatus(RsStatus.CREATED)
+                                                    )
+                                                )
+                                        );
+                                    } else {
+                                        upd = temp.list(location).thenCompose(
+                                            items -> UpdateMavenSlice.remove(temp, items)
+                                        ).thenApply(
+                                            nothing -> new RsWithStatus(RsStatus.BAD_REQUEST)
+                                        );
+                                    }
+                                    return upd;
                                 }
-                                return upd;
-                            }
                         );
                     } else {
                         res = CompletableFuture.completedFuture(new RsWithStatus(RsStatus.CREATED));
@@ -134,6 +152,19 @@ final class UpdateMavenSlice implements Slice {
                     return res;
                 }
             )
+        );
+    }
+
+    /**
+     * Delete items from storage.
+     * @param asto Storage
+     * @param items Keys to remove
+     * @return Completable remove operation
+     */
+    private static CompletableFuture<Void> remove(final Storage asto, final Collection<Key> items) {
+        return CompletableFuture.allOf(
+            items.stream().map(asto::delete)
+                .toArray(CompletableFuture[]::new)
         );
     }
 }
