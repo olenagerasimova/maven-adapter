@@ -35,21 +35,28 @@ import org.junit.jupiter.api.Test;
 /**
  * Test for {@link AstoValidUpload}.
  * @since 0.5
+ * @todo #131:30min Refactor this test class: each test method has repeating lines of code,
+ *  extract storage and AstoValidUpload instance into fields, initialise them in @BeforeEach
+ *  method and introduce other methods to avoid code duplication. Also thinks about any other
+ *  situations to test.
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public class AstoValidUploadTest {
 
     @Test
-    void returnsTrueWhenAllChecksumsAreValid() throws InterruptedException {
+    void returnsTrueWhenUploadIsValid() throws InterruptedException {
         final Storage storage = new InMemoryStorage();
         final BlockingStorage bsto = new BlockingStorage(storage);
+        final Key upload = new Key.From(".upload/com/test");
         final Key artifact = new Key.From("com/test");
-        final Key jar = new Key.From("com/test/1.0/my-package.jar");
-        final Key war = new Key.From("com/test/1.0/my-package.war");
+        final Key jar = new Key.From(upload, "1.0/my-package.jar");
+        final Key war = new Key.From(upload, "1.0/my-package.war");
         final byte[] jbytes = "jar artifact".getBytes();
         final byte[] wbytes = "war artifact".getBytes();
         bsto.save(jar, jbytes);
         bsto.save(war, wbytes);
+        new TestResource("maven-metadata.xml.example")
+            .saveTo(storage, new Key.From(upload, "maven-metadata.xml"));
         new TestResource("maven-metadata.xml.example")
             .saveTo(storage, new Key.From(artifact, "maven-metadata.xml"));
         bsto.save(jar, jbytes);
@@ -57,7 +64,7 @@ public class AstoValidUploadTest {
         new RepositoryChecksums(storage).generate(jar).toCompletableFuture().join();
         new RepositoryChecksums(storage).generate(war).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            new AstoValidUpload(storage).validate(artifact)
+            new AstoValidUpload(storage).validate(upload, artifact)
                 .toCompletableFuture().join(),
             new IsEqual<>(true)
         );
@@ -79,9 +86,62 @@ public class AstoValidUploadTest {
         bsto.save(jar, bytes);
         new RepositoryChecksums(storage).generate(jar).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            new AstoValidUpload(storage).validate(key)
+            new AstoValidUpload(storage).validate(key, key)
                 .toCompletableFuture().join(),
             new IsEqual<>(false)
         );
     }
+
+    @Test
+    void returnsFalseWhenNoArtifactsFound() {
+        final Storage storage = new InMemoryStorage();
+        final Key upload = new Key.From(".upload/com/test/logger");
+        new TestResource("maven-metadata.xml.example")
+            .saveTo(storage, new Key.From(upload, "maven-metadata.xml"));
+        MatcherAssert.assertThat(
+            new AstoValidUpload(storage).validate(upload, upload)
+                .toCompletableFuture().join(),
+            new IsEqual<>(false)
+        );
+    }
+
+    @Test
+    void returnsFalseWhenMetadataIsNotValid() throws InterruptedException {
+        final Storage storage = new InMemoryStorage();
+        final BlockingStorage bsto = new BlockingStorage(storage);
+        final Key upload = new Key.From(".upload/com/test/logger");
+        final Key artifact = new Key.From("com/test/logger");
+        final Key jar = new Key.From("com/test/logger/1.0/my-package.jar");
+        final byte[] bytes = "artifact".getBytes();
+        bsto.save(jar, bytes);
+        bsto.save(
+            new Key.From(upload, "maven-metadata.xml"),
+            String.join(
+                "\n",
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+                "<metadata>",
+                "  <groupId>com.test</groupId>",
+                "  <artifactId>jogger</artifactId>",
+                "  <versioning>",
+                "    <latest>1.0</latest>",
+                "    <release>1.0</release>",
+                "    <versions>",
+                "      <version>1.0</version>",
+                "    </versions>",
+                "    <lastUpdated>20200804141716</lastUpdated>",
+                "  </versioning>",
+                "</metadata>"
+            ).getBytes()
+        );
+        new TestResource("maven-metadata.xml.example")
+            .saveTo(storage, new Key.From(artifact, "maven-metadata.xml"));
+        bsto.save(jar, bytes);
+        new RepositoryChecksums(storage).generate(jar).toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            new AstoValidUpload(storage).validate(upload, artifact)
+                .toCompletableFuture().join(),
+            new IsEqual<>(false)
+        );
+    }
+
 }

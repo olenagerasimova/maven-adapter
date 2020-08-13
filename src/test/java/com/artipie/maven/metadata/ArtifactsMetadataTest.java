@@ -27,8 +27,10 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.asto.test.TestResource;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -37,15 +39,38 @@ import org.junit.jupiter.api.Test;
  */
 class ArtifactsMetadataTest {
 
+    /**
+     * Test storage.
+     */
+    private Storage storage;
+
+    /**
+     * Test key.
+     */
+    private Key key;
+
+    @BeforeEach
+    void initiate() {
+        this.storage = new InMemoryStorage();
+        this.key = new Key.From("com/test/logger");
+        new TestResource("maven-metadata.xml.example")
+            .saveTo(this.storage, new Key.From(this.key, "maven-metadata.xml"));
+    }
+
     @Test
     void readsVersion() {
-        final Storage storage = new InMemoryStorage();
-        final Key key = new Key.From("com/artipie/example");
-        new TestResource("maven-metadata.xml.example")
-            .saveTo(storage, new Key.From(key, "maven-metadata.xml"));
         MatcherAssert.assertThat(
-            new ArtifactsMetadata(storage).latest(key).toCompletableFuture().join(),
+            new ArtifactsMetadata(this.storage).latest(this.key).toCompletableFuture().join(),
             new IsEqual<>("1.0")
+        );
+    }
+
+    @Test
+    void readsGroupAndArtifactIds() {
+        MatcherAssert.assertThat(
+            new ArtifactsMetadata(this.storage).groupAndArtifact(this.key)
+                .toCompletableFuture().join(),
+            new IsEqual<>(new ImmutablePair<>("com.test", "logger"))
         );
     }
 

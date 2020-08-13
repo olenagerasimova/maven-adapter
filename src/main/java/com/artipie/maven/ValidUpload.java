@@ -38,11 +38,12 @@ public interface ValidUpload {
      * - validate upload checksums;
      * - validate metadata: check metadata group and id are the same as in
      * repository metadata, metadata versions are correct.
-     * @param location Upload artifact files location
+     * @param upload Upload artifact files location
+     * @param artifact Artifact files location
      * @return Completable validation action: true if uploaded maven-metadata.xml is valid,
      *  false otherwise
      */
-    CompletionStage<Boolean> validate(Key location);
+    CompletionStage<Boolean> validate(Key upload, Key artifact);
 
     /**
      * Dummy {@link ValidUpload} implementation.
@@ -71,7 +72,7 @@ public interface ValidUpload {
         }
 
         @Override
-        public CompletionStage<Boolean> validate(final Key location) {
+        public CompletionStage<Boolean> validate(final Key upload, final Key artifact) {
             return CompletableFuture.completedFuture(this.res);
         }
     }
