@@ -28,8 +28,6 @@ import com.artipie.asto.Storage;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.asto.test.TestResource;
-import java.nio.charset.StandardCharsets;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
@@ -54,8 +52,10 @@ public class AstoValidUploadTest {
         bsto.save(war, wbytes);
         new TestResource("maven-metadata.xml.example")
             .saveTo(storage, new Key.From(artifact, "maven-metadata.xml"));
-        this.addChecksums(bsto, jbytes, jar.string());
-        this.addChecksums(bsto, wbytes, war.string());
+        bsto.save(jar, jbytes);
+        bsto.save(war, wbytes);
+        new RepositoryChecksums(storage).generate(jar).toCompletableFuture().join();
+        new RepositoryChecksums(storage).generate(war).toCompletableFuture().join();
         MatcherAssert.assertThat(
             new AstoValidUpload(storage).validate(artifact)
                 .toCompletableFuture().join(),
@@ -76,41 +76,12 @@ public class AstoValidUploadTest {
         bsto.save(new Key.From(String.format("%s.sha256", war.string())), "123".getBytes());
         new TestResource("maven-metadata.xml.example")
             .saveTo(storage, new Key.From(key, "maven-metadata.xml"));
-        this.addChecksums(bsto, bytes, jar.string());
+        bsto.save(jar, bytes);
+        new RepositoryChecksums(storage).generate(jar).toCompletableFuture().join();
         MatcherAssert.assertThat(
             new AstoValidUpload(storage).validate(key)
                 .toCompletableFuture().join(),
             new IsEqual<>(false)
-        );
-    }
-
-    /**
-     * Adds data checksums to storage by provided key.
-     * @param bsto Blocking storage
-     * @param data Data to calc checksums from
-     * @param key Data key
-     * @throws InterruptedException On error
-     * @todo #125:30min Move this method to class RepositoryChecksums: create new method in
-     *  RepositoryChecksums to calculate checksums from content by provided key.
-     */
-    private void addChecksums(final BlockingStorage bsto, final byte[] data, final String key)
-        throws InterruptedException {
-        bsto.save(
-            new Key.From(String.format("%s.sha1", key)),
-            DigestUtils.sha1Hex(data).getBytes(StandardCharsets.US_ASCII)
-        );
-        bsto.save(
-            new Key.From(String.format("%s.sha256", key)),
-            DigestUtils.sha256Hex(data).getBytes(StandardCharsets.US_ASCII)
-        );
-        // @checkstyle LineLengthCheck (1 line)
-        bsto.save(
-            new Key.From(String.format("%s.sha512", key)),
-            DigestUtils.sha512Hex(data).getBytes(StandardCharsets.US_ASCII)
-        );
-        bsto.save(
-            new Key.From(String.format("%s.md5", key)),
-            DigestUtils.md5Hex(data).getBytes(StandardCharsets.US_ASCII)
         );
     }
 }
