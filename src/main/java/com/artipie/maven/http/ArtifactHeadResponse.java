@@ -29,7 +29,7 @@ import com.artipie.http.Response;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.StandardRs;
-import com.artipie.maven.repository.RepositoryChecksums;
+import com.artipie.maven.asto.RepositoryChecksums;
 
 /**
  * Artifact {@code HEAD} response.

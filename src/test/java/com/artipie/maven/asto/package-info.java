@@ -21,9 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 /**
- * Maven repository API.
+ * Asto maven adapter package tests.
  *
- * @since 0.1
+ * @since 0.5
  */
-package com.artipie.maven.repository;
+package com.artipie.maven.asto;

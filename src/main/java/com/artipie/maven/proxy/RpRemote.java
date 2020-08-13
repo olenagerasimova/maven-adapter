@@ -21,10 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.maven.repository;
+package com.artipie.maven.proxy;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.maven.ArtifactNotFoundException;
+import com.artipie.maven.ProxyCache;
+import com.artipie.maven.Repository;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
 import io.reactivex.Single;

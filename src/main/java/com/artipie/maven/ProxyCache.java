@@ -21,30 +21,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.maven.repository;
+package com.artipie.maven;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 
 /**
- * This exception can be thrown when artifact was not found.
+ * Maven proxy cache.
  * @since 0.5
  */
-@SuppressWarnings("serial")
-public final class ArtifactNotFoundException extends IllegalStateException {
+public interface ProxyCache {
 
     /**
-     * New exception with artifact key.
-     * @param artifact Artifact key
+     * Cache that does nothing.
      */
-    public ArtifactNotFoundException(final Key artifact) {
-        this(String.format("Artifact '%s' was not found", artifact.string()));
-    }
+    ProxyCache NOP = (key, remote) -> remote.get();
 
     /**
-     * New exception with message.
-     * @param msg Message
+     * Try to load content from cache or fallback to remote publisher if cached key doesn't exist.
+     * When loading remote item, the cache may save its content to the cache storage.
+     * @param key Cached item key
+     * @param remote Remote source
+     * @return Content for key
      */
-    public ArtifactNotFoundException(final String msg) {
-        super(msg);
-    }
+    CompletionStage<? extends Content> load(
+        Key key, Supplier<? extends CompletionStage<? extends Content>> remote
+    );
 }

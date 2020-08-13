@@ -21,27 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.maven.http;
-
-import com.artipie.http.Slice;
-import com.artipie.maven.ProxyCache;
-import com.artipie.maven.proxy.RpRemote;
-import java.net.URI;
-import org.eclipse.jetty.client.HttpClient;
 
 /**
- * Maven proxy repository slice.
+ * Asto maven adapter package.
+ *
  * @since 0.5
  */
-public final class MavenProxySlice extends Slice.Wrap {
-
-    /**
-     * Proxy for URI.
-     * @param http Http client
-     * @param uri URI
-     * @param cache Proxy cache
-     */
-    public MavenProxySlice(final HttpClient http, final URI uri, final ProxyCache cache) {
-        super(new RemoteDownloadSlice(new RpRemote(http, uri, cache)));
-    }
-}
+package com.artipie.maven.asto;

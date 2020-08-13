@@ -38,7 +38,7 @@ import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.rs.StandardRs;
 import com.artipie.http.slice.KeyFromPath;
-import com.artipie.maven.repository.Repository;
+import com.artipie.maven.Repository;
 import java.nio.ByteBuffer;
 import java.util.Map.Entry;
 import java.util.function.Supplier;

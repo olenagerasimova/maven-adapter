@@ -21,13 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.maven.repository;
+package com.artipie.maven.asto;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.rx.RxStorage;
 import com.artipie.asto.rx.RxStorageWrapper;
+import com.artipie.maven.ProxyCache;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
