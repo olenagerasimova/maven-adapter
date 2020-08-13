@@ -23,12 +23,16 @@
  */
 package com.artipie.maven.repository;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.ext.ContentDigest;
+import com.artipie.asto.ext.Digests;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.rx.RxStorageWrapper;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Observable;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,6 +40,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.cactoos.map.MapEntry;
 
@@ -86,6 +91,28 @@ public final class RepositoryChecksums {
                     return map;
                 }
             ).to(SingleInterop.get());
+    }
+
+    /**
+     * Calculates and generates artifact checksum files.
+     * @param artifact Artifact
+     * @return Completable action
+     */
+    public CompletionStage<Void> generate(final Key artifact) {
+        return CompletableFuture.allOf(
+            SUPPORTED_ALGS.stream().map(
+                alg -> this.repo.value(artifact).thenCompose(
+                    content -> new ContentDigest(
+                        content, Digests.valueOf(alg.toUpperCase(Locale.US))
+                    ).hex().thenCompose(
+                        hex -> this.repo.save(
+                            new Key.From(String.format("%s.%s", artifact.string(), alg)),
+                            new Content.From(hex.getBytes(StandardCharsets.UTF_8))
+                        )
+                    )
+                )
+            ).toArray(CompletableFuture[]::new)
+        );
     }
 
     /**
