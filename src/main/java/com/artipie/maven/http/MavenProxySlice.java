@@ -23,11 +23,26 @@
  */
 package com.artipie.maven.http;
 
+import com.artipie.http.Response;
 import com.artipie.http.Slice;
-import com.artipie.maven.ProxyCache;
-import com.artipie.maven.proxy.RpRemote;
+import com.artipie.http.client.ClientSlices;
+import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RequestLineFrom;
+import com.artipie.http.rq.RqMethod;
+import com.artipie.http.rs.RsStatus;
+import com.artipie.http.rs.RsWithStatus;
+import com.artipie.http.rt.RtRule;
+import com.artipie.http.rt.RtRulePath;
+import com.artipie.http.rt.SliceRoute;
+import com.artipie.http.slice.SliceSimple;
 import java.net.URI;
-import org.eclipse.jetty.client.HttpClient;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.apache.http.client.utils.URIBuilder;
+import org.reactivestreams.Publisher;
 
 /**
  * Maven proxy repository slice.
@@ -36,12 +51,102 @@ import org.eclipse.jetty.client.HttpClient;
 public final class MavenProxySlice extends Slice.Wrap {
 
     /**
-     * Proxy for URI.
-     * @param http Http client
-     * @param uri URI
-     * @param cache Proxy cache
+     * New Maven proxy slice.
+     * @param clients HTTP clients
+     * @param remote Remote URI
      */
-    public MavenProxySlice(final HttpClient http, final URI uri, final ProxyCache cache) {
-        super(new RemoteDownloadSlice(new RpRemote(http, uri, cache)));
+    public MavenProxySlice(final ClientSlices clients, final URI remote) {
+        super(
+            new SliceRoute(
+                new RtRulePath(
+                    new RtRule.All(
+                        new RtRule.ByMethod(RqMethod.GET),
+                        new RtRule.ByMethod(RqMethod.HEAD)
+                    ),
+                    new ClientSlice(clients, remote)
+                ),
+                new RtRulePath(
+                    RtRule.FALLBACK,
+                    new SliceSimple(new RsWithStatus(RsStatus.METHOD_NOT_ALLOWED))
+                )
+            )
+        );
+    }
+
+    /**
+     * Client slice.
+     * @since 0.5
+     * @todo #128:30min This class will be moved to `artipie/http-client` repository.
+     *  Then update http-client dependency version, use http-client's version
+     *  and remove this class here.
+     */
+    private static final class ClientSlice implements Slice {
+
+        /**
+         * Client HTTP slices.
+         */
+        private final ClientSlices clients;
+
+        /**
+         * Remote URI.
+         */
+        private final URI remote;
+
+        /**
+         * New client slice from remote URI.
+         * @param clients Slice clients
+         * @param remote Remote URI
+         */
+        ClientSlice(final ClientSlices clients, final URI remote) {
+            this.clients = clients;
+            this.remote = remote;
+        }
+
+        @Override
+        public Response response(final String line,
+            final Iterable<Map.Entry<String, String>> headers, final Publisher<ByteBuffer> body) {
+            final Slice slice;
+            final String host = this.remote.getHost();
+            final int port = this.remote.getPort();
+            final String scheme = this.remote.getScheme();
+            switch (scheme) {
+                case "https":
+                    slice = this.clients.https(host, port);
+                    break;
+                case "http":
+                    slice = this.clients.http(host, port);
+                    break;
+                default:
+                    throw new IllegalStateException(
+                        String.format("Scheme '%s' is not supported", scheme)
+                    );
+            }
+            final RequestLineFrom rqline = new RequestLineFrom(line);
+            final URI uri = rqline.uri();
+            return slice.response(
+                new RequestLine(
+                    rqline.method().value(),
+                    new URIBuilder(uri)
+                        .setPath(concatPaths(this.remote.getPath(), uri.getPath()))
+                        .toString(),
+                    rqline.version()
+                ).toString(),
+                headers, body
+            );
+        }
+
+        /**
+         * Concat multiple paths into single.
+         * @param paths URI paths
+         * @return Merged path string
+         */
+        private static String concatPaths(final String... paths) {
+            final String rel = Stream.of(paths).map(
+                path -> path.replaceAll("(?:^/|/$)", "")
+            ).flatMap(path -> Arrays.stream(path.split("/")))
+                .filter(part -> !part.isEmpty())
+                .collect(Collectors.joining("/"));
+            return String.format("/%s", rel);
+        }
     }
 }
