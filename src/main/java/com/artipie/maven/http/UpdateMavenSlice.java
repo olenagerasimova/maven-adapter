@@ -23,7 +23,6 @@
  */
 package com.artipie.maven.http;
 
-import com.artipie.asto.Content;
 import com.artipie.asto.Copy;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
@@ -34,6 +33,7 @@ import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
+import com.artipie.http.slice.ContentWithSize;
 import com.artipie.http.slice.KeyFromPath;
 import com.artipie.maven.Maven;
 import com.artipie.maven.ValidUpload;
@@ -113,7 +113,8 @@ final class UpdateMavenSlice implements Slice {
         final Storage temp = new SubStorage(UpdateMavenSlice.TEMP, this.storage);
         return new AsyncResponse(
             temp.save(
-                new KeyFromPath(new RequestLineFrom(line).uri().getPath()), new Content.From(body)
+                new KeyFromPath(new RequestLineFrom(line).uri().getPath()),
+                new ContentWithSize(body, head)
             ).thenCompose(
                 ignored -> {
                     final CompletionStage<Response> res;
