@@ -90,8 +90,8 @@ public final class AstoValidUpload implements ValidUpload {
 
     /**
      * Validates uploaded and existing metadata by comparing group and artifact ids.
-     * @param upload Upload artifact files location
-     * @param artifact Artifact files location
+     * @param upload Uploaded artifacts location
+     * @param artifact Artifact location
      * @return Completable validation action: true if group and artifact ids are equal,
      *  false otherwise.
      */
@@ -168,14 +168,6 @@ public final class AstoValidUpload implements ValidUpload {
                             )
                     )
                 )
-            ).reduce(
-                new ArrayList<>(5),
-                (list, equals) -> {
-                    list.add(equals);
-                    return list;
-                }
-            ).map(
-                array -> !array.contains(false)
-            );
+            ).all(equal -> equal);
     }
 }
