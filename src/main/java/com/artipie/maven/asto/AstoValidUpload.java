@@ -33,18 +33,21 @@ import com.artipie.maven.ValidUpload;
 import com.artipie.maven.metadata.ArtifactsMetadata;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Observable;
+import io.reactivex.Single;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Pattern;
 
 /**
- * Asto {@link ValidUpload} implementation validates upload from abstract storage.
+ * Asto {@link ValidUpload} implementation validates upload from abstract storage. Validation
+ * process includes:
+ * - check maven-metadata.xml: group and artifact ids from uploaded xml are the same as in
+ *  existing xml, checksums (if there are any) are valid
+ * - artifacts checksums are correct
  * @since 0.5
- * @todo #125:30min Implement maven-metadata.xml validation: check metadata group and id are
- *  the same as in repository metadata, metadata versions are correct, metadata checksums are
- *  correct. Do not forget about tests.
  * @checkstyle MagicNumberCheck (500 lines)
  */
 public final class AstoValidUpload implements ValidUpload {
@@ -65,66 +68,106 @@ public final class AstoValidUpload implements ValidUpload {
 
     /**
      * Ctor.
-     * @param storage Abstact storage
+     * @param storage Abstract storage
      */
     public AstoValidUpload(final Storage storage) {
         this.storage = storage;
     }
 
     @Override
-    public CompletionStage<Boolean> validate(final Key location) {
-        return this.validateChecksums(location);
+    public CompletionStage<Boolean> validate(final Key upload, final Key artifact) {
+        return this.validateMetadata(upload, artifact)
+            .thenCompose(
+                valid -> {
+                    CompletionStage<Boolean> res = CompletableFuture.completedStage(valid);
+                    if (valid) {
+                        res = this.validateChecksums(upload);
+                    }
+                    return res;
+                }
+            );
+    }
+
+    /**
+     * Validates uploaded and existing metadata by comparing group and artifact ids.
+     * @param upload Uploaded artifacts location
+     * @param artifact Artifact location
+     * @return Completable validation action: true if group and artifact ids are equal,
+     *  false otherwise.
+     */
+    private CompletionStage<Boolean> validateMetadata(final Key upload, final Key artifact) {
+        final ArtifactsMetadata metadata = new ArtifactsMetadata(this.storage);
+        return metadata.groupAndArtifact(upload).thenCompose(
+            existing -> metadata.groupAndArtifact(artifact).thenApply(
+                uploaded -> uploaded.equals(existing)
+            )
+        ).thenCompose(
+            same -> {
+                final CompletionStage<Boolean> res;
+                if (same) {
+                    res = this.validateArtifactChecksums(new Key.From(upload, "maven-metadata.xml"))
+                        .to(SingleInterop.get());
+                } else {
+                    res = CompletableFuture.completedStage(false);
+                }
+                return res;
+            }
+        );
     }
 
     /**
      * Validate artifact checksums.
-     * @param location Artifact location
+     * @param upload Artifact location
      * @return Completable validation action: true if checksums are correct, false otherwise
      */
-    private CompletionStage<Boolean> validateChecksums(final Key location) {
+    private CompletionStage<Boolean> validateChecksums(final Key upload) {
         final RxStorage rxsto = new RxStorageWrapper(this.storage);
-        return new ArtifactsMetadata(this.storage).latest(location).thenCompose(
+        return new ArtifactsMetadata(this.storage).latest(upload).thenCompose(
             version -> {
-                final Key pckg = new Key.From(location, version);
+                final Key pckg = new Key.From(upload, version);
                 return rxsto.list(pckg)
                     .flatMapObservable(Observable::fromIterable)
                     .filter(key -> PTN_ARTIFACT.matcher(key.string()).matches())
                     .flatMapSingle(
-                        artifact -> SingleInterop.fromFuture(
-                            new RepositoryChecksums(this.storage).checksums(artifact)
-                        ).map(Map::entrySet)
-                            .flatMapObservable(Observable::fromIterable)
-                            .flatMapSingle(
-                                entry ->
-                                    SingleInterop.fromFuture(
-                                        this.storage.value(artifact).thenCompose(
-                                            content -> new ContentDigest(
-                                                content,
-                                                Digests.valueOf(
-                                                    entry.getKey().toUpperCase(Locale.US)
-                                                )
-                                            ).hex().thenApply(
-                                                hex -> hex.equals(entry.getValue())
-                                            )
-                                    )
-                                )
-                            ).reduce(
-                                new ArrayList<>(5),
-                                (list, equals) -> {
-                                    list.add(equals);
-                                    return list;
-                                }
-                            )
+                        this::validateArtifactChecksums
                     ).reduce(
                         new ArrayList<>(5),
                         (list, res) -> {
-                            list.add(!res.contains(false));
+                            list.add(res);
                             return list;
                         }
                     ).map(
-                        array -> !array.contains(false)
+                        array -> !array.isEmpty() && !array.contains(false)
                     ).to(SingleInterop.get());
             }
         );
+    }
+
+    /**
+     * Validates artifact checksums.
+     * @param artifact Artifact key
+     * @return Validation result: false if at least one checksum is invalid, true if all are valid
+     *  or if no checksums exists.
+     */
+    private Single<Boolean> validateArtifactChecksums(final Key artifact) {
+        return SingleInterop.fromFuture(
+            new RepositoryChecksums(this.storage).checksums(artifact)
+        ).map(Map::entrySet)
+            .flatMapObservable(Observable::fromIterable)
+            .flatMapSingle(
+                entry ->
+                    SingleInterop.fromFuture(
+                        this.storage.value(artifact).thenCompose(
+                            content -> new ContentDigest(
+                                content,
+                                Digests.valueOf(
+                                    entry.getKey().toUpperCase(Locale.US)
+                                )
+                            ).hex().thenApply(
+                                hex -> hex.equals(entry.getValue())
+                            )
+                    )
+                )
+            ).all(equal -> equal);
     }
 }

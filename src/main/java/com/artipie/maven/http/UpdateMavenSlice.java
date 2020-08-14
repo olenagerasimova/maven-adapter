@@ -120,32 +120,33 @@ final class UpdateMavenSlice implements Slice {
                     final CompletionStage<Response> res;
                     if (matcher.matches()) {
                         final Key location = new Key.From(matcher.group("pkg"));
-                        res = this.validator.validate(new Key.From(UpdateMavenSlice.TEMP, location))
-                            .thenCompose(
-                                valid -> {
-                                    final CompletionStage<Response> upd;
-                                    if (valid) {
-                                        upd = temp.list(location).thenCompose(
-                                            list -> new Copy(temp, new ListOf<>(list))
-                                                .copy(this.storage).thenCompose(
-                                                    nothing -> CompletableFuture.allOf(
-                                                        this.maven.update(location)
-                                                            .toCompletableFuture(),
-                                                        UpdateMavenSlice.remove(temp, list)
-                                                    ).thenApply(
-                                                        any -> new RsWithStatus(RsStatus.CREATED)
-                                                    )
+                        res = this.validator.validate(
+                            new Key.From(UpdateMavenSlice.TEMP, location), location
+                        ).thenCompose(
+                            valid -> {
+                                final CompletionStage<Response> upd;
+                                if (valid) {
+                                    upd = temp.list(location).thenCompose(
+                                        list -> new Copy(temp, new ListOf<>(list))
+                                            .copy(this.storage).thenCompose(
+                                                nothing -> CompletableFuture.allOf(
+                                                    this.maven.update(location)
+                                                        .toCompletableFuture(),
+                                                    UpdateMavenSlice.remove(temp, list)
+                                                ).thenApply(
+                                                    any -> new RsWithStatus(RsStatus.CREATED)
                                                 )
-                                        );
-                                    } else {
-                                        upd = temp.list(location).thenCompose(
-                                            items -> UpdateMavenSlice.remove(temp, items)
-                                        ).thenApply(
-                                            nothing -> new RsWithStatus(RsStatus.BAD_REQUEST)
-                                        );
-                                    }
-                                    return upd;
+                                            )
+                                    );
+                                } else {
+                                    upd = temp.list(location).thenCompose(
+                                        items -> UpdateMavenSlice.remove(temp, items)
+                                    ).thenApply(
+                                        nothing -> new RsWithStatus(RsStatus.BAD_REQUEST)
+                                    );
                                 }
+                                return upd;
+                            }
                         );
                     } else {
                         res = CompletableFuture.completedFuture(new RsWithStatus(RsStatus.CREATED));
