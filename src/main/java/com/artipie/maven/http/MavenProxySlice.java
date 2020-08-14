@@ -23,6 +23,7 @@
  */
 package com.artipie.maven.http;
 
+import com.artipie.asto.cache.Cache;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.client.ClientSlices;
@@ -47,15 +48,26 @@ import org.reactivestreams.Publisher;
 /**
  * Maven proxy repository slice.
  * @since 0.5
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class MavenProxySlice extends Slice.Wrap {
 
     /**
-     * New Maven proxy slice.
+     * New maven proxy without cache.
      * @param clients HTTP clients
      * @param remote Remote URI
      */
     public MavenProxySlice(final ClientSlices clients, final URI remote) {
+        this(clients, remote, Cache.NOP);
+    }
+
+    /**
+     * New Maven proxy slice with cache.
+     * @param clients HTTP clients
+     * @param remote Remote URI
+     * @param cache Repository cache
+     */
+    public MavenProxySlice(final ClientSlices clients, final URI remote, final Cache cache) {
         super(
             new SliceRoute(
                 new RtRulePath(
@@ -63,7 +75,7 @@ public final class MavenProxySlice extends Slice.Wrap {
                         new RtRule.ByMethod(RqMethod.GET),
                         new RtRule.ByMethod(RqMethod.HEAD)
                     ),
-                    new ClientSlice(clients, remote)
+                    new CachedProxySlice(new ClientSlice(clients, remote), cache)
                 ),
                 new RtRulePath(
                     RtRule.FALLBACK,
