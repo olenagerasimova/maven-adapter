@@ -23,7 +23,6 @@
  */
 package com.artipie.maven.http;
 
-import com.artipie.asto.Content;
 import com.artipie.asto.Copy;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
