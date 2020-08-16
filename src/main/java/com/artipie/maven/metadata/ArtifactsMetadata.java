@@ -57,15 +57,32 @@ public final class ArtifactsMetadata {
     }
 
     /**
-     * Reads version from maven-metadata.xml.
+     * Reads release version from maven-metadata.xml.
      * @param location Package location
      * @return Version as completed stage
      */
-    public CompletionStage<String> latest(final Key location) {
+    public CompletionStage<String> release(final Key location) {
         return this.storage.value(new Key.From(location, ArtifactsMetadata.MAVEN_METADATA))
             .thenCompose(
                 content -> new PublisherAs(content).string(StandardCharsets.UTF_8)
-                .thenApply(metadata -> new XMLDocument(metadata).xpath("//latest/text()").get(0))
+                .thenApply(
+                    metadata -> {
+                        final XMLDocument xml = new XMLDocument(metadata);
+                        final String latest = "//latest/text()";
+                        final String release = "//release/text()";
+                        final String res;
+                        if (xml.xpath(release).size() > 0) {
+                            res = xml.xpath(release).get(0);
+                        } else if (xml.xpath(latest).size() > 0) {
+                            res = xml.xpath(latest).get(0);
+                        } else {
+                            throw new IllegalArgumentException(
+                                "Maven metadata xml not valid: latest version not found"
+                            );
+                        }
+                        return res;
+                    }
+                )
             );
     }
 

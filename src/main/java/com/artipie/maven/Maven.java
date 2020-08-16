@@ -35,10 +35,11 @@ public interface Maven {
 
     /**
      * Updates the metadata of a maven package.
-     * @param pkg Maven package key
+     * @param upload Uploading artifact location
+     * @param artifact Artifact location
      * @return Completion stage
      */
-    CompletionStage<Void> update(Key pkg);
+    CompletionStage<Void> update(Key upload, Key artifact);
 
     /**
      * Fake {@link Maven} implementation.
@@ -52,7 +53,7 @@ public interface Maven {
         private boolean updated;
 
         @Override
-        public CompletionStage<Void> update(final Key pkg) {
+        public CompletionStage<Void> update(final Key upload, final Key artifact) {
             this.updated = true;
             return CompletableFuture.allOf();
         }

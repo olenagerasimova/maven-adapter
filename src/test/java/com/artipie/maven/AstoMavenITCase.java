@@ -24,32 +24,18 @@
 package com.artipie.maven;
 
 import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
+import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.fs.FileStorage;
+import com.artipie.asto.test.TestResource;
 import com.artipie.maven.asto.AstoMaven;
 import com.jcabi.matchers.XhtmlMatchers;
 import com.jcabi.xml.XML;
 import com.jcabi.xml.XMLDocument;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
-import org.cactoos.io.InputOf;
-import org.cactoos.io.OutputTo;
-import org.cactoos.io.TeeInput;
+import java.util.concurrent.CompletableFuture;
 import org.cactoos.list.ListOf;
-import org.cactoos.list.Mapped;
-import org.cactoos.scalar.LengthOf;
-import org.cactoos.text.Split;
-import org.cactoos.text.TextOf;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.AllOf;
@@ -67,47 +53,77 @@ import org.junit.jupiter.api.io.TempDir;
 public final class AstoMavenITCase {
 
     /**
+     * Artifact key.
+     */
+    public static final Key.From ARTIFACT = new Key.From("com", "artipie", "asto");
+
+    /**
+     * Upload key.
+     */
+    public static final Key.From UPLOAD = new Key.From(".upload", "com", "artipie", "asto");
+
+    /**
      * Temporary directory with repository data.
      * @checkstyle VisibilityModifierCheck (5 lines)
      */
     @TempDir
     Path repo;
 
+    /**
+     * Test repository.
+     */
+    private Storage repository;
+
     @BeforeEach
-    void setUp() throws Exception {
-        final Path asto = this.repo.resolve("com").resolve("artipie").resolve("asto");
-        final TestResource res = new TestResource(
-            Thread.currentThread().getContextClassLoader(), "./com/artipie/asto"
-        );
-        final List<TestResource> versions = res.list().stream()
-            .filter(item -> !item.toString().endsWith("maven-metadata.xml"))
-            .collect(Collectors.toList());
-        for (final TestResource version : versions) {
-            final Path verpath = asto.resolve(version.name());
-            verpath.toFile().mkdirs();
-            final Collection<TestResource> files = version.list();
-            for (final TestResource file : files) {
-                file.copy(verpath.resolve(file.name()));
-            }
-        }
-        final TestResource meta = res.resolve("maven-metadata.xml");
-        meta.copy(asto.resolve(meta.name()));
+    void setUp() {
+        final Storage resources = new FileStorage(new TestResource("com/artipie/asto").asPath());
+        this.repository = new FileStorage(this.repo);
+        resources.list(Key.ROOT).thenCompose(
+            list -> CompletableFuture.allOf(list.stream()
+                .filter(
+                    item -> !item.string().contains("1.0-SNAPSHOT")
+                        && !item.string().contains("maven-metadata.xml")
+                )
+                .map(
+                    item -> resources.value(item).thenCompose(
+                        content -> this.repository.save(
+                            new Key.From(AstoMavenITCase.ARTIFACT, item), content
+                        )
+                    )
+                )
+                .toArray(CompletableFuture[]::new)
+            )
+        ).join();
+        resources.list(Key.ROOT).thenCompose(
+            list -> CompletableFuture.allOf(
+                list.stream()
+                .filter(
+                    item -> item.string().contains("1.0-SNAPSHOT")
+                    || item.string().contains("maven-metadata.xml")
+                )
+                .map(
+                    item -> resources.value(item).thenCompose(
+                        content -> this.repository.save(
+                            new Key.From(AstoMavenITCase.UPLOAD, item), content
+                        )
+                    )
+                )
+                .toArray(CompletableFuture[]::new)
+            )
+        ).join();
     }
 
     @Test
     void generatesMetadata() throws Exception {
-        final FileStorage storage = new FileStorage(this.repo);
-        new AstoMaven(storage)
-            .update(new Key.From("com", "artipie", "asto"))
+        new AstoMaven(this.repository)
+            .update(AstoMavenITCase.UPLOAD, AstoMavenITCase.ARTIFACT)
             .toCompletableFuture()
             .get();
         MatcherAssert.assertThat(
             new XMLDocument(
-                Files.readString(
-                    this.repo.resolve("com").resolve("artipie").resolve("asto")
-                        .resolve("maven-metadata.xml"),
-                    StandardCharsets.UTF_8
-                )
+                this.repository.value(new Key.From(AstoMavenITCase.UPLOAD, "maven-metadata.xml"))
+                .thenCompose(content -> new PublisherAs(content).string(StandardCharsets.UTF_8))
+                    .join()
             ),
             new AllOf<>(
                 new ListOf<Matcher<? super XML>>(
@@ -129,92 +145,4 @@ public final class AstoMavenITCase {
         );
     }
 
-    /**
-     * Test resource helper.
-     * @since 0.4
-     */
-    static final class TestResource {
-
-        /**
-         * Class loader.
-         */
-        private final ClassLoader clo;
-
-        /**
-         * Resource location.
-         */
-        private final String location;
-
-        /**
-         * Ctor.
-         * @param clo Class loader
-         */
-        TestResource(final ClassLoader clo) {
-            this(clo, "");
-        }
-
-        /**
-         * Ctor.
-         * @param clo Class loader
-         * @param location Resource location
-         */
-        TestResource(final ClassLoader clo, final String location) {
-            this.clo = clo;
-            this.location = location;
-        }
-
-        /**
-         * Resolve child.
-         * @param name Child name
-         * @return Resource
-         */
-        public TestResource resolve(final String name) {
-            return new TestResource(this.clo, String.join("/", this.location, name));
-        }
-
-        /**
-         * List resources.
-         * @return Collection of child resources
-         * @throws IOException On error
-         */
-        public Collection<TestResource> list() throws IOException {
-            try (InputStream src = this.clo.getResourceAsStream(this.location)) {
-                return new Mapped<>(
-                    name -> new TestResource(
-                        this.clo,
-                        String.join("/", this.location, name.asString())
-                    ),
-                    new Split(new TextOf(new InputOf(src)), new TextOf("\n"))
-                );
-            }
-        }
-
-        /**
-         * Copy resource to output path.
-         * @param out Output
-         * @throws IOException On error
-         */
-        public void copy(final Path out) throws IOException {
-            // @checkstyle LineLengthCheck (10 lines)
-            try (
-                InputStream src = new BufferedInputStream(this.clo.getResourceAsStream(this.location));
-                OutputStream ous = new BufferedOutputStream(Files.newOutputStream(out, StandardOpenOption.WRITE, StandardOpenOption.CREATE))
-            ) {
-                new LengthOf(new TeeInput(new InputOf(src), new OutputTo(ous))).intValue();
-            }
-        }
-
-        /**
-         * Resource name.
-         * @return Name
-         */
-        public String name() {
-            return Paths.get(this.location).getFileName().toString();
-        }
-
-        @Override
-        public String toString() {
-            return this.location;
-        }
-    }
 }

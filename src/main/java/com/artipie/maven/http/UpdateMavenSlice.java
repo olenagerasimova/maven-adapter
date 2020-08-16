@@ -38,6 +38,7 @@ import com.artipie.http.slice.KeyFromPath;
 import com.artipie.maven.Maven;
 import com.artipie.maven.ValidUpload;
 import com.artipie.maven.asto.AstoMaven;
+import com.artipie.maven.asto.AstoValidUpload;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Map;
@@ -101,7 +102,7 @@ final class UpdateMavenSlice implements Slice {
      * @param storage Storage
      */
     UpdateMavenSlice(final Storage storage) {
-        this(storage, new AstoMaven(storage), new ValidUpload.Dummy());
+        this(storage, new AstoMaven(storage), new AstoValidUpload(storage));
     }
 
     @Override
@@ -126,16 +127,19 @@ final class UpdateMavenSlice implements Slice {
                             valid -> {
                                 final CompletionStage<Response> upd;
                                 if (valid) {
-                                    upd = temp.list(location).thenCompose(
-                                        list -> new Copy(temp, new ListOf<>(list))
-                                            .copy(this.storage).thenCompose(
-                                                nothing -> CompletableFuture.allOf(
-                                                    this.maven.update(location)
-                                                        .toCompletableFuture(),
-                                                    UpdateMavenSlice.remove(temp, list)
-                                                ).thenApply(
-                                                    any -> new RsWithStatus(RsStatus.CREATED)
-                                                )
+                                    upd = this.maven.update(
+                                        new Key.From(UpdateMavenSlice.TEMP, location), location
+                                    )
+                                        .thenCompose(nothing -> temp.list(location))
+                                        .thenCompose(
+                                            list -> new Copy(temp, new ListOf<>(list))
+                                                .copy(this.storage).thenCompose(
+                                                    nothing -> UpdateMavenSlice.remove(temp, list)
+                                                        .thenApply(
+                                                            any -> new RsWithStatus(
+                                                                RsStatus.CREATED
+                                                            )
+                                                        )
                                             )
                                     );
                                 } else {

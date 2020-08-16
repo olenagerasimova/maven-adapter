@@ -28,6 +28,7 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.maven.Maven;
+import com.artipie.maven.metadata.ArtifactsMetadata;
 import com.artipie.maven.metadata.MavenMetadata;
 import com.jcabi.xml.XMLDocument;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
@@ -83,8 +84,8 @@ public final class AstoMaven implements Maven {
     }
 
     @Override
-    public CompletionStage<Void> update(final Key pkg) {
-        return this.storage.value(new Key.From(pkg, "maven-metadata.xml"))
+    public CompletionStage<Void> update(final Key upload, final Key artifact) {
+        return this.storage.value(new Key.From(upload, "maven-metadata.xml"))
             .thenComposeAsync(
                 pub -> new Concatenation(pub).single().to(SingleInterop.get()), this.exec
             )
@@ -92,16 +93,24 @@ public final class AstoMaven implements Maven {
             .thenApply(XMLDocument::new)
             .thenApply(doc -> new MavenMetadata(Directives.copyOf(doc.node())))
             .thenCompose(
-                doc -> this.storage.list(pkg).thenApply(
+                doc -> this.storage.list(artifact).thenApply(
                     items -> items.stream()
                         .map(
                             item -> item.string()
-                                .replaceAll(String.format("%s/", pkg.string()), "")
+                                .replaceAll(String.format("%s/", artifact.string()), "")
                                 .split("/")[0]
                         )
                         .filter(item -> !item.startsWith("maven-metadata"))
                         .collect(Collectors.toSet())
-                ).thenApply(doc::versions)
-            ).thenCompose(doc -> doc.save(this.storage, pkg));
+                ).thenCompose(
+                    versions -> new ArtifactsMetadata(this.storage).release(upload)
+                        .thenApply(
+                            latest -> {
+                                versions.add(latest);
+                                return doc.versions(versions);
+                            }
+                    )
+                )
+            ).thenCompose(doc -> doc.save(this.storage, upload));
     }
 }
