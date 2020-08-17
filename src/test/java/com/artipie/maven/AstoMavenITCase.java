@@ -82,6 +82,7 @@ public final class AstoMavenITCase {
             list -> CompletableFuture.allOf(list.stream()
                 .filter(
                     item -> !item.string().contains("1.0-SNAPSHOT")
+                        && !item.string().contains("0.20.2")
                         && !item.string().contains("maven-metadata.xml")
                 )
                 .map(
@@ -98,7 +99,7 @@ public final class AstoMavenITCase {
             list -> CompletableFuture.allOf(
                 list.stream()
                 .filter(
-                    item -> item.string().contains("1.0-SNAPSHOT")
+                    item -> item.string().contains("0.20.2")
                     || item.string().contains("maven-metadata.xml")
                 )
                 .map(
@@ -130,15 +131,14 @@ public final class AstoMavenITCase {
                     // @checkstyle LineLengthCheck (20 lines)
                     XhtmlMatchers.hasXPath("/metadata/groupId[text() = 'com.artipie']"),
                     XhtmlMatchers.hasXPath("/metadata/artifactId[text() = 'asto']"),
-                    XhtmlMatchers.hasXPath("/metadata/versioning/latest[text() = '1.0-SNAPSHOT']"),
+                    XhtmlMatchers.hasXPath("/metadata/versioning/latest[text() = '0.20.2']"),
                     XhtmlMatchers.hasXPath("/metadata/versioning/release[text() = '0.20.2']"),
-                    XhtmlMatchers.hasXPath("/metadata/versioning/versions/version[text() = '0.18']"),
                     XhtmlMatchers.hasXPath("/metadata/versioning/versions/version[text() = '0.15']"),
                     XhtmlMatchers.hasXPath("/metadata/versioning/versions/version[text() = '0.11.1']"),
                     XhtmlMatchers.hasXPath("/metadata/versioning/versions/version[text() = '0.20.1']"),
                     XhtmlMatchers.hasXPath("/metadata/versioning/versions/version[text() = '0.20.2']"),
-                    XhtmlMatchers.hasXPath("/metadata/versioning/versions/version[text() = '1.0-SNAPSHOT']"),
                     XhtmlMatchers.hasXPath("/metadata/versioning/versions/version[text() = '0.18']"),
+                    XhtmlMatchers.hasXPath("metadata/versioning/versions[count(//version) = 5]"),
                     XhtmlMatchers.hasXPath("/metadata/versioning/lastUpdated")
                 )
             )
