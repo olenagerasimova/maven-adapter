@@ -78,12 +78,14 @@ public final class AstoMavenITCase {
     void setUp() {
         final Storage resources = new FileStorage(new TestResource("com/artipie/asto").asPath());
         this.repository = new FileStorage(this.repo);
+        final String latest = "0.20.2";
+        final String meta = "maven-metadata.xml";
         resources.list(Key.ROOT).thenCompose(
             list -> CompletableFuture.allOf(list.stream()
                 .filter(
                     item -> !item.string().contains("1.0-SNAPSHOT")
-                        && !item.string().contains("0.20.2")
-                        && !item.string().contains("maven-metadata.xml")
+                        && !item.string().contains(latest)
+                        && !item.string().contains(meta)
                 )
                 .map(
                     item -> resources.value(item).thenCompose(
@@ -99,8 +101,8 @@ public final class AstoMavenITCase {
             list -> CompletableFuture.allOf(
                 list.stream()
                 .filter(
-                    item -> item.string().contains("0.20.2")
-                    || item.string().contains("maven-metadata.xml")
+                    item -> item.string().contains(latest)
+                    || item.string().contains(meta)
                 )
                 .map(
                     item -> resources.value(item).thenCompose(
