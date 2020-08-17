@@ -25,6 +25,7 @@ package com.artipie.maven;
 
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.asto.test.TestResource;
@@ -34,8 +35,8 @@ import com.jcabi.xml.XML;
 import com.jcabi.xml.XMLDocument;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.concurrent.CompletableFuture;
 import org.cactoos.list.ListOf;
+import org.cactoos.scalar.Unchecked;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.AllOf;
@@ -75,45 +76,22 @@ public final class AstoMavenITCase {
     private Storage repository;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws InterruptedException {
         final Storage resources = new FileStorage(new TestResource("com/artipie/asto").asPath());
         this.repository = new FileStorage(this.repo);
         final String latest = "0.20.2";
         final String meta = "maven-metadata.xml";
-        resources.list(Key.ROOT).thenCompose(
-            list -> CompletableFuture.allOf(list.stream()
-                .filter(
-                    item -> !item.string().contains("1.0-SNAPSHOT")
-                        && !item.string().contains(latest)
-                        && !item.string().contains(meta)
-                )
-                .map(
-                    item -> resources.value(item).thenCompose(
-                        content -> this.repository.save(
-                            new Key.From(AstoMavenITCase.ARTIFACT, item), content
-                        )
-                    )
-                )
-                .toArray(CompletableFuture[]::new)
+        final BlockingStorage bsto = new BlockingStorage(resources);
+        bsto.list(Key.ROOT).stream()
+            .filter(
+                item -> !item.string().contains("1.0-SNAPSHOT")
+                    && !item.string().contains(latest)
+                    && !item.string().contains(meta)
             )
-        ).join();
-        resources.list(Key.ROOT).thenCompose(
-            list -> CompletableFuture.allOf(
-                list.stream()
-                .filter(
-                    item -> item.string().contains(latest)
-                    || item.string().contains(meta)
-                )
-                .map(
-                    item -> resources.value(item).thenCompose(
-                        content -> this.repository.save(
-                            new Key.From(AstoMavenITCase.UPLOAD, item), content
-                        )
-                    )
-                )
-                .toArray(CompletableFuture[]::new)
-            )
-        ).join();
+            .forEach(item -> this.putToStorage(bsto, item, AstoMavenITCase.ARTIFACT));
+        bsto.list(Key.ROOT).stream()
+            .filter(item -> item.string().contains(latest) || item.string().contains(meta))
+            .forEach(item -> this.putToStorage(bsto, item, AstoMavenITCase.UPLOAD));
     }
 
     @Test
@@ -145,6 +123,18 @@ public final class AstoMavenITCase {
                 )
             )
         );
+    }
+
+    private boolean putToStorage(final BlockingStorage bsto, final Key item, final Key base) {
+        return new Unchecked<>(
+            () -> {
+                new BlockingStorage(this.repository).save(
+                    new Key.From(base, item),
+                    new Unchecked<>(() -> bsto.value(item)).value()
+                );
+                return true;
+            }
+        ).value();
     }
 
 }

@@ -61,6 +61,7 @@ public final class ArtifactsMetadata {
      * @param location Package location
      * @return Version as completed stage
      */
+    @SuppressWarnings("PMD.ConfusingTernary")
     public CompletionStage<String> release(final Key location) {
         return this.storage.value(new Key.From(location, ArtifactsMetadata.MAVEN_METADATA))
             .thenCompose(
@@ -71,9 +72,9 @@ public final class ArtifactsMetadata {
                         final String latest = "//latest/text()";
                         final String release = "//release/text()";
                         final String res;
-                        if (xml.xpath(release).size() > 0) {
+                        if (!xml.xpath(release).isEmpty()) {
                             res = xml.xpath(release).get(0);
-                        } else if (xml.xpath(latest).size() > 0) {
+                        } else if (!xml.xpath(latest).isEmpty()) {
                             res = xml.xpath(latest).get(0);
                         } else {
                             throw new IllegalArgumentException(
