@@ -97,7 +97,7 @@ public final class AstoMavenTest {
                     XhtmlMatchers.hasXPath("/metadata/versioning/versions/version[text() = '1.0']"),
                     XhtmlMatchers.hasXPath("/metadata/versioning/versions/version[text() = '0.8']"),
                     XhtmlMatchers.hasXPath("/metadata/versioning/versions/version[text() = '0.9']"),
-                    XhtmlMatchers.hasXPath("metadata/versioning/versions[count(//version) = 3]"),
+                    XhtmlMatchers.hasXPath("/metadata/versioning/versions[count(//version) = 3]"),
                     XhtmlMatchers.hasXPath("/metadata/versioning/lastUpdated")
                 )
             )
@@ -121,7 +121,7 @@ public final class AstoMavenTest {
                     XhtmlMatchers.hasXPath("/metadata/versioning/latest[text() = '1.0']"),
                     XhtmlMatchers.hasXPath("/metadata/versioning/release[text() = '1.0']"),
                     XhtmlMatchers.hasXPath("/metadata/versioning/versions/version[text() = '1.0']"),
-                    XhtmlMatchers.hasXPath("metadata/versioning/versions[count(//version) = 1]"),
+                    XhtmlMatchers.hasXPath("/metadata/versioning/versions[count(//version) = 1]"),
                     XhtmlMatchers.hasXPath("/metadata/versioning/lastUpdated")
                 )
             )
