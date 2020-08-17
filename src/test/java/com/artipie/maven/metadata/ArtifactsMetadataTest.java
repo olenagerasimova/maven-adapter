@@ -60,7 +60,7 @@ class ArtifactsMetadataTest {
     @Test
     void readsVersion() {
         MatcherAssert.assertThat(
-            new ArtifactsMetadata(this.storage).latest(this.key).toCompletableFuture().join(),
+            new ArtifactsMetadata(this.storage).release(this.key).toCompletableFuture().join(),
             new IsEqual<>("1.0")
         );
     }

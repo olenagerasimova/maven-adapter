@@ -97,22 +97,35 @@ public final class AstoValidUpload implements ValidUpload {
      */
     private CompletionStage<Boolean> validateMetadata(final Key upload, final Key artifact) {
         final ArtifactsMetadata metadata = new ArtifactsMetadata(this.storage);
-        return metadata.groupAndArtifact(upload).thenCompose(
-            existing -> metadata.groupAndArtifact(artifact).thenApply(
-                uploaded -> uploaded.equals(existing)
-            )
-        ).thenCompose(
-            same -> {
-                final CompletionStage<Boolean> res;
-                if (same) {
-                    res = this.validateArtifactChecksums(new Key.From(upload, "maven-metadata.xml"))
-                        .to(SingleInterop.get());
-                } else {
-                    res = CompletableFuture.completedStage(false);
+        final String meta = "maven-metadata.xml";
+        return this.storage.exists(new Key.From(artifact, meta))
+            .thenCompose(
+                exists -> {
+                    final CompletionStage<Boolean> res;
+                    if (exists) {
+                        res = metadata.groupAndArtifact(upload).thenCompose(
+                            existing -> metadata.groupAndArtifact(artifact).thenApply(
+                                uploaded -> uploaded.equals(existing)
+                            )
+                        );
+                    } else {
+                        res = CompletableFuture.completedStage(true);
+                    }
+                    return res;
                 }
-                return res;
-            }
-        );
+            ).thenCompose(
+                same -> {
+                    final CompletionStage<Boolean> res;
+                    if (same) {
+                        res = this.validateArtifactChecksums(
+                            new Key.From(upload, meta)
+                        ).to(SingleInterop.get());
+                    } else {
+                        res = CompletableFuture.completedStage(false);
+                    }
+                    return res;
+                }
+            );
     }
 
     /**
@@ -122,7 +135,7 @@ public final class AstoValidUpload implements ValidUpload {
      */
     private CompletionStage<Boolean> validateChecksums(final Key upload) {
         final RxStorage rxsto = new RxStorageWrapper(this.storage);
-        return new ArtifactsMetadata(this.storage).latest(upload).thenCompose(
+        return new ArtifactsMetadata(this.storage).release(upload).thenCompose(
             version -> {
                 final Key pckg = new Key.From(upload, version);
                 return rxsto.list(pckg)

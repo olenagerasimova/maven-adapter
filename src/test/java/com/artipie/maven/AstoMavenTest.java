@@ -58,6 +58,11 @@ public class AstoMavenTest {
     public static final String MAVEN = "maven";
 
     /**
+     * Maven name.
+     */
+    public static final String META = ".update/com/artipie/maven/maven-metadata.xml";
+
+    /**
      * Unsupported algorithm checksum file name.
      */
     public static final String UNSUPPORTED = "maven-metadata.xml.unsupported";
@@ -73,9 +78,10 @@ public class AstoMavenTest {
             new Content.From("md5-package-content".getBytes())
         ).toCompletableFuture().get();
         new AstoMaven(storage)
-            .update(new Key.From(AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN))
-            .toCompletableFuture()
-            .get();
+            .update(
+                new Key.From(AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN),
+                new Key.From(AstoMavenTest.META)
+            ).toCompletableFuture().get();
         MatcherAssert.assertThat(
             storage.exists(
                 new Key.From(
@@ -101,7 +107,8 @@ public class AstoMavenTest {
         ).toCompletableFuture().get();
         new AstoMaven(storage)
             .update(
-                new Key.From(AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN)
+                new Key.From(AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN),
+                new Key.From(AstoMavenTest.META)
             ).toCompletableFuture().get();
         MatcherAssert.assertThat(
             storage.exists(
@@ -128,7 +135,8 @@ public class AstoMavenTest {
         ).toCompletableFuture().get();
         new AstoMaven(storage)
             .update(
-                new Key.From(AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN)
+                new Key.From(AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN),
+                new Key.From(AstoMavenTest.META)
             ).toCompletableFuture().get();
         MatcherAssert.assertThat(
             storage.exists(
@@ -157,7 +165,8 @@ public class AstoMavenTest {
             .get();
         new AstoMaven(storage)
             .update(
-                new Key.From(AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN)
+                new Key.From(AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN),
+                new Key.From(AstoMavenTest.META)
             )
             .toCompletableFuture()
             .get();
@@ -186,8 +195,10 @@ public class AstoMavenTest {
             new Content.From("anything".getBytes())
         ).toCompletableFuture().get();
         new AstoMaven(storage)
-            .update(new Key.From(AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN))
-            .toCompletableFuture()
+            .update(
+                new Key.From(AstoMavenTest.COM, AstoMavenTest.ARTIPIE, AstoMavenTest.MAVEN),
+                new Key.From(AstoMavenTest.META)
+            ).toCompletableFuture()
             .get();
         MatcherAssert.assertThat(
             storage.exists(

@@ -26,7 +26,7 @@ SOFTWARE.
   <groupId>com.artipie</groupId>
   <artifactId>asto</artifactId>
   <versioning>
-    <latest>0.20.2</latest>
+    <latest>1.0-SNAPSHOT</latest>
     <release>0.20.2</release>
     <versions>
       <version>0.3.0</version>

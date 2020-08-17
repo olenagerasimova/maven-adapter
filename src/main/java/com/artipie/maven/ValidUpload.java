@@ -38,8 +38,8 @@ public interface ValidUpload {
      * - validate upload checksums;
      * - validate metadata: check metadata group and id are the same as in
      * repository metadata, metadata versions are correct.
-     * @param upload Upload artifact files location
-     * @param artifact Artifact files location
+     * @param upload Uploading artifact location
+     * @param artifact Artifact location
      * @return Completable validation action: true if uploaded maven-metadata.xml is valid,
      *  false otherwise
      */
