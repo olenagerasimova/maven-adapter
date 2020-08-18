@@ -69,7 +69,7 @@ public final class ArtifactsMetadata {
                 content -> new PublisherAs(content).string(StandardCharsets.UTF_8)
                 .thenApply(
                     metadata -> new XMLDocument(metadata).xpath("//version/text()").stream()
-                        .max(Comparator.naturalOrder()).orElseThrow(
+                        .max(Comparator.comparing(Version::new)).orElseThrow(
                             () -> new IllegalArgumentException(
                                 "Maven metadata xml not valid: latest version not found"
                             )
