@@ -44,7 +44,7 @@ class VersionsTest {
     @Test
     void comparesMinorVersions() {
         MatcherAssert.assertThat(
-            new Versions().compare("0.2", "0.2.1"),
+            new Versions().compare("0.2", "0.21.2"),
             new IsEqual<>(-1)
         );
     }
