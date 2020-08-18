@@ -67,10 +67,10 @@ public final class MavenMetadata {
             .push().xpath("versioning").remove().pop()
             .xpath("/metadata")
             .add("versioning");
-        items.stream().max(Comparator.naturalOrder())
+        items.stream().max(Comparator.comparing(Version::new))
             .ifPresent(latest -> copy.add("latest").set(latest).up());
         items.stream().filter(version -> !version.endsWith("SNAPSHOT"))
-            .max(Comparator.naturalOrder())
+            .max(Comparator.comparing(Version::new))
             .ifPresent(latest -> copy.add("release").set(latest).up());
         copy.add("versions");
         items.forEach(version -> copy.add("version").set(version).up());
