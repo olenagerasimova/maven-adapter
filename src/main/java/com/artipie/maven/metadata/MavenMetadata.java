@@ -28,6 +28,7 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -66,10 +67,10 @@ public final class MavenMetadata {
             .push().xpath("versioning").remove().pop()
             .xpath("/metadata")
             .add("versioning");
-        items.stream().max(new Versions())
+        items.stream().max(Comparator.comparing(Version::new))
             .ifPresent(latest -> copy.add("latest").set(latest).up());
         items.stream().filter(version -> !version.endsWith("SNAPSHOT"))
-            .max(new Versions())
+            .max(Comparator.comparing(Version::new))
             .ifPresent(latest -> copy.add("release").set(latest).up());
         copy.add("versions");
         items.forEach(version -> copy.add("version").set(version).up());

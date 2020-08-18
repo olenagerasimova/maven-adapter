@@ -24,19 +24,31 @@
 package com.artipie.maven.metadata;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.stream.Stream;
 
 /**
- * Versions comparator.
+ * Artifact version.
  * @since 0.5
  */
-public final class Versions implements Comparator<String> {
+public final class Version implements Comparable<Version> {
+
+    /**
+     * Version value as string.
+     */
+    private final String value;
+
+    /**
+     * Ctor.
+     * @param value Version as string
+     */
+    public Version(final String value) {
+        this.value = value;
+    }
 
     @Override
-    public int compare(final String first, final String second) {
+    public int compareTo(final Version another) {
         return Arrays.compare(
-            Versions.stringVersionToIntArray(first), Versions.stringVersionToIntArray(second)
+            stringVersionToIntArray(this.value), stringVersionToIntArray(another.value)
         );
     }
 
@@ -45,8 +57,9 @@ public final class Versions implements Comparator<String> {
      * @param version Version to clean
      * @return Version without snapshot
      */
-    private static Integer[] stringVersionToIntArray(final String version) {
+    private static int[] stringVersionToIntArray(final String version) {
         return Stream.of(version.replace("-SNAPSHOT", "").split("\\."))
-            .map(Integer::parseInt).toArray(Integer[]::new);
+            .mapToInt(Integer::parseInt).toArray();
     }
+
 }

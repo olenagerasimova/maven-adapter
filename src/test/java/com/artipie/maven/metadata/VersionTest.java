@@ -25,51 +25,29 @@ package com.artipie.maven.metadata;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
- * Test for {@link Versions}.
+ * Test for {@link Version}.
  * @since 0.5
  */
-class VersionsTest {
+class VersionTest {
 
-    @Test
-    void comparesSimpleVersions() {
+    @CsvSource({
+        "1,1,0",
+        "1,2,-1",
+        "2,1,1",
+        "0.2,0.20.1,-1",
+        "1.0,1.1-SNAPSHOT,-1",
+        "2.0-SNAPSHOT,1.1,1",
+        "0.1-SNAPSHOT,0.3-SNAPSHOT,-1"
+    })
+    @ParameterizedTest
+    void comparesSimpleVersions(final String first, final String second, final int res) {
         MatcherAssert.assertThat(
-            new Versions().compare("1", "2"),
-            new IsEqual<>(-1)
-        );
-    }
-
-    @Test
-    void comparesMinorVersions() {
-        MatcherAssert.assertThat(
-            new Versions().compare("0.2", "0.21.2"),
-            new IsEqual<>(-1)
-        );
-    }
-
-    @Test
-    void comparesSimpleWithSnapshot() {
-        MatcherAssert.assertThat(
-            new Versions().compare("1.0", "1.1-SNAPSHOT"),
-            new IsEqual<>(-1)
-        );
-    }
-
-    @Test
-    void comparesSnapshotWithSimple() {
-        MatcherAssert.assertThat(
-            new Versions().compare("2.1-SNAPSHOT", "2.1.1"),
-            new IsEqual<>(-1)
-        );
-    }
-
-    @Test
-    void comparesSnapshotWithSnapshot() {
-        MatcherAssert.assertThat(
-            new Versions().compare("1.0.1-SNAPSHOT", "1.2.1-SNAPSHOT"),
-            new IsEqual<>(-1)
+            new Version(first).compareTo(new Version(second)),
+            new IsEqual<>(res)
         );
     }
 
