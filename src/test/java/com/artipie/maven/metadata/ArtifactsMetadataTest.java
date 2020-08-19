@@ -23,19 +23,25 @@
  */
 package com.artipie.maven.metadata;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
-import com.artipie.asto.test.TestResource;
+import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.IsInstanceOf;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  * Test for {@link ArtifactsMetadata}.
  * @since 0.5
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 class ArtifactsMetadataTest {
 
@@ -53,25 +59,79 @@ class ArtifactsMetadataTest {
     void initiate() {
         this.storage = new InMemoryStorage();
         this.key = new Key.From("com/test/logger");
-        new TestResource("maven-metadata.xml.example")
-            .saveTo(this.storage, new Key.From(this.key, "maven-metadata.xml"));
+    }
+
+    @Test
+    void readsMaxVersion() {
+        final String expected = "1.10-SNAPSHOT";
+        this.generate("0.3", expected, "1.0.1", "0.9-SNAPSHOT", "0.22");
+        MatcherAssert.assertThat(
+            new ArtifactsMetadata(this.storage).maxVersion(this.key).toCompletableFuture().join(),
+            new IsEqual<>(expected)
+        );
     }
 
     @Test
     void readsVersion() {
+        final String expected = "1.0";
+        this.generate(expected, "0.9");
         MatcherAssert.assertThat(
-            new ArtifactsMetadata(this.storage).release(this.key).toCompletableFuture().join(),
-            new IsEqual<>("1.0")
+            new ArtifactsMetadata(this.storage).maxVersion(this.key).toCompletableFuture().join(),
+            new IsEqual<>(expected)
+        );
+    }
+
+    @Test
+    void throwsExceptionOnInvalidMetadata() {
+        this.generate();
+        MatcherAssert.assertThat(
+            Assertions.assertThrows(
+                CompletionException.class,
+                () -> new ArtifactsMetadata(this.storage)
+                    .maxVersion(this.key).toCompletableFuture().join()
+            ).getCause(),
+            new IsInstanceOf(IllegalArgumentException.class)
         );
     }
 
     @Test
     void readsGroupAndArtifactIds() {
+        this.generate("8.0");
         MatcherAssert.assertThat(
             new ArtifactsMetadata(this.storage).groupAndArtifact(this.key)
                 .toCompletableFuture().join(),
             new IsEqual<>(new ImmutablePair<>("com.test", "logger"))
         );
+    }
+
+    /**
+     * Generates maven-metadata.xml.
+     * @param versions Versions list
+     * @todo #144:30min Extract this method into class in test scope: create class to generate and
+     *  add maven-metadata.xml to storage, use this new class here and in AstoMavenITCase.
+     */
+    private void generate(final String... versions) {
+        this.storage.save(
+            new Key.From(this.key, "maven-metadata.xml"),
+            new Content.From(
+                String.join(
+                    "\n",
+                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+                    "<metadata>",
+                    "  <groupId>com.test</groupId>",
+                    "  <artifactId>logger</artifactId>",
+                    "  <versioning>",
+                    "    <versions>",
+                    Stream.of(versions)
+                        .map(version -> String.format("      <version>%s</version>", version))
+                        .collect(Collectors.joining("\n")),
+                    "    </versions>",
+                    "    <lastUpdated>20200804141716</lastUpdated>",
+                    "  </versioning>",
+                    "</metadata>"
+                ).getBytes()
+            )
+        ).join();
     }
 
 }

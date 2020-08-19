@@ -67,8 +67,13 @@ final class UpdateMavenSlice implements Slice {
     /**
      * Metadata pattern.
      */
-    private static final Pattern PTN_META =
-        Pattern.compile("^/(?<pkg>.+)/maven-metadata.xml$");
+    private static final Pattern PTN_META = Pattern.compile("^/(?<pkg>.+)/maven-metadata.xml$");
+
+    /**
+     * Snapshots packages versions have their own metadata, path for such metadata upload is
+     * ending <code>-SNAPSHOT/maven-metadata.xml</code>.
+     */
+    private static final String SNAPSHOT_METADATA = "-SNAPSHOT/maven-metadata.xml";
 
     /**
      * Storage.
@@ -119,7 +124,7 @@ final class UpdateMavenSlice implements Slice {
             ).thenCompose(
                 ignored -> {
                     final CompletionStage<Response> res;
-                    if (matcher.matches()) {
+                    if (matcher.matches() && !path.endsWith(UpdateMavenSlice.SNAPSHOT_METADATA)) {
                         final Key location = new Key.From(matcher.group("pkg"));
                         res = this.validator.validate(
                             new Key.From(UpdateMavenSlice.TEMP, location), location
