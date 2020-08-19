@@ -28,6 +28,7 @@ import com.artipie.asto.Storage;
 import com.artipie.asto.ext.PublisherAs;
 import com.jcabi.xml.XMLDocument;
 import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
 import java.util.concurrent.CompletionStage;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -61,28 +62,17 @@ public final class ArtifactsMetadata {
      * @param location Package location
      * @return Version as completed stage
      */
-    @SuppressWarnings("PMD.ConfusingTernary")
-    public CompletionStage<String> release(final Key location) {
+    public CompletionStage<String> maxVersion(final Key location) {
         return this.storage.value(new Key.From(location, ArtifactsMetadata.MAVEN_METADATA))
             .thenCompose(
                 content -> new PublisherAs(content).string(StandardCharsets.UTF_8)
                 .thenApply(
-                    metadata -> {
-                        final XMLDocument xml = new XMLDocument(metadata);
-                        final String latest = "//latest/text()";
-                        final String release = "//release/text()";
-                        final String res;
-                        if (!xml.xpath(release).isEmpty()) {
-                            res = xml.xpath(release).get(0);
-                        } else if (!xml.xpath(latest).isEmpty()) {
-                            res = xml.xpath(latest).get(0);
-                        } else {
-                            throw new IllegalArgumentException(
+                    metadata -> new XMLDocument(metadata).xpath("//version/text()").stream()
+                        .max(Comparator.comparing(Version::new)).orElseThrow(
+                            () -> new IllegalArgumentException(
                                 "Maven metadata xml not valid: latest version not found"
-                            );
-                        }
-                        return res;
-                    }
+                            )
+                        )
                 )
             );
     }
