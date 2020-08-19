@@ -135,7 +135,7 @@ public final class AstoValidUpload implements ValidUpload {
      */
     private CompletionStage<Boolean> validateChecksums(final Key upload) {
         final RxStorage rxsto = new RxStorageWrapper(this.storage);
-        return new ArtifactsMetadata(this.storage).release(upload).thenCompose(
+        return new ArtifactsMetadata(this.storage).maxVersion(upload).thenCompose(
             version -> {
                 final Key pckg = new Key.From(upload, version);
                 return rxsto.list(pckg)

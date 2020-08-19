@@ -62,8 +62,7 @@ public final class ArtifactsMetadata {
      * @param location Package location
      * @return Version as completed stage
      */
-    @SuppressWarnings("PMD.ConfusingTernary")
-    public CompletionStage<String> release(final Key location) {
+    public CompletionStage<String> maxVersion(final Key location) {
         return this.storage.value(new Key.From(location, ArtifactsMetadata.MAVEN_METADATA))
             .thenCompose(
                 content -> new PublisherAs(content).string(StandardCharsets.UTF_8)

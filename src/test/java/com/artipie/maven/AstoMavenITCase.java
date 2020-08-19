@@ -31,15 +31,14 @@ import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.asto.test.TestResource;
 import com.artipie.maven.asto.AstoMaven;
-import com.google.common.collect.Lists;
 import com.jcabi.matchers.XhtmlMatchers;
 import com.jcabi.xml.XML;
 import com.jcabi.xml.XMLDocument;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.cactoos.list.ListOf;
 import org.cactoos.scalar.Unchecked;
 import org.hamcrest.Matcher;
@@ -69,17 +68,6 @@ public final class AstoMavenITCase {
     public static final Key.From UPLOAD = new Key.From(".upload", "com", "artipie", "asto");
 
     /**
-     * Metadata file name.
-     */
-    public static final String META = "maven-metadata.xml";
-
-    /**
-     * Artifacts versions.
-     */
-    private static final List<String> VERSIONS =
-        new ListOf<>("0.11.1", "0.15", "0.18", "0.20.1");
-
-    /**
      * Temporary directory with repository data.
      * @checkstyle VisibilityModifierCheck (5 lines)
      */
@@ -99,16 +87,10 @@ public final class AstoMavenITCase {
     @Test
     void generatesWithSnapshotMetadata() throws Exception {
         final String snapshot = "1.0-SNAPSHOT";
-        final String version = "0.20.2";
-        this.addFilesToStorage(
-            item -> !item.string().contains(snapshot)
-                && !item.string().contains(AstoMavenITCase.META),
-            item -> item.string().contains(snapshot) || item.string().contains(AstoMavenITCase.META)
-        );
-        final List<String> list = Lists.newArrayList(AstoMavenITCase.VERSIONS);
-        list.add(version);
-        list.add(snapshot);
-        this.generateMeta(list);
+        final Predicate<String> cond = item -> !item.contains(snapshot);
+        this.addFilesToStorage(cond, AstoMavenITCase.ARTIFACT);
+        this.addFilesToStorage(cond.negate(), AstoMavenITCase.ARTIFACT);
+        this.metadataAndVersions(snapshot, "0.20.2");
         new AstoMaven(this.repository)
             .update(AstoMavenITCase.UPLOAD, AstoMavenITCase.ARTIFACT)
             .toCompletableFuture()
@@ -143,13 +125,14 @@ public final class AstoMavenITCase {
     void generatesMetadata() throws Exception {
         final String latest = "0.20.2";
         this.addFilesToStorage(
-            item -> !item.string().contains("1.0-SNAPSHOT") && !item.string().contains(latest)
-                && !item.string().contains(AstoMavenITCase.META),
-            item -> item.string().contains(latest) || item.string().contains(AstoMavenITCase.META)
+            item -> !item.contains("1.0-SNAPSHOT") && !item.contains(latest),
+            AstoMavenITCase.ARTIFACT
         );
-        final List<String> list = Lists.newArrayList(AstoMavenITCase.VERSIONS);
-        list.add(latest);
-        this.generateMeta(list);
+        this.addFilesToStorage(
+            item -> item.contains(latest),
+            AstoMavenITCase.UPLOAD
+        );
+        this.metadataAndVersions(latest);
         new AstoMaven(this.repository)
             .update(AstoMavenITCase.UPLOAD, AstoMavenITCase.ARTIFACT)
             .toCompletableFuture()
@@ -179,31 +162,19 @@ public final class AstoMavenITCase {
         );
     }
 
-    private void addFilesToStorage(final Predicate<Key> artifact, final Predicate<Key> upload)
+    private void addFilesToStorage(final Predicate<String> condition, final Key base)
         throws InterruptedException {
         final Storage resources = new FileStorage(new TestResource("com/artipie/asto").asPath());
         final BlockingStorage bsto = new BlockingStorage(resources);
         bsto.list(Key.ROOT).stream()
-            .filter(artifact)
+            .map(Key::string)
+            .filter(condition)
             .forEach(
                 item -> new Unchecked<>(
                     () -> {
                         new BlockingStorage(this.repository).save(
-                            new Key.From(AstoMavenITCase.ARTIFACT, item),
-                            new Unchecked<>(() -> bsto.value(item)).value()
-                        );
-                        return true;
-                    }
-                ).value()
-        );
-        bsto.list(Key.ROOT).stream()
-            .filter(upload)
-            .forEach(
-                item -> new Unchecked<>(
-                    () -> {
-                        new BlockingStorage(this.repository).save(
-                            new Key.From(AstoMavenITCase.UPLOAD, item),
-                            new Unchecked<>(() -> bsto.value(item)).value()
+                            new Key.From(base, item),
+                            new Unchecked<>(() -> bsto.value(new Key.From(item))).value()
                         );
                         return true;
                     }
@@ -211,7 +182,7 @@ public final class AstoMavenITCase {
         );
     }
 
-    private void generateMeta(final List<String> versions) {
+    private void metadataAndVersions(final String... versions) {
         this.repository.save(
             new Key.From(AstoMavenITCase.UPLOAD, "maven-metadata.xml"),
             new Content.From(
@@ -225,7 +196,11 @@ public final class AstoMavenITCase {
                     "    <latest>0.20.2</latest>",
                     "    <release>0.20.2</release>",
                     "    <versions>",
-                    versions.stream()
+                    "      <version>0.11.1</version>",
+                    "      <version>0.15</version>",
+                    "      <version>0.18</version>",
+                    "      <version>0.20.1</version>",
+                    Stream.of(versions)
                         .map(version -> String.format("      <version>%s</version>", version))
                         .collect(Collectors.joining("\n")),
                     "    </versions>",

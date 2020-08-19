@@ -103,7 +103,7 @@ public final class AstoMaven implements Maven {
                         .filter(item -> !item.startsWith("maven-metadata"))
                         .collect(Collectors.toSet())
                 ).thenCompose(
-                    versions -> new ArtifactsMetadata(this.storage).release(upload)
+                    versions -> new ArtifactsMetadata(this.storage).maxVersion(upload)
                         .thenApply(
                             latest -> {
                                 versions.add(latest);
