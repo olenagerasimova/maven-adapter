@@ -84,16 +84,14 @@ public final class MavenMetadata {
      * Save metadata to storage.
      * @param storage Storage to save
      * @param base Base key where to save
-     * @return Async state
+     * @return Completion action with key for saved maven-metadata
      */
-    public CompletionStage<Void> save(final Storage storage, final Key base) {
+    public CompletionStage<Key> save(final Storage storage, final Key base) {
+        final Key res = new Key.From(base, "maven-metadata.xml");
         return CompletableFuture.supplyAsync(
             () -> new Xembler(this.dirs).xmlQuietly().getBytes(StandardCharsets.UTF_8)
-        ).thenCompose(
-            data -> storage.save(
-                new Key.From(base, "maven-metadata.xml"),
-                new Content.From(data)
-            )
-        );
+        )
+            .thenCompose(data -> storage.save(res, new Content.From(data)))
+            .thenApply(nothing -> res);
     }
 }
