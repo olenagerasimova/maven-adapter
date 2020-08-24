@@ -71,10 +71,11 @@ public final class MavenProxySlice extends Slice.Wrap {
         super(
             new SliceRoute(
                 new RtRulePath(
-                    new RtRule.All(
-                        new RtRule.ByMethod(RqMethod.GET),
-                        new RtRule.ByMethod(RqMethod.HEAD)
-                    ),
+                    new RtRule.ByMethod(RqMethod.HEAD),
+                    new HeadProxySlice(new ClientSlice(clients, remote))
+                ),
+                new RtRulePath(
+                    new RtRule.ByMethod(RqMethod.GET),
                     new CachedProxySlice(new ClientSlice(clients, remote), cache)
                 ),
                 new RtRulePath(

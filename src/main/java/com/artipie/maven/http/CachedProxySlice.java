@@ -27,29 +27,62 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.cache.Cache;
 import com.artipie.asto.cache.CacheControl;
+import com.artipie.asto.cache.DigestVerification;
+import com.artipie.asto.ext.Digests;
+import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
+import com.artipie.http.headers.Header;
 import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rs.RsWithBody;
+import com.artipie.http.rs.StandardRs;
 import com.artipie.http.slice.KeyFromPath;
 import java.nio.ByteBuffer;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
 /**
  * Maven proxy slice with cache support.
  * @since 0.5
+ * @todo #146:30min Create integration test for cached proxy:
+ *  the test starts new server instance and serves HEAD requests for artifact with checksum
+ *  headers, cache contains some artifact, test requests this artifact from `CachedProxySlice`
+ *  with injected `Cache` and client `Slice` instances and verifies that target slice
+ *  doesn't invalidate the cache if checksums headers matches and invalidates cache if
+ *  checksums doesn't match.
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class CachedProxySlice implements Slice {
 
     /**
+     * Checksum header pattern.
+     */
+    private static final Pattern CHECKSUM_PATTERN =
+        Pattern.compile("x-checksum-(sha1|sha256|sha512|md5)", Pattern.CASE_INSENSITIVE);
+
+    /**
+     * Translation of checksum headers to digest algorithms.
+     */
+    private static final Map<String, String> DIGEST_NAMES = Map.of(
+        "sha1", "SHA-1",
+        "sha256", "SHA-256",
+        "sha512", "SHA-512",
+        "md5", "MD5"
+    );
+
+    /**
      * Origin slice.
      */
-    private final Slice origin;
+    private final Slice client;
 
     /**
      * Cache.
@@ -58,156 +91,64 @@ final class CachedProxySlice implements Slice {
 
     /**
      * Wraps origin slice with caching layer.
-     * @param origin Origin slice
+     * @param client Client slice
      * @param cache Cache
      */
-    CachedProxySlice(final Slice origin, final Cache cache) {
-        this.origin = origin;
+    CachedProxySlice(final Slice client, final Cache cache) {
+        this.client = client;
         this.cache = cache;
     }
 
     @Override
     public Response response(final String line, final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> body) {
-        final Key key = new KeyFromPath(new RequestLineFrom(line).uri().getPath());
+        final RequestLineFrom req = new RequestLineFrom(line);
+        final Key key = new KeyFromPath(req.uri().getPath());
         return new AsyncResponse(
-            this.cache.load(
-                key,
-                () -> CompletableFuture.completedFuture(
-                    new Content.From(
-                        new ProxyPublisher(this.origin.response(line, headers, body))
-                    )
-                ),
-                CacheControl.Standard.ALWAYS
-            ).thenApply(RsWithBody::new)
+            new RepoHead(this.client).head(req.uri().getPath(), new Headers.From(headers))
+                .thenCompose(
+                    head -> this.cache.load(
+                        key,
+                        () -> CompletableFuture.completedFuture(
+                            new Content.From(
+                                new ProxyPublisher(this.client.response(line, headers, body))
+                            )
+                        ),
+                        new CacheControl.All(
+                            StreamSupport.stream(head.spliterator(), false)
+                                .map(Header::new)
+                                .map(CachedProxySlice::checksumControl)
+                                .collect(Collectors.toUnmodifiableList())
+                        )
+                    ).thenApply(pub -> new RsWithBody(StandardRs.OK, pub))
+                )
         );
     }
 
     /**
-     * Proxy publisher from response.
-     * @since 0.5
+     * Checksum cache control verification.
+     * @param header Checksum header
+     * @return Cache control with digest
      */
-    private static final class ProxyPublisher implements Publisher<ByteBuffer> {
-
-        /**
-         * Slice response.
-         */
-        private final Response response;
-
-        /**
-         * Ctor.
-         * @param response Slice response
-         */
-        ProxyPublisher(final Response response) {
-            this.response = response;
-        }
-
-        @Override
-        public void subscribe(final Subscriber<? super ByteBuffer> subscriber) {
-            this.response.send(
-                (status, headers, body) -> {
-                    final CompletableFuture<Void> future = new CompletableFuture<>();
-                    body.subscribe(new CompletableSubscriber(subscriber, future));
-                    return future;
-                }
-            );
-        }
-    }
-
-    /**
-     * Subscriber decorator that completes {@link CompletableFuture} on error and on complete.
-     * @since 0.5
-     */
-    private static final class CompletableSubscriber implements Subscriber<ByteBuffer> {
-
-        /**
-         * Subscriber.
-         */
-        private final Subscriber<? super ByteBuffer> origin;
-
-        /**
-         * Completable future.
-         */
-        private final CompletableFuture<Void> future;
-
-        /**
-         * Ctor.
-         * @param origin Subscriber
-         * @param future Completable
-         */
-        CompletableSubscriber(final Subscriber<? super ByteBuffer> origin,
-            final CompletableFuture<Void> future) {
-            this.origin = origin;
-            this.future = future;
-        }
-
-        @Override
-        public void onSubscribe(final Subscription subscription) {
-            this.origin.onSubscribe(new CompletableSubscription(subscription, this.future));
-        }
-
-        @Override
-        public void onNext(final ByteBuffer buffer) {
-            this.origin.onNext(buffer);
-        }
-
-        @Override
-        public void onError(final Throwable err) {
+    private static CacheControl checksumControl(final Header header) {
+        final Matcher matcher = CachedProxySlice.CHECKSUM_PATTERN.matcher(header.getKey());
+        final CacheControl res;
+        if (matcher.matches()) {
             try {
-                this.origin.onError(err);
-            } finally {
-                this.future.completeExceptionally(err);
+                res = new DigestVerification(
+                    new Digests.FromString(
+                        CachedProxySlice.DIGEST_NAMES.get(
+                            matcher.group(1).toLowerCase(Locale.US)
+                        )
+                    ).get(),
+                    Hex.decodeHex(header.getValue().toCharArray())
+                );
+            } catch (final DecoderException err) {
+                throw new IllegalStateException("Invalid digest hex", err);
             }
+        } else {
+            res = CacheControl.Standard.ALWAYS;
         }
-
-        @Override
-        public void onComplete() {
-            try {
-                this.origin.onComplete();
-            } finally {
-                this.future.complete(null);
-            }
-        }
-    }
-
-    /**
-     * Subscription decorator that cancels {@link CompletableFuture} on subscription cancellation.
-     * @since 0.5
-     */
-    private static final class CompletableSubscription implements Subscription {
-
-        /**
-         * Origin subscription.
-         */
-        private final Subscription origin;
-
-        /**
-         * Completable future.
-         */
-        private final CompletableFuture<Void> future;
-
-        /**
-         * Ctor.
-         * @param origin Subscription
-         * @param future Completable
-         */
-        CompletableSubscription(final Subscription origin, final CompletableFuture<Void> future) {
-            this.origin = origin;
-            this.future = future;
-        }
-
-        @Override
-        public void request(final long num) {
-            this.origin.request(num);
-        }
-
-        @Override
-        public void cancel() {
-            try {
-                this.origin.cancel();
-            } finally {
-                this.future.cancel(true);
-            }
-        }
+        return res;
     }
 }
