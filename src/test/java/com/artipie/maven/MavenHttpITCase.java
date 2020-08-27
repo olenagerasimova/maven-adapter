@@ -121,9 +121,10 @@ final class MavenHttpITCase {
     @CsvSource({"1.3.3,1", "0.1-SNAPSHOT,0"})
     void deployOneArtifact(final String version, final String cnt, final @TempDir Path temp)
         throws Exception {
-        final Path jar = this.jarPath(version, temp);
-        final Path pom = this.pomPath(version, temp);
-        final FileStorage storage = this.prepareStorage(temp, jar, pom);
+        this.prepareArtifacts(version, temp);
+        final FileStorage storage = new FileStorage(
+            Files.createDirectories(temp.resolve("remote"))
+        );
         try (VertxSliceServer server = new VertxSliceServer(this.vertx, new MavenSlice(storage))) {
             final int port = server.start();
             this.deploy(
@@ -162,9 +163,11 @@ final class MavenHttpITCase {
     )
     void deployUpdateRepositoryMetadata(final String first, final String second, final String cnt,
         final @TempDir Path temp) throws Exception {
-        final Path jar = this.jarPath(first, temp);
-        final Path pom = this.pomPath(first, temp);
-        final FileStorage storage = this.prepareStorage(temp, jar, pom);
+        this.prepareArtifacts(first, temp);
+        this.prepareArtifacts(second, temp);
+        final FileStorage storage = new FileStorage(
+            Files.createDirectories(temp.resolve("remote"))
+        );
         try (VertxSliceServer server = new VertxSliceServer(this.vertx, new MavenSlice(storage))) {
             final MavenArtifacts art = new MavenArtifacts(
                 server.start(), Files.createDirectories(temp.resolve("local"))
@@ -209,11 +212,9 @@ final class MavenHttpITCase {
         return temp.resolve(String.format("maven-resolver-util-%s.pom", version));
     }
 
-    private FileStorage prepareStorage(final Path temp, final Path jar, final Path pom)
-        throws IOException {
-        Files.write(jar, new byte[]{});
-        Files.write(pom, new byte[]{});
-        return new FileStorage(Files.createDirectories(temp.resolve("remote")));
+    private void prepareArtifacts(final String version, final Path temp) throws IOException {
+        Files.write(this.jarPath(version, temp), new byte[]{});
+        Files.write(this.pomPath(version, temp), new byte[]{});
     }
 
     /**
