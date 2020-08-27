@@ -23,13 +23,11 @@
  */
 package com.artipie.maven.metadata;
 
-import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.maven.MetadataXml;
 import java.util.concurrent.CompletionException;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
@@ -43,6 +41,7 @@ import org.junit.jupiter.api.Test;
  * @since 0.5
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class ArtifactsMetadataTest {
 
     /**
@@ -107,31 +106,12 @@ class ArtifactsMetadataTest {
     /**
      * Generates maven-metadata.xml.
      * @param versions Versions list
-     * @todo #144:30min Extract this method into class in test scope: create class to generate and
-     *  add maven-metadata.xml to storage, use this new class here and in AstoMavenITCase.
      */
     private void generate(final String... versions) {
-        this.storage.save(
-            new Key.From(this.key, "maven-metadata.xml"),
-            new Content.From(
-                String.join(
-                    "\n",
-                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-                    "<metadata>",
-                    "  <groupId>com.test</groupId>",
-                    "  <artifactId>logger</artifactId>",
-                    "  <versioning>",
-                    "    <versions>",
-                    Stream.of(versions)
-                        .map(version -> String.format("      <version>%s</version>", version))
-                        .collect(Collectors.joining("\n")),
-                    "    </versions>",
-                    "    <lastUpdated>20200804141716</lastUpdated>",
-                    "  </versioning>",
-                    "</metadata>"
-                ).getBytes()
-            )
-        ).join();
+        new MetadataXml("com.test", "logger").addXmlToStorage(
+            this.storage, new Key.From(this.key, "maven-metadata.xml"),
+            new MetadataXml.VersionTags(versions)
+        );
     }
 
 }
