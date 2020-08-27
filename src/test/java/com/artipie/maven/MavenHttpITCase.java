@@ -30,6 +30,7 @@ import com.artipie.maven.http.MavenSlice;
 import com.artipie.vertx.VertxSliceServer;
 import com.jcabi.matchers.XhtmlMatchers;
 import io.vertx.reactivex.core.Vertx;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -62,6 +63,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  * Tests for the not-yet implementend Maven HTTP API.
@@ -71,6 +74,7 @@ import org.junit.jupiter.api.io.TempDir;
  *  the deployment of files are extremely slow, each upload of empty
  *  files takes several seconds. Fix this situation.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle ParameterNumberCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class MavenHttpITCase {
@@ -113,24 +117,19 @@ final class MavenHttpITCase {
         }
     }
 
-    @Test
-    void deployOneArtifact(final @TempDir Path temp)
+    @ParameterizedTest
+    @CsvSource({"1.3.3,1", "0.1-SNAPSHOT,0"})
+    void deployOneArtifact(final String version, final String cnt, final @TempDir Path temp)
         throws Exception {
-        final Path jar = temp.resolve("maven-resolver-util-1.3.3.jar");
-        final Path pom = temp.resolve("maven-resolver-util-1.3.3.pom");
-        Files.write(jar, new byte[]{0});
-        Files.write(pom, new byte[]{0});
+        this.prepareArtifacts(version, temp);
         final FileStorage storage = new FileStorage(
             Files.createDirectories(temp.resolve("remote"))
         );
         try (VertxSliceServer server = new VertxSliceServer(this.vertx, new MavenSlice(storage))) {
             final int port = server.start();
-            new MavenArtifacts(
-                port,
-                Files.createDirectories(temp.resolve("local"))
-            ).deploy(
-                "org.apache.maven.resolver:maven-resolver-util:1.3.3",
-                jar, pom
+            this.deploy(
+                version, temp,
+                new MavenArtifacts(port, Files.createDirectories(temp.resolve("local")))
             );
         }
         MatcherAssert.assertThat(
@@ -145,33 +144,36 @@ final class MavenHttpITCase {
             XhtmlMatchers.hasXPaths(
                 "metadata/groupId[text() = 'org.apache.maven.resolver']",
                 "metadata/artifactId[text() = 'maven-resolver-util']",
-                "metadata/versioning/release[text() = '1.3.3']",
+                String.format("metadata/versioning/latest[text() = '%s']", version),
+                String.format("metadata/versioning[count(//release) = %s]", cnt),
+                String.format("/metadata/versioning/versions/version[text() = '%s']", version),
                 "metadata/versioning/versions[count(//version) = 1]"
             )
         );
     }
 
-    @Test
-    void deployUpdateRepositoryMetadata(final @TempDir Path temp)
-        throws Exception {
-        final Path jar = temp.resolve("maven-resolver-util-1.3.3.jar");
-        final Path pom = temp.resolve("maven-resolver-util-1.3.3.pom");
-        Files.write(jar, new byte[]{0});
-        Files.write(pom, new byte[]{0});
+    @ParameterizedTest
+    @CsvSource(
+        {
+            "1.3.3,1.3.4,1",
+            "0.1-SNAPSHOT,1.0,1",
+            "0.4,0.8-SNAPSHOT,1",
+            "0.8-SNAPSHOT,0.9-SNAPSHOT,0"
+        }
+    )
+    void deployUpdateRepositoryMetadata(final String first, final String second, final String cnt,
+        final @TempDir Path temp) throws Exception {
+        this.prepareArtifacts(first, temp);
+        this.prepareArtifacts(second, temp);
         final FileStorage storage = new FileStorage(
             Files.createDirectories(temp.resolve("remote"))
         );
         try (VertxSliceServer server = new VertxSliceServer(this.vertx, new MavenSlice(storage))) {
-            final int port = server.start();
             final MavenArtifacts art = new MavenArtifacts(
-                port, Files.createDirectories(temp.resolve("local"))
+                server.start(), Files.createDirectories(temp.resolve("local"))
             );
-            art.deploy(
-                "org.apache.maven.resolver:maven-resolver-util:1.3.3", jar, pom
-            );
-            art.deploy(
-                "org.apache.maven.resolver:maven-resolver-util:1.3.4", jar, pom
-            );
+            this.deploy(first, temp, art);
+            this.deploy(second, temp, art);
         }
         MatcherAssert.assertThat(
             new String(
@@ -185,10 +187,34 @@ final class MavenHttpITCase {
             XhtmlMatchers.hasXPaths(
                 "metadata/groupId[text() = 'org.apache.maven.resolver']",
                 "metadata/artifactId[text() = 'maven-resolver-util']",
-                "metadata/versioning/release[text() = '1.3.4']",
+                String.format("metadata/versioning/latest[text() = '%s']", second),
+                String.format("metadata/versioning[count(//release) = %s]", cnt),
+                String.format("/metadata/versioning/versions/version[text() = '%s']", first),
+                String.format("/metadata/versioning/versions/version[text() = '%s']", second),
                 "metadata/versioning/versions[count(//version) = 2]"
             )
         );
+    }
+
+    private void deploy(final String version, final Path temp, final MavenArtifacts art)
+        throws DeploymentException {
+        art.deploy(
+            String.format("org.apache.maven.resolver:maven-resolver-util:%s", version),
+            this.jarPath(version, temp), this.pomPath(version, temp)
+        );
+    }
+
+    private Path jarPath(final String version, final Path temp) {
+        return temp.resolve(String.format("maven-resolver-util-%s.jar", version));
+    }
+
+    private Path pomPath(final String version, final Path temp) {
+        return temp.resolve(String.format("maven-resolver-util-%s.pom", version));
+    }
+
+    private void prepareArtifacts(final String version, final Path temp) throws IOException {
+        Files.write(this.jarPath(version, temp), new byte[]{});
+        Files.write(this.pomPath(version, temp), new byte[]{});
     }
 
     /**

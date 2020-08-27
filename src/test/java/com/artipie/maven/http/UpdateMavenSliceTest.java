@@ -161,4 +161,32 @@ class UpdateMavenSliceTest {
         );
     }
 
+    @Test
+    void doesNotStartUpdateWhenSnapshotMetadataIsSent() {
+        final Storage storage = new InMemoryStorage();
+        final byte[] meta = "snapshot metadata".getBytes();
+        final String mlocation = "org/example/artifact/0.2-SNAPSHOT/maven-metadata.xml";
+        final Maven.Fake maven = new Maven.Fake();
+        MatcherAssert.assertThat(
+            "Returns CREATED status for snapshot metadata",
+            new UpdateMavenSlice(storage, maven, new ValidUpload.Dummy()),
+            new SliceHasResponse(
+                new RsHasStatus(RsStatus.CREATED),
+                new RequestLine("PUT", String.format("/%s", mlocation)),
+                Headers.EMPTY, new Content.From(meta)
+            )
+        );
+        MatcherAssert.assertThat(
+            "Does not start update",
+            maven.wasUpdated(),
+            new IsEqual<>(false)
+        );
+        MatcherAssert.assertThat(
+            "Puts snapshot metadata to storage",
+            new PublisherAs(storage.value(new Key.From(UpdateMavenSlice.TEMP, mlocation)).join())
+                .bytes().toCompletableFuture().join(),
+            new IsEqual<>(meta)
+        );
+    }
+
 }
