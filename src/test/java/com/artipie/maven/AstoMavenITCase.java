@@ -23,7 +23,6 @@
  */
 package com.artipie.maven;
 
-import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.blocking.BlockingStorage;
@@ -183,33 +182,16 @@ public final class AstoMavenITCase {
     }
 
     private void metadataAndVersions(final String... versions) {
-        this.repository.save(
-            new Key.From(AstoMavenITCase.UPLOAD, "maven-metadata.xml"),
-            new Content.From(
-                String.join(
-                    "\n",
-                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-                    "<metadata>",
-                    "  <groupId>com.artipie</groupId>",
-                    "  <artifactId>asto</artifactId>",
-                    "  <versioning>",
-                    "    <latest>0.20.2</latest>",
-                    "    <release>0.20.2</release>",
-                    "    <versions>",
-                    "      <version>0.11.1</version>",
-                    "      <version>0.15</version>",
-                    "      <version>0.18</version>",
-                    "      <version>0.20.1</version>",
+        new MetadataXml("com.artipie", "asto").addXmlToStorage(
+            this.repository, new Key.From(AstoMavenITCase.UPLOAD, "maven-metadata.xml"),
+            new MetadataXml.VersionTags(
+                "0.20.2", "0.20.2",
+                Stream.concat(
+                    Stream.of("0.11.1", "0.15", "0.18", "0.20.1"),
                     Stream.of(versions)
-                        .map(version -> String.format("      <version>%s</version>", version))
-                        .collect(Collectors.joining("\n")),
-                    "    </versions>",
-                    "    <lastUpdated>20200804141716</lastUpdated>",
-                    "  </versioning>",
-                    "</metadata>"
-                ).getBytes()
+                ).collect(Collectors.toList())
             )
-        ).join();
+        );
     }
 
 }
