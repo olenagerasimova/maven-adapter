@@ -28,6 +28,7 @@ import com.artipie.asto.Storage;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.asto.test.TestResource;
+import com.artipie.maven.MetadataXml;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,7 @@ import org.junit.jupiter.api.Test;
  *  extract storage and AstoValidUpload instance into fields, initialise them in @BeforeEach
  *  method and introduce other methods to avoid code duplication. Also thinks about any other
  *  situations to test.
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public class AstoValidUploadTest {
@@ -114,24 +116,9 @@ public class AstoValidUploadTest {
         final Key jar = new Key.From("com/test/logger/1.0/my-package.jar");
         final byte[] bytes = "artifact".getBytes();
         bsto.save(jar, bytes);
-        bsto.save(
-            new Key.From(upload, "maven-metadata.xml"),
-            String.join(
-                "\n",
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-                "<metadata>",
-                "  <groupId>com.test</groupId>",
-                "  <artifactId>jogger</artifactId>",
-                "  <versioning>",
-                "    <latest>1.0</latest>",
-                "    <release>1.0</release>",
-                "    <versions>",
-                "      <version>1.0</version>",
-                "    </versions>",
-                "    <lastUpdated>20200804141716</lastUpdated>",
-                "  </versioning>",
-                "</metadata>"
-            ).getBytes()
+        new MetadataXml("com.test", "jogger").addXmlToStorage(
+            storage, new Key.From(upload, "maven-metadata.xml"),
+            new MetadataXml.VersionTags("1.0", "1.0", "1.0")
         );
         new TestResource("maven-metadata.xml.example")
             .saveTo(storage, new Key.From(artifact, "maven-metadata.xml"));
