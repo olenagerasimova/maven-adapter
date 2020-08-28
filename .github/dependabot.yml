@@ -1,0 +1,14 @@
+---
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: "/"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 20
+    reviewers:
+      - g4s8
+    commit-message:
+      prefix: "#168 - (deps) "
+    rebase-strategy: auto
+    target-branch: master
