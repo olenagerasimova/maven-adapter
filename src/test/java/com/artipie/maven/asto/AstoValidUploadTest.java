@@ -74,8 +74,8 @@ public final class AstoValidUploadTest {
         final byte[] wbytes = "war artifact".getBytes();
         this.bsto.save(jar, jbytes);
         this.bsto.save(war, wbytes);
-        this.addResource(upload);
-        this.addResource(artifact);
+        this.addMetadata(upload);
+        this.addMetadata(artifact);
         this.bsto.save(jar, jbytes);
         this.bsto.save(war, wbytes);
         new RepositoryChecksums(this.storage).generate(jar).toCompletableFuture().join();
@@ -95,7 +95,7 @@ public final class AstoValidUploadTest {
         this.bsto.save(jar, bytes);
         this.bsto.save(war, "war artifact".getBytes());
         this.bsto.save(new Key.From(String.format("%s.sha256", war.string())), "123".getBytes());
-        this.addResource(key);
+        this.addMetadata(key);
         this.bsto.save(jar, bytes);
         new RepositoryChecksums(this.storage).generate(jar).toCompletableFuture().join();
         MatcherAssert.assertThat(
@@ -107,7 +107,7 @@ public final class AstoValidUploadTest {
     @Test
     void returnsFalseWhenNoArtifactsFound() {
         final Key upload = new Key.From(".upload/com/test/logger");
-        this.addResource(upload);
+        this.addMetadata(upload);
         MatcherAssert.assertThat(
             this.validupload.validate(upload, upload).toCompletableFuture().join(),
             new IsEqual<>(false)
@@ -125,7 +125,7 @@ public final class AstoValidUploadTest {
             this.storage, new Key.From(upload, "maven-metadata.xml"),
             new MetadataXml.VersionTags("1.0", "1.0", "1.0")
         );
-        this.addResource(artifact);
+        this.addMetadata(artifact);
         this.bsto.save(jar, bytes);
         new RepositoryChecksums(this.storage).generate(jar).toCompletableFuture().join();
         MatcherAssert.assertThat(
@@ -134,7 +134,7 @@ public final class AstoValidUploadTest {
         );
     }
 
-    private void addResource(final Key base) {
+    private void addMetadata(final Key base) {
         new TestResource("maven-metadata.xml.example")
             .saveTo(this.storage, new Key.From(base, "maven-metadata.xml"));
     }
