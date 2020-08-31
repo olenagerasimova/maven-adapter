@@ -61,6 +61,7 @@ public final class AstoValidUploadTest {
     void init() {
         this.storage = new InMemoryStorage();
         this.bsto = new BlockingStorage(this.storage);
+        this.validupload = new AstoValidUpload(this.storage);
     }
 
     @Test
@@ -79,7 +80,6 @@ public final class AstoValidUploadTest {
         this.bsto.save(war, wbytes);
         new RepositoryChecksums(this.storage).generate(jar).toCompletableFuture().join();
         new RepositoryChecksums(this.storage).generate(war).toCompletableFuture().join();
-        this.validupload = new AstoValidUpload(this.storage);
         MatcherAssert.assertThat(
             this.validupload.validate(upload, artifact).toCompletableFuture().join(),
             new IsEqual<>(true)
