@@ -193,7 +193,7 @@ public final class MavenITCase {
                         );
                         return true;
                     }
-                ).value()
-            );
+            ).value()
+        );
     }
 }
