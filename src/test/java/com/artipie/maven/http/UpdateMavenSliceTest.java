@@ -37,13 +37,22 @@ import com.artipie.http.rs.RsStatus;
 import com.artipie.maven.Maven;
 import com.artipie.maven.ValidUpload;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.hamcrest.FeatureMatcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.collection.IsEmptyCollection;
 import org.hamcrest.collection.IsEmptyIterable;
+import org.hamcrest.core.AllOf;
+import org.hamcrest.core.Every;
 import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.IsInstanceOf;
+import org.hamcrest.core.IsNot;
+import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +62,7 @@ import org.junit.jupiter.api.Test;
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  * @checkstyle MagicNumberCheck (500 lines)
  * @checkstyle IllegalCatchCheck (500 lines)
+ * @checkstyle ExecutableStatementCountCheck (500 lines)
  */
 @SuppressWarnings({"PMD.AvoidDuplicateLiterals", "PMD.AvoidCatchingGenericException"})
 class UpdateMavenSliceTest {
@@ -232,16 +242,43 @@ class UpdateMavenSliceTest {
                 }
             ).start();
         }
-        for (final CompletableFuture<Void> task : tasks) {
-            try {
-                task.join();
-            } catch (final Exception ignored) {
+        final List<Throwable> failures = tasks.stream().flatMap(
+            task -> {
+                Stream<Throwable> result;
+                try {
+                    task.join();
+                    result = Stream.empty();
+                } catch (final RuntimeException ex) {
+                    result = Stream.of(ex.getCause());
+                }
+                return result;
             }
-        }
+        ).collect(Collectors.toList());
         MatcherAssert.assertThat(
             "Some updates failed",
-            tasks.stream().anyMatch(CompletableFuture::isCompletedExceptionally),
-            new IsEqual<>(true)
+            failures,
+            new IsNot<>(new IsEmptyCollection<>())
+        );
+        MatcherAssert.assertThat(
+            "All failure due to concurrent lock access",
+            failures,
+            new Every<>(
+                new AllOf<>(
+                    Arrays.asList(
+                        new IsInstanceOf(IllegalStateException.class),
+                        new FeatureMatcher<>(
+                            new StringContains("Failed to acquire lock."),
+                            "an exception with message",
+                            "message"
+                        ) {
+                            @Override
+                            protected String featureValueOf(final Throwable actual) {
+                                return actual.getMessage();
+                            }
+                        }
+                    )
+                )
+            )
         );
         MatcherAssert.assertThat(
             "Storage has no locks",
