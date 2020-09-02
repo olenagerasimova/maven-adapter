@@ -32,21 +32,29 @@ import com.artipie.http.Headers;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.hm.SliceHasResponse;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.maven.Maven;
 import com.artipie.maven.ValidUpload;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.collection.IsEmptyCollection;
 import org.hamcrest.collection.IsEmptyIterable;
 import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 /**
  * Test for {@link UpdateMavenSlice}.
  * @since 0.5
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle MagicNumberCheck (500 lines)
+ * @checkstyle IllegalCatchCheck (500 lines)
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@SuppressWarnings({"PMD.AvoidDuplicateLiterals", "PMD.AvoidCatchingGenericException"})
 class UpdateMavenSliceTest {
 
     @Test
@@ -189,4 +197,57 @@ class UpdateMavenSliceTest {
         );
     }
 
+    @RepeatedTest(10)
+    void throwsExceptionWhenMetadataUpdatesDoneSimultaneously() {
+        final Storage storage = new InMemoryStorage();
+        final int count = 3;
+        final CountDownLatch latch = new CountDownLatch(count);
+        final List<CompletableFuture<Void>> tasks = new ArrayList<>(count);
+        for (int number = 0; number < count; number += 1) {
+            final CompletableFuture<Void> future = new CompletableFuture<>();
+            tasks.add(future);
+            new Thread(
+                () -> {
+                    try {
+                        latch.countDown();
+                        latch.await();
+                        new UpdateMavenSlice(
+                            storage,
+                            new Maven.Fake(),
+                            new ValidUpload.Dummy(true)
+                        ).response(
+                            new RequestLine(
+                                RqMethod.PUT,
+                                String.format("/%s", "org/example/artifact/0.1/maven-metadata.xml")
+                            ).toString(),
+                            Headers.EMPTY,
+                            new Content.From("java metadata".getBytes())
+                        ).send(
+                            (status, headers, body) -> CompletableFuture.allOf()
+                        ).toCompletableFuture().join();
+                        future.complete(null);
+                    } catch (final Exception exception) {
+                        future.completeExceptionally(exception);
+                    }
+                }
+            ).start();
+        }
+        for (final CompletableFuture<Void> task : tasks) {
+            try {
+                task.join();
+            } catch (final Exception ignored) {
+            }
+        }
+        MatcherAssert.assertThat(
+            "Some updates failed",
+            tasks.stream().anyMatch(CompletableFuture::isCompletedExceptionally),
+            new IsEqual<>(true)
+        );
+        MatcherAssert.assertThat(
+            "Storage has no locks",
+            storage.list(Key.ROOT).join().stream()
+                .noneMatch(key -> key.string().contains("lock")),
+            new IsEqual<>(true)
+        );
+    }
 }

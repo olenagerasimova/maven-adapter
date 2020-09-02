@@ -137,14 +137,18 @@ final class UpdateMavenSlice implements Slice {
                                     )
                                         .thenCompose(nothing -> temp.list(location))
                                         .thenCompose(
-                                            list -> new Copy(temp, new ListOf<>(list))
-                                                .copy(this.storage).thenCompose(
-                                                    nothing -> UpdateMavenSlice.remove(temp, list)
-                                                        .thenApply(
-                                                            any -> new RsWithStatus(
-                                                                RsStatus.CREATED
-                                                            )
-                                                        )
+                                            list -> this.storage.exclusively(
+                                                location,
+                                                target -> new Copy(temp, new ListOf<>(list))
+                                                    .copy(target).thenCompose(
+                                                        nothing ->
+                                                            UpdateMavenSlice.remove(temp, list)
+                                                                .thenApply(
+                                                                    any -> new RsWithStatus(
+                                                                        RsStatus.CREATED
+                                                                    )
+                                                                )
+                                                    )
                                             )
                                     );
                                 } else {
