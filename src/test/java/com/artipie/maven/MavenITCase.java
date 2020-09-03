@@ -118,12 +118,12 @@ public final class MavenITCase {
         MatcherAssert.assertThat(
             this.exec(
                 "mvn", "-s", "/home/settings.xml", "dependency:get",
-                "-Dartifact=com.artipie:maven-adapter:0.1"
+                "-Dartifact=com.artipie:helloworld:0.1"
             ).replaceAll("\n", ""),
             new StringContainsInOrder(
                 new ListOf<String>(
                     // @checkstyle LineLengthCheck (1 line)
-                    String.format("Downloaded from my-repo: http://host.testcontainers.internal:%d/com/artipie/maven-adapter/0.1/maven-adapter-0.1.pom (5.0 kB ", this.port),
+                    String.format("Downloaded from my-repo: http://host.testcontainers.internal:%d/com/artipie/helloworld/0.1/helloworld-0.1.jar (11 B", this.port),
                     "BUILD SUCCESS"
                 )
             )
@@ -154,14 +154,6 @@ public final class MavenITCase {
     private List<String> settings() {
         return new ListOf<String>(
             "<settings>",
-            "    <servers>",
-            "        <server>",
-            "            <id>artipie</id>",
-            "            <configuration>",
-            "                <useCache>true</useCache>",
-            "            </configuration>",
-            "        </server>",
-            "    </servers>",
             "    <profiles>",
             "        <profile>",
             "            <id>artipie</id>",
@@ -182,7 +174,7 @@ public final class MavenITCase {
 
     private void addFilesToStorage() throws InterruptedException {
         final Storage resources = new FileStorage(
-            new TestResource("com/artipie/maven-adapter").asPath()
+            new TestResource("com/artipie/helloworld").asPath()
         );
         final BlockingStorage bsto = new BlockingStorage(resources);
         bsto.list(Key.ROOT).stream()
@@ -191,7 +183,7 @@ public final class MavenITCase {
                 item -> new Unchecked<>(
                     () -> {
                         new BlockingStorage(this.storage).save(
-                            new Key.From("com", "artipie", "maven-adapter", item),
+                            new Key.From("com", "artipie", "helloworld", item),
                             new Unchecked<>(() -> bsto.value(new Key.From(item))).value()
                         );
                         return true;
