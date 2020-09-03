@@ -101,11 +101,6 @@ SOFTWARE.
       <artifactId>http-client</artifactId>
       <version>0.2</version>
     </dependency>
-    <!-- @todo #54:30min Remove commons usage in favor of cactoos
-          Cactoos provides most of commons libraries functions in a
-          declarative and object-oriented way, and we should try
-          to use it whenever is possible.
-      -->
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>vertx-server</artifactId>
