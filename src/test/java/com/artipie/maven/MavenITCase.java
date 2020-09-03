@@ -53,7 +53,7 @@ import org.testcontainers.containers.GenericContainer;
 
 /**
  * Maven integration test.
- * @since 0.11
+ * @since 0.5
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
