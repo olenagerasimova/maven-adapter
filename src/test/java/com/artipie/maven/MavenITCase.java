@@ -150,6 +150,9 @@ public final class MavenITCase {
             ).replaceAll("\n", ""),
             new StringContains("BUILD SUCCESS")
         );
+        this.exec(
+            "mvn", "-s", "/home/settings.xml", "-f", "/home/helloworld-src/pom.xml", "clean"
+        );
         MatcherAssert.assertThat(
             "Artifacts added to storage",
             this.storage.list(new Key.From("com/artipie/helloworld"))
@@ -163,10 +166,9 @@ public final class MavenITCase {
     }
 
     @AfterEach
-    void stopContainer() throws IOException {
+    void stopContainer() {
         this.server.close();
         this.cntn.stop();
-        FileUtils.cleanDirectory(this.tmp.toFile());
     }
 
     @AfterAll
@@ -272,7 +274,7 @@ public final class MavenITCase {
 
     private Optional<Pair<String, String>> getUser(final boolean anonymous) {
         Optional<Pair<String, String>> res = Optional.empty();
-        if (anonymous) {
+        if (!anonymous) {
             res = Optional.of(MavenITCase.USER);
         }
         return res;
