@@ -108,10 +108,10 @@ public final class MavenITCase {
     private int port;
 
     @ParameterizedTest
-    @ValueSource(strings = {"all", "anonymous"})
-    void downloadsDependency(final String type) throws Exception {
-        this.init(this.auth(type));
-        this.settings(this.getUser(type));
+    @ValueSource(booleans = {true, false})
+    void downloadsDependency(final boolean anonymous) throws Exception {
+        this.init(this.auth(anonymous));
+        this.settings(this.getUser(anonymous));
         this.addFilesToStorage();
         MatcherAssert.assertThat(
             this.exec(
@@ -129,10 +129,10 @@ public final class MavenITCase {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"all", "anonymous"})
-    void deploysArtifact(final String type) throws Exception {
-        this.init(this.auth(type));
-        this.settings(this.getUser(type));
+    @ValueSource(booleans = {true, false})
+    void deploysArtifact(final boolean anonymous) throws Exception {
+        this.init(this.auth(anonymous));
+        this.settings(this.getUser(anonymous));
         FileUtils.copyDirectory(
             new TestResource("helloworld-src").asPath().toFile(),
             this.tmp.resolve("helloworld-src").toFile()
@@ -163,9 +163,10 @@ public final class MavenITCase {
     }
 
     @AfterEach
-    void stopContainer() {
+    void stopContainer() throws IOException {
         this.server.close();
         this.cntn.stop();
+        FileUtils.cleanDirectory(this.tmp.toFile());
     }
 
     @AfterAll
@@ -251,9 +252,9 @@ public final class MavenITCase {
         );
     }
 
-    private Pair<Permissions, Identities> auth(final String type) {
+    private Pair<Permissions, Identities> auth(final boolean anonymous) {
         final Pair<Permissions, Identities> res;
-        if ("anonymous".equals(type)) {
+        if (anonymous) {
             res = new ImmutablePair<>(Permissions.FREE, Identities.ANONYMOUS);
         } else {
             res = new ImmutablePair<>(
@@ -269,9 +270,9 @@ public final class MavenITCase {
         return res;
     }
 
-    private Optional<Pair<String, String>> getUser(final String type) {
+    private Optional<Pair<String, String>> getUser(final boolean anonymous) {
         Optional<Pair<String, String>> res = Optional.empty();
-        if (!"anonymous".equals(type)) {
+        if (anonymous) {
             res = Optional.of(MavenITCase.USER);
         }
         return res;
