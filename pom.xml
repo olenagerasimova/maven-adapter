@@ -193,6 +193,7 @@ SOFTWARE.
           <configuration>
             <excludes combine.children="append">
               <exclude>checkstyle:.*/src/test/resources-binary/.*</exclude>
+              <exclude>pmd:.*/src/test/resources-binary/.*</exclude>
               <exclude>findbugs:.*</exclude>
               <exclude>duplicatefinder:.*</exclude>
             </excludes>
