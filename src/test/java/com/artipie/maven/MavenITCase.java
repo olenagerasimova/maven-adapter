@@ -25,8 +25,6 @@ package com.artipie.maven;
 
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
-import com.artipie.asto.blocking.BlockingStorage;
-import com.artipie.asto.fs.FileStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.asto.test.TestResource;
 import com.artipie.http.auth.Authentication;
@@ -45,7 +43,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.cactoos.list.ListOf;
-import org.cactoos.scalar.Unchecked;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.StringContains;
@@ -234,24 +231,9 @@ public final class MavenITCase {
         );
     }
 
-    private void addFilesToStorage() throws InterruptedException {
-        final Storage resources = new FileStorage(
-            new TestResource("com/artipie/helloworld").asPath()
-        );
-        final BlockingStorage bsto = new BlockingStorage(resources);
-        bsto.list(Key.ROOT).stream()
-            .map(Key::string)
-            .forEach(
-                item -> new Unchecked<>(
-                    () -> {
-                        new BlockingStorage(this.storage).save(
-                            new Key.From("com", "artipie", "helloworld", item),
-                            new Unchecked<>(() -> bsto.value(new Key.From(item))).value()
-                        );
-                        return true;
-                    }
-            ).value()
-        );
+    private void addFilesToStorage() {
+        new TestResource("com/artipie/helloworld")
+            .addFilesTo(this.storage, new Key.From("com", "artipie", "helloworld"));
     }
 
     private Pair<Permissions, Identities> auth(final boolean anonymous) {
