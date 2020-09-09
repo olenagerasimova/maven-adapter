@@ -101,11 +101,6 @@ SOFTWARE.
       <artifactId>http-client</artifactId>
       <version>0.2</version>
     </dependency>
-    <!-- @todo #54:30min Remove commons usage in favor of cactoos
-          Cactoos provides most of commons libraries functions in a
-          declarative and object-oriented way, and we should try
-          to use it whenever is possible.
-      -->
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>vertx-server</artifactId>
@@ -122,6 +117,24 @@ SOFTWARE.
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core</artifactId>
       <version>3.9.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <version>1.14.3</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>1.14.3</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>mockserver</artifactId>
+      <version>1.14.3</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -180,6 +193,7 @@ SOFTWARE.
           <configuration>
             <excludes combine.children="append">
               <exclude>checkstyle:.*/src/test/resources-binary/.*</exclude>
+              <exclude>pmd:.*/src/test/resources-binary/.*</exclude>
               <exclude>findbugs:.*</exclude>
               <exclude>duplicatefinder:.*</exclude>
             </excludes>

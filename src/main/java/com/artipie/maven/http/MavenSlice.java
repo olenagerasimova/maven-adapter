@@ -69,7 +69,7 @@ public final class MavenSlice extends Slice.Wrap {
      * @param perms Access permissions.
      * @param users Concrete identities.
      */
-    private MavenSlice(final Storage storage, final Permissions perms, final Identities users) {
+    public MavenSlice(final Storage storage, final Permissions perms, final Identities users) {
         super(
             new SliceRoute(
                 new RtRulePath(
