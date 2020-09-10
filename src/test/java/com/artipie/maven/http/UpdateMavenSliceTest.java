@@ -32,21 +32,39 @@ import com.artipie.http.Headers;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.hm.SliceHasResponse;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.maven.Maven;
 import com.artipie.maven.ValidUpload;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.hamcrest.FeatureMatcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.collection.IsEmptyCollection;
 import org.hamcrest.collection.IsEmptyIterable;
+import org.hamcrest.core.AllOf;
+import org.hamcrest.core.Every;
 import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.IsInstanceOf;
+import org.hamcrest.core.IsNot;
+import org.hamcrest.core.StringContains;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 /**
  * Test for {@link UpdateMavenSlice}.
  * @since 0.5
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle MagicNumberCheck (500 lines)
+ * @checkstyle IllegalCatchCheck (500 lines)
+ * @checkstyle ExecutableStatementCountCheck (500 lines)
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@SuppressWarnings({"PMD.AvoidDuplicateLiterals", "PMD.AvoidCatchingGenericException"})
 class UpdateMavenSliceTest {
 
     @Test
@@ -189,4 +207,84 @@ class UpdateMavenSliceTest {
         );
     }
 
+    @RepeatedTest(10)
+    void throwsExceptionWhenMetadataUpdatesDoneSimultaneously() {
+        final Storage storage = new InMemoryStorage();
+        final int count = 3;
+        final CountDownLatch latch = new CountDownLatch(count);
+        final List<CompletableFuture<Void>> tasks = new ArrayList<>(count);
+        for (int number = 0; number < count; number += 1) {
+            final CompletableFuture<Void> future = new CompletableFuture<>();
+            tasks.add(future);
+            new Thread(
+                () -> {
+                    try {
+                        latch.countDown();
+                        latch.await();
+                        new UpdateMavenSlice(
+                            storage,
+                            new Maven.Fake(),
+                            new ValidUpload.Dummy(true)
+                        ).response(
+                            new RequestLine(
+                                RqMethod.PUT,
+                                String.format("/%s", "org/example/artifact/0.1/maven-metadata.xml")
+                            ).toString(),
+                            Headers.EMPTY,
+                            new Content.From("java metadata".getBytes())
+                        ).send(
+                            (status, headers, body) -> CompletableFuture.allOf()
+                        ).toCompletableFuture().join();
+                        future.complete(null);
+                    } catch (final Exception exception) {
+                        future.completeExceptionally(exception);
+                    }
+                }
+            ).start();
+        }
+        final List<Throwable> failures = tasks.stream().flatMap(
+            task -> {
+                Stream<Throwable> result;
+                try {
+                    task.join();
+                    result = Stream.empty();
+                } catch (final RuntimeException ex) {
+                    result = Stream.of(ex.getCause());
+                }
+                return result;
+            }
+        ).collect(Collectors.toList());
+        MatcherAssert.assertThat(
+            "Some updates failed",
+            failures,
+            new IsNot<>(new IsEmptyCollection<>())
+        );
+        MatcherAssert.assertThat(
+            "All failure due to concurrent lock access",
+            failures,
+            new Every<>(
+                new AllOf<>(
+                    Arrays.asList(
+                        new IsInstanceOf(IllegalStateException.class),
+                        new FeatureMatcher<>(
+                            new StringContains("Failed to acquire lock."),
+                            "an exception with message",
+                            "message"
+                        ) {
+                            @Override
+                            protected String featureValueOf(final Throwable actual) {
+                                return actual.getMessage();
+                            }
+                        }
+                    )
+                )
+            )
+        );
+        MatcherAssert.assertThat(
+            "Storage has no locks",
+            storage.list(Key.ROOT).join().stream()
+                .noneMatch(key -> key.string().contains("lock")),
+            new IsEqual<>(true)
+        );
+    }
 }
