@@ -132,14 +132,15 @@ final class UpdateMavenSlice implements Slice {
                             valid -> {
                                 final CompletionStage<Response> upd;
                                 if (valid) {
-                                    upd = this.maven.update(
-                                        new Key.From(UpdateMavenSlice.TEMP, location), location
-                                    )
-                                        .thenCompose(nothing -> temp.list(location))
-                                        .thenCompose(
-                                            list -> this.storage.exclusively(
-                                                location,
-                                                target -> new Copy(temp, new ListOf<>(list))
+                                    upd = this.storage.exclusively(
+                                        location,
+                                        target -> this.maven.update(
+                                            new Key.From(UpdateMavenSlice.TEMP, location),
+                                            location
+                                        )
+                                            .thenCompose(nothing -> temp.list(location))
+                                            .thenCompose(
+                                                list -> new Copy(temp, new ListOf<>(list))
                                                     .copy(target).thenCompose(
                                                         nothing ->
                                                             UpdateMavenSlice.remove(temp, list)
