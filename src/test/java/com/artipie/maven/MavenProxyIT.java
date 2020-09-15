@@ -1,0 +1,235 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2020 artipie.com
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+package com.artipie.maven;
+
+import com.artipie.asto.Storage;
+import com.artipie.asto.cache.StorageCache;
+import com.artipie.asto.fs.FileStorage;
+import com.artipie.http.client.jetty.JettyClientSlices;
+import com.artipie.http.slice.LoggingSlice;
+import com.artipie.maven.http.MavenProxySlice;
+import com.artipie.vertx.VertxSliceServer;
+import com.jcabi.log.Logger;
+import io.vertx.reactivex.core.Vertx;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import org.cactoos.list.ListOf;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.AllOf;
+import org.hamcrest.core.StringContains;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.io.TempDir;
+import org.testcontainers.Testcontainers;
+import org.testcontainers.containers.GenericContainer;
+
+/**
+ * Integration test for {@link com.artipie.maven.http.MavenProxySlice}.
+ *
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @since 0.11
+ */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@EnabledOnOs(OS.LINUX)
+final class MavenProxyIT {
+
+    /**
+     * Vertx instance.
+     */
+    private static final Vertx VERTX = Vertx.vertx();
+
+    /**
+     * Test user.
+     */
+//    private static final Pair<String, String> USER = new ImmutablePair<>("Alladin", "openSesame");
+
+    /**
+     * Temporary directory for all tests.
+     * @checkstyle VisibilityModifierCheck (3 lines)
+     */
+    @TempDir
+    Path tmp;
+
+    /**
+     * Vertx slice server instance.
+     */
+    private VertxSliceServer server;
+
+    /**
+     * Container.
+     */
+    private GenericContainer<?> cntn;
+
+    /**
+     * Storage.
+     */
+    private Storage storage;
+
+    /**
+     * Vertx slice server port.
+     */
+    private int port;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        final JettyClientSlices slices = new JettyClientSlices();
+        slices.start();
+        this.storage = new FileStorage(this.tmp);
+        this.server = new VertxSliceServer(
+            MavenProxyIT.VERTX,
+            new LoggingSlice(new MavenProxySlice(
+                slices,
+                URI.create("https://repo.maven.apache.org/maven2/"),
+                new StorageCache(this.storage)
+            ))
+        );
+//        this.server = new VertxSliceServer(
+//            MavenProxyIT.VERTX,
+//            new LoggingSlice(new MavenSlice(this.storage, Permissions.FREE, Identities.ANONYMOUS))
+//        );
+        this.port = this.server.start();
+        Testcontainers.exposeHostPorts(this.port);
+        this.cntn = new GenericContainer<>("centos:centos8")
+            .withCommand("tail", "-f", "/dev/null")
+            .withWorkingDirectory("/home/")
+            .withFileSystemBind(this.tmp.toString(), "/home");
+        this.cntn.start();
+        this.cntn.execInContainer("yum", "-y", "install", "maven");
+    }
+
+    @AfterEach
+    void tearDown() {
+        this.server.close();
+        this.cntn.stop();
+    }
+
+    @AfterAll
+    static void close() {
+        MavenProxyIT.VERTX.close();
+    }
+
+//    @ParameterizedTest
+//    @ValueSource(booleans = {true, false})
+    @Test
+    void shouldGetArtifactFromCentralAndSaveInCache(/*final boolean anonymous*/) throws Exception {
+//        this.init(this.auth(anonymous));
+//        this.settings(this.getUser(anonymous));
+        this.settings();
+        final String artifact = "-Dartifact=args4j:args4j:2.32:jar";
+        String res = this.exec(
+            "mvn", "-s", "/home/settings.xml", "dependency:get", artifact
+        ).replaceAll("\n", "");
+        MatcherAssert.assertThat(
+            "Artifact wasn't downloaded",
+            res,
+            new AllOf<>(
+                Arrays.asList(
+                    new StringContains("BUILD SUCCESS"),
+                    new StringContains("Downloaded from central: https://repo.maven.apache.org/maven2/args4j/args4j/2.32/args4j-2.32.jar (154 kB")
+                )
+            )
+        );
+//        MatcherAssert.assertThat(
+//            "Artifact wasn't in storage",
+//            this.storage.exists(new Key.From("args4j", "args4j", "2.32", "args4j-2.32"))
+//                .toCompletableFuture().join(),
+//            new IsEqual<>(true)
+//        );
+    }
+
+    private String exec(final String... command) throws Exception {
+        Logger.debug(this, "Command:\n%s", String.join(" ", command));
+        return this.cntn.execInContainer(command).getStdout();
+    }
+
+    private void settings(/*final Optional<Pair<String, String>> user*/) throws IOException {
+        final Path setting = this.tmp.resolve("settings.xml");
+        setting.toFile().createNewFile();
+        Files.write(
+            setting,
+            new ListOf<String>(
+                "<settings>",
+//                "   <servers>",
+//                "       <server>",
+//                "           <id>my-repo</id>",
+//                user.map(
+//                    data -> String.format(
+//                        "<username>%s</username>\n<password>%s</password>",
+//                        data.getKey(), data.getValue()
+//                    )
+//                ).orElse(""),
+//                "       </server>",
+//                "   </servers>",
+                "    <profiles>",
+                "        <profile>",
+                "            <id>artipie</id>",
+                "            <repositories>",
+                "                <repository>",
+                "                    <id>my-repo</id>",
+                String.format("<url>http://host.testcontainers.internal:%d/</url>", this.port),
+                "                </repository>",
+                "            </repositories>",
+                "        </profile>",
+                "    </profiles>",
+                "    <activeProfiles>",
+                "        <activeProfile>artipie</activeProfile>",
+                "    </activeProfiles>",
+                "</settings>"
+            )
+        );
+    }
+
+//    private Pair<Permissions, Identities> auth(final boolean anonymous) {
+//        final Pair<Permissions, Identities> res;
+//        if (anonymous) {
+//            res = new ImmutablePair<>(Permissions.FREE, Identities.ANONYMOUS);
+//        } else {
+//            res = new ImmutablePair<>(
+//                (name, action) -> MavenProxyIT.USER.getKey().equals(name)
+//                                      && ("download".equals(action) || "upload".equals(action)),
+//                new BasicIdentities(
+//                    new Authentication.Single(
+//                        MavenProxyIT.USER.getKey(), MavenProxyIT.USER.getValue()
+//                    )
+//                )
+//            );
+//        }
+//        return res;
+//    }
+//
+//    private Optional<Pair<String, String>> getUser(final boolean anonymous) {
+//        Optional<Pair<String, String>> res = Optional.empty();
+//        if (!anonymous) {
+//            res = Optional.of(MavenProxyIT.USER);
+//        }
+//        return res;
+//    }
+}
