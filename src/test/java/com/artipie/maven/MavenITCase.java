@@ -137,7 +137,7 @@ public final class MavenITCase {
         Files.write(
             this.tmp.resolve("helloworld-src/pom.xml"),
             String.format(
-                Files.readString(this.tmp.resolve("helloworld-src/pom.xml")), this.port
+                Files.readString(this.tmp.resolve("helloworld-src/pom.xml.template")), this.port
             ).getBytes()
         );
         MatcherAssert.assertThat(
