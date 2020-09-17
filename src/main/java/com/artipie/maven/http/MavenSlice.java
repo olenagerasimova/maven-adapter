@@ -33,6 +33,7 @@ import com.artipie.http.auth.Permissions;
 import com.artipie.http.auth.SliceAuth;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.StandardRs;
+import com.artipie.http.rt.ByMethodsRule;
 import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.RtRulePath;
 import com.artipie.http.rt.SliceRoute;
@@ -74,8 +75,8 @@ public final class MavenSlice extends Slice.Wrap {
             new SliceRoute(
                 new RtRulePath(
                     new RtRule.Any(
-                        new RtRule.ByMethod(RqMethod.GET),
-                        new RtRule.ByMethod(RqMethod.HEAD)
+                        new ByMethodsRule(RqMethod.GET),
+                        new ByMethodsRule(RqMethod.HEAD)
                     ),
                     new SliceAuth(
                         new LocalMavenSlice(storage),
@@ -84,7 +85,7 @@ public final class MavenSlice extends Slice.Wrap {
                     )
                 ),
                 new RtRulePath(
-                    new RtRule.ByMethod(RqMethod.PUT),
+                    new ByMethodsRule(RqMethod.PUT),
                     new SliceAuth(
                         new UpdateMavenSlice(storage),
                         new Permission.ByName("upload", perms),

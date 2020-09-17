@@ -32,6 +32,7 @@ import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
+import com.artipie.http.rt.ByMethodsRule;
 import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.RtRulePath;
 import com.artipie.http.rt.SliceRoute;
@@ -71,11 +72,11 @@ public final class MavenProxySlice extends Slice.Wrap {
         super(
             new SliceRoute(
                 new RtRulePath(
-                    new RtRule.ByMethod(RqMethod.HEAD),
+                    new ByMethodsRule(RqMethod.HEAD),
                     new HeadProxySlice(new ClientSlice(clients, remote))
                 ),
                 new RtRulePath(
-                    new RtRule.ByMethod(RqMethod.GET),
+                    new ByMethodsRule(RqMethod.GET),
                     new CachedProxySlice(new ClientSlice(clients, remote), cache)
                 ),
                 new RtRulePath(
