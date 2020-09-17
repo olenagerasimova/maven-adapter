@@ -25,6 +25,7 @@ package com.artipie.maven.http;
 
 import com.artipie.asto.Storage;
 import com.artipie.http.Slice;
+import com.artipie.http.auth.Action;
 import com.artipie.http.auth.Authentication;
 import com.artipie.http.auth.BasicIdentities;
 import com.artipie.http.auth.Identities;
@@ -80,7 +81,7 @@ public final class MavenSlice extends Slice.Wrap {
                     ),
                     new SliceAuth(
                         new LocalMavenSlice(storage),
-                        new Permission.ByName("download", perms),
+                        new Permission.ByName(perms, Action.Standard.READ),
                         users
                     )
                 ),
@@ -88,7 +89,7 @@ public final class MavenSlice extends Slice.Wrap {
                     new ByMethodsRule(RqMethod.PUT),
                     new SliceAuth(
                         new UpdateMavenSlice(storage),
-                        new Permission.ByName("upload", perms),
+                        new Permission.ByName(perms, Action.Standard.WRITE),
                         users
                     )
                 ),
