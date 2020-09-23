@@ -46,6 +46,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Test for {@link MavenProxySlice} to verify it can work with central.
  * @since 0.6
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class MavenProxySliceITCase {
 
