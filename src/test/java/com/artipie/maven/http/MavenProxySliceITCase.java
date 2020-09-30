@@ -36,7 +36,11 @@ import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.slice.LoggingSlice;
+import com.artipie.vertx.VertxSliceServer;
+import io.vertx.reactivex.core.Vertx;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.AfterEach;
@@ -48,7 +52,13 @@ import org.junit.jupiter.api.Test;
  * @since 0.6
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class MavenProxySliceITCase {
+
+    /**
+     * Vertx instance.
+     */
+    private static final Vertx VERTX = Vertx.vertx();
 
     /**
      * Jetty client.
@@ -65,6 +75,16 @@ final class MavenProxySliceITCase {
      */
     private Storage storage;
 
+    /**
+     * Server port.
+     */
+    private int port;
+
+    /**
+     * Vertx slice server instance.
+     */
+    private VertxSliceServer server;
+
     @BeforeEach
     void setUp() throws Exception {
         this.client.start();
@@ -75,11 +95,33 @@ final class MavenProxySliceITCase {
                 new StorageCache(this.storage)
             )
         );
+        this.server = new VertxSliceServer(MavenProxySliceITCase.VERTX, this.proxy);
+        this.port = this.server.start();
     }
 
     @AfterEach
     void tearDown() throws Exception {
         this.client.stop();
+        this.server.stop();
+    }
+
+    @Test
+    void downloadJar() throws Exception {
+        final HttpURLConnection con = (HttpURLConnection) new URL(
+            String.format("http://localhost:%s/args4j/args4j/2.32/args4j-2.32.jar", this.port)
+        ).openConnection();
+        con.setRequestMethod("GET");
+        MatcherAssert.assertThat(
+            "Response status is 200",
+            con.getResponseCode(),
+            new IsEqual<>(Integer.parseInt(RsStatus.OK.code()))
+        );
+        MatcherAssert.assertThat(
+            "Jar was saved to storage",
+            this.storage.exists(new Key.From("args4j/args4j/2.32/args4j-2.32.jar")).join(),
+            new IsEqual<>(true)
+        );
+        con.disconnect();
     }
 
     @Test

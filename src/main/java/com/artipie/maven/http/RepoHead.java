@@ -23,17 +23,15 @@
  */
 package com.artipie.maven.http;
 
-import com.artipie.http.Connection;
 import com.artipie.http.Headers;
 import com.artipie.http.Slice;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
+import com.jcabi.log.Logger;
 import io.reactivex.Flowable;
-import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import org.reactivestreams.Publisher;
 
 /**
  * Head repository metadata.
@@ -57,47 +55,34 @@ final class RepoHead {
     /**
      * Artifact head.
      * @param path Path for artifact
-     * @param headers Headers to send
      * @return Artifact headers
      */
-    CompletionStage<Headers> head(final String path, final Headers headers) {
-        final CompletableFuture<Headers> result = new CompletableFuture<>();
-        this.client.response(
-            new RequestLine(RqMethod.HEAD, path).toString(), headers, Flowable.empty()
-        ).send(new HeadConnection(result));
-        return result;
-    }
-
-    /**
-     * Connection which accepts HEAD requests and returns headers to future.
-     * @since 0.5
-     */
-    private static final class HeadConnection implements Connection {
-
-        /**
-         * Future to report the result.
-         */
-        private final CompletableFuture<Headers> future;
-
-        /**
-         * New head connection.
-         * @param future Future for result
-         */
-        HeadConnection(final CompletableFuture<Headers> future) {
-            this.future = future;
-        }
-
-        @Override
-        public CompletionStage<Void> accept(final RsStatus status, final Headers headers,
-            final Publisher<ByteBuffer> none) {
-            if (status.success()) {
-                this.future.complete(headers);
-            } else {
-                this.future.completeExceptionally(
-                    new IllegalStateException(String.format("Unexpected status %s", status))
-                );
+    CompletionStage<Headers> head(final String path) {
+        final CompletableFuture<Headers> promise = new CompletableFuture<>();
+        return this.client.response(
+            new RequestLine(RqMethod.HEAD, path).toString(), Headers.EMPTY, Flowable.empty()
+        ).send(
+            (status, rsheaders, body) -> {
+                final CompletionStage<Headers> res;
+                if (status == RsStatus.OK) {
+                    res = CompletableFuture.completedFuture(rsheaders);
+                } else {
+                    res = CompletableFuture.failedFuture(
+                        new IllegalStateException(
+                            String.format("Unsuccessful response status `%s`", status.code())
+                        )
+                    );
+                }
+                return res.thenAccept(promise::complete).toCompletableFuture();
             }
-            return CompletableFuture.completedFuture(null);
-        }
+        ).handle(
+            (nothing, throwable) -> {
+                if (throwable != null) {
+                    Logger.error(this, throwable.getMessage());
+                    promise.completeExceptionally(throwable);
+                }
+                return null;
+            }
+        ).thenCompose(nothing -> promise);
     }
 }

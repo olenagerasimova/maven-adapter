@@ -26,10 +26,12 @@ package com.artipie.maven.http;
 import com.artipie.asto.cache.Cache;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
+import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.client.ClientSlices;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rq.RqMethod;
+import com.artipie.http.rs.RsFull;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.rt.ByMethodsRule;
@@ -37,10 +39,12 @@ import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.RtRulePath;
 import com.artipie.http.rt.SliceRoute;
 import com.artipie.http.slice.SliceSimple;
+import io.reactivex.Flowable;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.http.client.utils.URIBuilder;
@@ -137,7 +141,8 @@ public final class MavenProxySlice extends Slice.Wrap {
             }
             final RequestLineFrom rqline = new RequestLineFrom(line);
             final URI uri = rqline.uri();
-            return slice.response(
+            final CompletableFuture<Response> promise = new CompletableFuture<>();
+            slice.response(
                 new RequestLine(
                     rqline.method().value(),
                     new URIBuilder(uri)
@@ -146,7 +151,17 @@ public final class MavenProxySlice extends Slice.Wrap {
                     rqline.version()
                 ).toString(),
                 headers, body
+            ).send(
+                (status, rsheaders, rsbody) -> {
+                    final CompletableFuture<Void> terminated = new CompletableFuture<>();
+                    final Flowable<ByteBuffer> termbody = Flowable.fromPublisher(rsbody)
+                        .doOnError(terminated::completeExceptionally)
+                        .doOnTerminate(() -> terminated.complete(null));
+                    promise.complete(new RsFull(status, rsheaders, termbody));
+                    return terminated;
+                }
             );
+            return new AsyncResponse(promise);
         }
 
         /**
