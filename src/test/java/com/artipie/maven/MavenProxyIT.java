@@ -23,6 +23,7 @@
  */
 package com.artipie.maven;
 
+import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.cache.StorageCache;
 import com.artipie.asto.fs.FileStorage;
@@ -40,6 +41,7 @@ import java.util.Arrays;
 import org.cactoos.list.ListOf;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.AllOf;
+import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -65,11 +67,6 @@ final class MavenProxyIT {
      * Vertx instance.
      */
     private static final Vertx VERTX = Vertx.vertx();
-
-    /**
-     * Test user.
-     */
-//    private static final Pair<String, String> USER = new ImmutablePair<>("Alladin", "openSesame");
 
     /**
      * Temporary directory for all tests.
@@ -111,10 +108,6 @@ final class MavenProxyIT {
                 new StorageCache(this.storage)
             ))
         );
-//        this.server = new VertxSliceServer(
-//            MavenProxyIT.VERTX,
-//            new LoggingSlice(new MavenSlice(this.storage, Permissions.FREE, Identities.ANONYMOUS))
-//        );
         this.port = this.server.start();
         Testcontainers.exposeHostPorts(this.port);
         this.cntn = new GenericContainer<>("centos:centos8")
@@ -122,7 +115,7 @@ final class MavenProxyIT {
             .withWorkingDirectory("/home/")
             .withFileSystemBind(this.tmp.toString(), "/home");
         this.cntn.start();
-        this.cntn.execInContainer("yum", "-y", "install", "maven");
+        this.exec("yum", "-y", "install", "maven");
     }
 
     @AfterEach
@@ -136,33 +129,33 @@ final class MavenProxyIT {
         MavenProxyIT.VERTX.close();
     }
 
-//    @ParameterizedTest
-//    @ValueSource(booleans = {true, false})
     @Test
-    void shouldGetArtifactFromCentralAndSaveInCache(/*final boolean anonymous*/) throws Exception {
-//        this.init(this.auth(anonymous));
-//        this.settings(this.getUser(anonymous));
+    void shouldGetArtifactFromCentralAndSaveInCache() throws Exception {
         this.settings();
-        final String artifact = "-Dartifact=args4j:args4j:2.32:jar";
-        String res = this.exec(
-            "mvn", "-s", "/home/settings.xml", "dependency:get", artifact
-        ).replaceAll("\n", "");
         MatcherAssert.assertThat(
             "Artifact wasn't downloaded",
-            res,
+            this.exec(
+                "mvn", "-s", "/home/settings.xml", "dependency:get", "-Dartifact=args4j:args4j:2.32:jar"
+            ).replaceAll("\n", ""),
             new AllOf<>(
                 Arrays.asList(
                     new StringContains("BUILD SUCCESS"),
-                    new StringContains("Downloaded from central: https://repo.maven.apache.org/maven2/args4j/args4j/2.32/args4j-2.32.jar (154 kB")
+                    new StringContains(
+                        String.format(
+                            // @checkstyle LineLengthCheck (1 line)
+                            "Downloaded from my-repo: http://host.testcontainers.internal:%s/args4j/args4j/2.32/args4j-2.32.jar (154 kB",
+                            this.port
+                        )
+                    )
                 )
             )
         );
-//        MatcherAssert.assertThat(
-//            "Artifact wasn't in storage",
-//            this.storage.exists(new Key.From("args4j", "args4j", "2.32", "args4j-2.32"))
-//                .toCompletableFuture().join(),
-//            new IsEqual<>(true)
-//        );
+        MatcherAssert.assertThat(
+            "Artifact wasn't in storage",
+            this.storage.exists(new Key.From("args4j", "args4j", "2.32", "args4j-2.32.jar"))
+                .toCompletableFuture().join(),
+            new IsEqual<>(true)
+        );
     }
 
     private String exec(final String... command) throws Exception {
@@ -170,24 +163,13 @@ final class MavenProxyIT {
         return this.cntn.execInContainer(command).getStdout();
     }
 
-    private void settings(/*final Optional<Pair<String, String>> user*/) throws IOException {
+    private void settings() throws IOException {
         final Path setting = this.tmp.resolve("settings.xml");
         setting.toFile().createNewFile();
         Files.write(
             setting,
             new ListOf<String>(
                 "<settings>",
-//                "   <servers>",
-//                "       <server>",
-//                "           <id>my-repo</id>",
-//                user.map(
-//                    data -> String.format(
-//                        "<username>%s</username>\n<password>%s</password>",
-//                        data.getKey(), data.getValue()
-//                    )
-//                ).orElse(""),
-//                "       </server>",
-//                "   </servers>",
                 "    <profiles>",
                 "        <profile>",
                 "            <id>artipie</id>",
@@ -206,30 +188,4 @@ final class MavenProxyIT {
             )
         );
     }
-
-//    private Pair<Permissions, Identities> auth(final boolean anonymous) {
-//        final Pair<Permissions, Identities> res;
-//        if (anonymous) {
-//            res = new ImmutablePair<>(Permissions.FREE, Identities.ANONYMOUS);
-//        } else {
-//            res = new ImmutablePair<>(
-//                (name, action) -> MavenProxyIT.USER.getKey().equals(name)
-//                                      && ("download".equals(action) || "upload".equals(action)),
-//                new BasicIdentities(
-//                    new Authentication.Single(
-//                        MavenProxyIT.USER.getKey(), MavenProxyIT.USER.getValue()
-//                    )
-//                )
-//            );
-//        }
-//        return res;
-//    }
-//
-//    private Optional<Pair<String, String>> getUser(final boolean anonymous) {
-//        Optional<Pair<String, String>> res = Optional.empty();
-//        if (!anonymous) {
-//            res = Optional.of(MavenProxyIT.USER);
-//        }
-//        return res;
-//    }
 }
