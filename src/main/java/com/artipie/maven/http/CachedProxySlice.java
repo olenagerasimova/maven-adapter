@@ -105,13 +105,13 @@ final class CachedProxySlice implements Slice {
         final RequestLineFrom req = new RequestLineFrom(line);
         final Key key = new KeyFromPath(req.uri().getPath());
         return new AsyncResponse(
-            new RepoHead(this.client).head(req.uri().getPath(), new Headers.From(headers))
-                .thenCompose(
+            new RepoHead(this.client)
+                .head(req.uri().getPath()).thenCompose(
                     head -> this.cache.load(
                         key,
                         () -> CompletableFuture.completedFuture(
                             new Content.From(
-                                new ProxyPublisher(this.client.response(line, headers, body))
+                                new ProxyPublisher(this.client.response(line, Headers.EMPTY, body))
                             )
                         ),
                         new CacheControl.All(
