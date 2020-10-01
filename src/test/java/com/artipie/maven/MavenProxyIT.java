@@ -26,7 +26,6 @@ package com.artipie.maven;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.cache.StorageCache;
-import com.artipie.asto.fs.FileStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.http.client.jetty.JettyClientSlices;
 import com.artipie.http.slice.LoggingSlice;
