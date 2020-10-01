@@ -27,6 +27,7 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.cache.StorageCache;
 import com.artipie.asto.fs.FileStorage;
+import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.http.client.jetty.JettyClientSlices;
 import com.artipie.http.slice.LoggingSlice;
 import com.artipie.maven.http.MavenProxySlice;
@@ -60,7 +61,7 @@ import org.testcontainers.containers.GenericContainer;
  * @since 0.11
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-@EnabledOnOs(OS.LINUX)
+@EnabledOnOs({OS.LINUX, OS.MAC})
 final class MavenProxyIT {
 
     /**
@@ -99,7 +100,7 @@ final class MavenProxyIT {
     void setUp() throws Exception {
         final JettyClientSlices slices = new JettyClientSlices();
         slices.start();
-        this.storage = new FileStorage(this.tmp);
+        this.storage = new InMemoryStorage();
         this.server = new VertxSliceServer(
             MavenProxyIT.VERTX,
             new LoggingSlice(
