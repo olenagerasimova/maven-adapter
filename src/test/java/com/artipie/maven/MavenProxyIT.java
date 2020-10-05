@@ -105,7 +105,7 @@ final class MavenProxyIT {
             new LoggingSlice(
                 new MavenProxySlice(
                     slices,
-                    URI.create("https://repo.maven.apache.org/maven2/"),
+                    URI.create("https://repo.maven.apache.org/maven2"),
                     new StorageCache(this.storage)
             ))
         );
