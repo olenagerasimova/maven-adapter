@@ -27,6 +27,7 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.cache.StorageCache;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.http.client.auth.Authenticator;
 import com.artipie.http.client.jetty.JettyClientSlices;
 import com.artipie.http.slice.LoggingSlice;
 import com.artipie.maven.http.MavenProxySlice;
@@ -106,6 +107,7 @@ final class MavenProxyIT {
                 new MavenProxySlice(
                     slices,
                     URI.create("https://repo.maven.apache.org/maven2"),
+                    Authenticator.ANONYMOUS,
                     new StorageCache(this.storage)
             ))
         );
