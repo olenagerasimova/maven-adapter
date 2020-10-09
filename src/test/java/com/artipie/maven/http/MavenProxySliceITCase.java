@@ -23,18 +23,12 @@
  */
 package com.artipie.maven.http;
 
-import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.cache.StorageCache;
 import com.artipie.asto.memory.InMemoryStorage;
-import com.artipie.http.Headers;
-import com.artipie.http.Slice;
 import com.artipie.http.client.auth.Authenticator;
 import com.artipie.http.client.jetty.JettyClientSlices;
-import com.artipie.http.hm.RsHasStatus;
-import com.artipie.http.rq.RequestLine;
-import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.slice.LoggingSlice;
 import com.artipie.vertx.VertxSliceServer;
@@ -43,6 +37,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,11 +62,6 @@ final class MavenProxySliceITCase {
     private final JettyClientSlices client = new JettyClientSlices();
 
     /**
-     * Maven proxy.
-     */
-    private Slice proxy;
-
-    /**
      * Test storage.
      */
     private Storage storage;
@@ -90,15 +80,17 @@ final class MavenProxySliceITCase {
     void setUp() throws Exception {
         this.client.start();
         this.storage = new InMemoryStorage();
-        this.proxy = new LoggingSlice(
-            new MavenProxySlice(
-                this.client,
-                URI.create("https://repo.maven.apache.org/maven2"),
-                Authenticator.ANONYMOUS,
-                new StorageCache(this.storage)
+        this.server = new VertxSliceServer(
+            MavenProxySliceITCase.VERTX,
+            new LoggingSlice(
+                new MavenProxySlice(
+                    this.client,
+                    URI.create("https://repo.maven.apache.org/maven2"),
+                    Authenticator.ANONYMOUS,
+                    new StorageCache(this.storage)
+                )
             )
         );
-        this.server = new VertxSliceServer(MavenProxySliceITCase.VERTX, this.proxy);
         this.port = this.server.start();
     }
 
@@ -109,7 +101,7 @@ final class MavenProxySliceITCase {
     }
 
     @Test
-    void downloadJar() throws Exception {
+    void downloadsJarFromCentralAndCachesIt() throws Exception {
         final HttpURLConnection con = (HttpURLConnection) new URL(
             String.format("http://localhost:%s/args4j/args4j/2.32/args4j-2.32.jar", this.port)
         ).openConnection();
@@ -128,46 +120,42 @@ final class MavenProxySliceITCase {
     }
 
     @Test
-    void headRequestWorks() {
+    void headRequestWorks() throws Exception {
+        final HttpURLConnection con = (HttpURLConnection) new URL(
+            String.format("http://localhost:%s/args4j/args4j/2.32/args4j-2.32.pom", this.port)
+        ).openConnection();
+        con.setRequestMethod("HEAD");
         MatcherAssert.assertThat(
-            this.proxy.response(
-                new RequestLine(RqMethod.HEAD, "/args4j/args4j/2.32/args4j-2.32.pom").toString(),
-                Headers.EMPTY,
-                Content.EMPTY
-            ),
-            new RsHasStatus(RsStatus.OK)
+            "Response status is 200",
+            con.getResponseCode(),
+            new IsEqual<>(Integer.parseInt(RsStatus.OK.code()))
         );
+        MatcherAssert.assertThat(
+            "Headers are returned",
+            con.getHeaderFields(),
+            Matchers.allOf(
+                Matchers.hasKey("Content-Type"),
+                Matchers.hasKey("Last-Modified"),
+                Matchers.hasKey("ETag"),
+                Matchers.hasKey("X-Checksum-MD5"),
+                Matchers.hasKey("X-Checksum-SHA1")
+            )
+        );
+        con.disconnect();
     }
 
     @Test
-    void checksumRequestWorks() {
+    void checksumRequestWorks() throws Exception {
+        final HttpURLConnection con = (HttpURLConnection) new URL(
+            String.format("http://localhost:%s/args4j/args4j/2.32/args4j-2.32.pom.md5", this.port)
+        ).openConnection();
+        con.setRequestMethod("GET");
         MatcherAssert.assertThat(
-            this.proxy.response(
-                new RequestLine(RqMethod.GET, "/args4j/args4j/2.32/args4j-2.32.pom.md5")
-                    .toString(),
-                Headers.EMPTY,
-                Content.EMPTY
-            ),
-            new RsHasStatus(RsStatus.OK)
+            "Response status is 200",
+            con.getResponseCode(),
+            new IsEqual<>(Integer.parseInt(RsStatus.OK.code()))
         );
-    }
-
-    @Test
-    void downloadsJarFromCentralAndCachesIt() {
-        MatcherAssert.assertThat(
-            "Response status is 200 OK",
-            this.proxy.response(
-                new RequestLine(RqMethod.GET, "/args4j/args4j/2.32/args4j-2.32.jar").toString(),
-                Headers.EMPTY,
-                Content.EMPTY
-            ),
-            new RsHasStatus(RsStatus.OK)
-        );
-        MatcherAssert.assertThat(
-            "Jar was saved to storage",
-            this.storage.exists(new Key.From("args4j/args4j/2.32/args4j-2.32.jar")).join(),
-            new IsEqual<>(true)
-        );
+        con.disconnect();
     }
 
 }
