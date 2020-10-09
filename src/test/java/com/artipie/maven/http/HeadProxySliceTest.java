@@ -46,6 +46,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Test for {@link HeadProxySlice}.
  * @since 0.8
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 class HeadProxySliceTest {
 
