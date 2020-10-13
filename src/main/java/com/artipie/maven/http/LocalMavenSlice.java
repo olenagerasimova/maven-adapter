@@ -38,7 +38,6 @@ import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.rs.StandardRs;
 import com.artipie.http.slice.KeyFromPath;
-import com.artipie.maven.Repository;
 import java.nio.ByteBuffer;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
@@ -47,11 +46,9 @@ import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
 
 /**
- * A {@link Slice} based on a {@link Repository}. This is the main entrypoint
- * for dispatching GET requests for artifacts to the various {@link Repository}
- * implementations.
+ * A {@link Slice} based on a {@link Storage}. This is the main entrypoint
+ * for dispatching GET requests for artifacts.
  *
- * @see Repository
  * @since 0.5
  * @todo #117:30min Add test to verify this class.
  *  Create integration test against local maven repository to download artifacts from
