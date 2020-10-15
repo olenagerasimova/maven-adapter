@@ -27,11 +27,9 @@ import com.artipie.asto.Storage;
 import com.artipie.http.Slice;
 import com.artipie.http.auth.Action;
 import com.artipie.http.auth.Authentication;
-import com.artipie.http.auth.BasicIdentities;
-import com.artipie.http.auth.Identities;
+import com.artipie.http.auth.BasicAuthSlice;
 import com.artipie.http.auth.Permission;
 import com.artipie.http.auth.Permissions;
-import com.artipie.http.auth.SliceAuth;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.StandardRs;
 import com.artipie.http.rt.ByMethodsRule;
@@ -52,17 +50,7 @@ public final class MavenSlice extends Slice.Wrap {
      * @param storage The storage and default parameters for free access.
      */
     public MavenSlice(final Storage storage) {
-        this(storage, Permissions.FREE, Identities.ANONYMOUS);
-    }
-
-    /**
-     * Ctor used by Artipie server which knows `Authentication` implementation.
-     * @param storage The storage and default parameters for free access.
-     * @param perms Access permissions.
-     * @param auth Auth details.
-     */
-    public MavenSlice(final Storage storage, final Permissions perms, final Authentication auth) {
-        this(storage, perms, new BasicIdentities(auth));
+        this(storage, Permissions.FREE, Authentication.ANONYMOUS);
     }
 
     /**
@@ -71,7 +59,7 @@ public final class MavenSlice extends Slice.Wrap {
      * @param perms Access permissions.
      * @param users Concrete identities.
      */
-    public MavenSlice(final Storage storage, final Permissions perms, final Identities users) {
+    public MavenSlice(final Storage storage, final Permissions perms, final Authentication users) {
         super(
             new SliceRoute(
                 new RtRulePath(
@@ -79,18 +67,18 @@ public final class MavenSlice extends Slice.Wrap {
                         new ByMethodsRule(RqMethod.GET),
                         new ByMethodsRule(RqMethod.HEAD)
                     ),
-                    new SliceAuth(
+                    new BasicAuthSlice(
                         new LocalMavenSlice(storage),
-                        new Permission.ByName(perms, Action.Standard.READ),
-                        users
+                        users,
+                        new Permission.ByName(perms, Action.Standard.READ)
                     )
                 ),
                 new RtRulePath(
                     new ByMethodsRule(RqMethod.PUT),
-                    new SliceAuth(
+                    new BasicAuthSlice(
                         new UpdateMavenSlice(storage),
-                        new Permission.ByName(perms, Action.Standard.WRITE),
-                        users
+                        users,
+                        new Permission.ByName(perms, Action.Standard.WRITE)
                     )
                 ),
                 new RtRulePath(
