@@ -94,12 +94,12 @@ SOFTWARE.
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>http</artifactId>
-      <version>0.16.1</version>
+      <version>0.16.5</version>
     </dependency>
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>http-client</artifactId>
-      <version>0.3.1</version>
+      <version>0.3.3</version>
     </dependency>
     <dependency>
       <groupId>com.artipie</groupId>

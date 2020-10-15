@@ -32,7 +32,7 @@ import com.artipie.asto.test.TestResource;
 import com.artipie.http.Headers;
 import com.artipie.http.Slice;
 import com.artipie.http.auth.Authentication;
-import com.artipie.http.client.auth.GenericAuthenticator;
+import com.artipie.http.client.auth.BasicAuthenticator;
 import com.artipie.http.client.jetty.JettyClientSlices;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
@@ -89,7 +89,7 @@ final class MavenProxySliceAuthIT {
             new LoggingSlice(
                 new MavenSlice(
                     storage,
-                    (name, action) -> name.equals(username),
+                    (user, action) -> user.name().equals(username),
                     new Authentication.Single(username, password)
                 )
             )
@@ -100,7 +100,7 @@ final class MavenProxySliceAuthIT {
             new MavenProxySlice(
                 this.client,
                 URI.create(String.format("http://localhost:%d", port)),
-                new GenericAuthenticator(username, password),
+                new BasicAuthenticator(username, password),
                 Cache.NOP
             )
         );
