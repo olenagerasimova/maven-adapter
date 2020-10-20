@@ -28,8 +28,6 @@ import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.asto.test.TestResource;
 import com.artipie.http.auth.Authentication;
-import com.artipie.http.auth.BasicIdentities;
-import com.artipie.http.auth.Identities;
 import com.artipie.http.auth.Permissions;
 import com.artipie.http.slice.LoggingSlice;
 import com.artipie.maven.http.MavenSlice;
@@ -173,7 +171,7 @@ public final class MavenITCase {
         MavenITCase.VERTX.close();
     }
 
-    void init(final Pair<Permissions, Identities> auth) throws IOException,
+    void init(final Pair<Permissions, Authentication> auth) throws IOException,
         InterruptedException {
         this.storage = new InMemoryStorage();
         this.server = new VertxSliceServer(
@@ -236,18 +234,16 @@ public final class MavenITCase {
             .addFilesTo(this.storage, new Key.From("com", "artipie", "helloworld"));
     }
 
-    private Pair<Permissions, Identities> auth(final boolean anonymous) {
-        final Pair<Permissions, Identities> res;
+    private Pair<Permissions, Authentication> auth(final boolean anonymous) {
+        final Pair<Permissions, Authentication> res;
         if (anonymous) {
-            res = new ImmutablePair<>(Permissions.FREE, Identities.ANONYMOUS);
+            res = new ImmutablePair<>(Permissions.FREE, Authentication.ANONYMOUS);
         } else {
             res = new ImmutablePair<>(
-                (name, action) -> MavenITCase.USER.getKey().equals(name)
+                (user, action) -> MavenITCase.USER.getKey().equals(user.name())
                     && ("download".equals(action) || "upload".equals(action)),
-                new BasicIdentities(
-                    new Authentication.Single(
-                        MavenITCase.USER.getKey(), MavenITCase.USER.getValue()
-                    )
+                new Authentication.Single(
+                    MavenITCase.USER.getKey(), MavenITCase.USER.getValue()
                 )
             );
         }
