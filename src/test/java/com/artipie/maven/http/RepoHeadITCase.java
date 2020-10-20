@@ -31,6 +31,7 @@ import com.artipie.http.client.jetty.JettyClientSlices;
 import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithHeaders;
+import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.rs.StandardRs;
 import com.artipie.http.slice.LoggingSlice;
 import com.artipie.vertx.VertxSliceServer;
@@ -104,7 +105,6 @@ class RepoHeadITCase {
         ).openConnection();
         con.setRequestMethod("GET");
         MatcherAssert.assertThat(
-            "Response status is 200",
             con.getResponseCode(),
             new IsEqual<>(Integer.parseInt(RsStatus.OK.code()))
         );
@@ -121,9 +121,8 @@ class RepoHeadITCase {
         ).openConnection();
         con.setRequestMethod("GET");
         MatcherAssert.assertThat(
-            "Response status is 500",
             con.getResponseCode(),
-            new IsEqual<>(Integer.parseInt(RsStatus.INTERNAL_ERROR.code()))
+            new IsEqual<>(Integer.parseInt(RsStatus.NOT_FOUND.code()))
         );
         con.disconnect();
     }
@@ -160,8 +159,15 @@ class RepoHeadITCase {
                         (head, throwable) -> {
                             final CompletionStage<Response> res;
                             if (throwable == null) {
-                                res = CompletableFuture
-                                    .completedFuture(new RsWithHeaders(StandardRs.OK, head));
+                                if (head.isPresent()) {
+                                    res = CompletableFuture.completedFuture(
+                                        new RsWithHeaders(StandardRs.OK, head.get())
+                                    );
+                                } else {
+                                    res = CompletableFuture.completedFuture(
+                                        new RsWithStatus(RsStatus.NOT_FOUND)
+                                    );
+                                }
                             } else {
                                 res = CompletableFuture.failedFuture(throwable);
                             }
