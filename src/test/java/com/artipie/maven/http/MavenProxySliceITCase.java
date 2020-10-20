@@ -122,7 +122,6 @@ final class MavenProxySliceITCase {
     }
 
     @Test
-    @Disabled
     void downloadsJarFromCache() throws Exception {
         new TestResource("com/artipie/helloworld")
             .addFilesTo(this.storage, new Key.From("com", "artipie", "helloworld"));
@@ -141,6 +140,7 @@ final class MavenProxySliceITCase {
     }
 
     @Test
+    @Disabled
     void downloadJarFromCentralAndCacheFailsWithNotFound() throws Exception {
         final HttpURLConnection con = (HttpURLConnection) new URL(
             String.format("http://localhost:%s/notfoundexample", this.port)

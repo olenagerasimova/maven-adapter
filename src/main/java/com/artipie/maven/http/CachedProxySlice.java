@@ -35,9 +35,7 @@ import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.headers.Header;
 import com.artipie.http.rq.RequestLineFrom;
-import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
-import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.rs.StandardRs;
 import com.artipie.http.slice.KeyFromPath;
 import java.nio.ByteBuffer;
@@ -108,27 +106,25 @@ final class CachedProxySlice implements Slice {
         final Key key = new KeyFromPath(req.uri().getPath());
         return new AsyncResponse(
             new RepoHead(this.client)
-                .head(req.uri().getPath()).thenApply(
-                    found -> found.<Response>map(
-                        head -> new AsyncResponse(
-                            this.cache.load(
-                                key,
-                                () -> CompletableFuture.completedFuture(
-                                    new Content.From(
-                                        new ProxyPublisher(
-                                            this.client.response(line, Headers.EMPTY, body)
-                                        )
-                                    )
-                                ),
-                                new CacheControl.All(
-                                    StreamSupport.stream(head.spliterator(), false)
-                                        .map(Header::new)
-                                        .map(CachedProxySlice::checksumControl)
-                                        .collect(Collectors.toUnmodifiableList())
-                                )
-                            ).thenApply(pub -> new RsWithBody(StandardRs.OK, pub))
+                .head(req.uri().getPath()).thenCompose(
+                    head -> this.cache.load(
+                        key,
+                        () -> CompletableFuture.completedFuture(
+                            new Content.From(
+                                new ProxyPublisher(this.client.response(line, Headers.EMPTY, body))
+                            )
+                        ),
+                        new CacheControl.All(
+                            StreamSupport.stream(
+                                head.orElse(Headers.EMPTY).spliterator(),
+                                false
+                            ).map(Header::new)
+                            .map(CachedProxySlice::checksumControl)
+                            .collect(Collectors.toUnmodifiableList())
                         )
-                    ).orElseGet(() -> new RsWithStatus(RsStatus.NOT_FOUND))
+                    ).thenApply(
+                        pub -> new RsWithBody(StandardRs.OK, pub)
+                    )
             )
         );
     }
