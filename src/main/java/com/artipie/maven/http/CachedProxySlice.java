@@ -115,13 +115,17 @@ final class CachedProxySlice implements Slice {
                             )
                         ),
                         new CacheControl.All(
-                            StreamSupport.stream(head.spliterator(), false)
-                                .map(Header::new)
-                                .map(CachedProxySlice::checksumControl)
-                                .collect(Collectors.toUnmodifiableList())
+                            StreamSupport.stream(
+                                head.orElse(Headers.EMPTY).spliterator(),
+                                false
+                            ).map(Header::new)
+                            .map(CachedProxySlice::checksumControl)
+                            .collect(Collectors.toUnmodifiableList())
                         )
-                    ).thenApply(pub -> new RsWithBody(StandardRs.OK, pub))
-                )
+                    ).thenApply(
+                        pub -> new RsWithBody(StandardRs.OK, pub)
+                    )
+            )
         );
     }
 

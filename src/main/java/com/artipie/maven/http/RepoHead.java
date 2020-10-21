@@ -30,6 +30,7 @@ import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import com.jcabi.log.Logger;
 import io.reactivex.Flowable;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -57,15 +58,17 @@ final class RepoHead {
      * @param path Path for artifact
      * @return Artifact headers
      */
-    CompletionStage<Headers> head(final String path) {
-        final CompletableFuture<Headers> promise = new CompletableFuture<>();
+    CompletionStage<Optional<Headers>> head(final String path) {
+        final CompletableFuture<Optional<Headers>> promise = new CompletableFuture<>();
         return this.client.response(
             new RequestLine(RqMethod.HEAD, path).toString(), Headers.EMPTY, Flowable.empty()
         ).send(
             (status, rsheaders, body) -> {
-                final CompletionStage<Headers> res;
+                final CompletionStage<Optional<Headers>> res;
                 if (status == RsStatus.OK) {
-                    res = CompletableFuture.completedFuture(rsheaders);
+                    res = CompletableFuture.completedFuture(Optional.of(rsheaders));
+                } else if (status == RsStatus.NOT_FOUND) {
+                    res = CompletableFuture.completedFuture(Optional.empty());
                 } else {
                     res = CompletableFuture.failedFuture(
                         new IllegalStateException(

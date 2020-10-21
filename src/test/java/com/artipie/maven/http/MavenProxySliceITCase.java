@@ -27,6 +27,7 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.cache.FromStorageCache;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.asto.test.TestResource;
 import com.artipie.http.client.auth.Authenticator;
 import com.artipie.http.client.jetty.JettyClientSlices;
 import com.artipie.http.rs.RsStatus;
@@ -41,6 +42,7 @@ import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -115,6 +117,38 @@ final class MavenProxySliceITCase {
             "Jar was saved to storage",
             this.storage.exists(new Key.From("args4j/args4j/2.32/args4j-2.32.jar")).join(),
             new IsEqual<>(true)
+        );
+        con.disconnect();
+    }
+
+    @Test
+    void downloadsJarFromCache() throws Exception {
+        new TestResource("com/artipie/helloworld")
+            .addFilesTo(this.storage, new Key.From("com", "artipie", "helloworld"));
+        final HttpURLConnection con = (HttpURLConnection) new URL(
+            String.format(
+                "http://localhost:%s/com/artipie/helloworld/0.1/helloworld-0.1.jar", this.port
+            )
+        ).openConnection();
+        con.setRequestMethod("GET");
+        MatcherAssert.assertThat(
+            "Response status is 200",
+            con.getResponseCode(),
+            new IsEqual<>(Integer.parseInt(RsStatus.OK.code()))
+        );
+        con.disconnect();
+    }
+
+    @Test
+    @Disabled
+    void downloadJarFromCentralAndCacheFailsWithNotFound() throws Exception {
+        final HttpURLConnection con = (HttpURLConnection) new URL(
+            String.format("http://localhost:%s/notfoundexample", this.port)
+        ).openConnection();
+        con.setRequestMethod("GET");
+        MatcherAssert.assertThat(
+            con.getResponseCode(),
+            new IsEqual<>(Integer.parseInt(RsStatus.NOT_FOUND.code()))
         );
         con.disconnect();
     }
