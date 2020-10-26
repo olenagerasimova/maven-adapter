@@ -127,28 +127,16 @@ final class CachedProxySlice implements Slice {
                         )
                     ).thenApply(
                         pub -> {
-                            final Response rsp;
+                            final Response resp;
                             if (pub.size().isPresent()) {
-                                rsp = new AsyncResponse(new PublisherAs(pub)
+                                resp = new AsyncResponse(new PublisherAs(pub)
                                     .asciiString()
-                                    .thenApply(
-                                        str -> {
-                                            final Response resp;
-                                            if (str.contains("404 Not Found")) {
-                                                resp = new RsWithStatus(RsStatus.NOT_FOUND);
-                                            } else {
-                                                resp = new RsWithBody(
-                                                    StandardRs.OK, new Content.From(str.getBytes())
-                                                );
-                                            }
-                                            return resp;
-                                        }
-                                    )
+                                    .thenApply(CachedProxySlice::contentContainsNotFound)
                                 );
                             } else {
-                                rsp = new RsWithBody(StandardRs.OK, new Content.From(pub));
+                                resp = new RsWithBody(StandardRs.OK, new Content.From(pub));
                             }
-                            return rsp;
+                            return resp;
                         }
                     )
             )
@@ -180,5 +168,23 @@ final class CachedProxySlice implements Slice {
             res = CacheControl.Standard.ALWAYS;
         }
         return res;
+    }
+
+    /**
+     * Check the presence of `NOT_FOUND` in content.
+     * @param content Content
+     * @return Response with `OK` and content if not found response is not
+     *  included in the content, response with `NOT_FOUND` otherwise.
+     */
+    private static Response contentContainsNotFound(final String content) {
+        final Response resp;
+        if (content.contains("404 Not Found")) {
+            resp = new RsWithStatus(RsStatus.NOT_FOUND);
+        } else {
+            resp = new RsWithBody(
+                StandardRs.OK, new Content.From(content.getBytes())
+            );
+        }
+        return resp;
     }
 }
