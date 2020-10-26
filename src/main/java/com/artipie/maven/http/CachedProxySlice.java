@@ -125,18 +125,22 @@ final class CachedProxySlice implements Slice {
                             .map(CachedProxySlice::checksumControl)
                             .collect(Collectors.toUnmodifiableList())
                         )
-                    ).thenCompose(pub -> new PublisherAs(pub)
-                        .asciiString()
-                        .thenApply(str -> {
-                            final Response resp;
-                            if (str.contains("404 Not Found")) {
-                                resp = new RsWithStatus(RsStatus.NOT_FOUND);
-                            } else {
-                                resp = new RsWithBody(StandardRs.OK, new Content.From(str.getBytes()));
-                            }
-                            return resp;
-                            }
-                        )
+                    ).thenCompose(
+                        pub -> new PublisherAs(pub)
+                            .asciiString()
+                            .thenApply(
+                                str -> {
+                                    final Response resp;
+                                    if (str.contains("404 Not Found")) {
+                                        resp = new RsWithStatus(RsStatus.NOT_FOUND);
+                                    } else {
+                                        resp = new RsWithBody(
+                                            StandardRs.OK, new Content.From(str.getBytes())
+                                        );
+                                    }
+                                    return resp;
+                                }
+                            )
                     )
             )
         );
