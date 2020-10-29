@@ -130,7 +130,7 @@ final class CachedProxySlice implements Slice {
                             final Response resp;
                             if (pub.size().isPresent()) {
                                 resp = new AsyncResponse(new PublisherAs(pub)
-                                    .asciiString()
+                                    .bytes()
                                     .thenApply(CachedProxySlice::contentContainsNotFound)
                                 );
                             } else {
@@ -176,13 +176,13 @@ final class CachedProxySlice implements Slice {
      * @return Response with `OK` and content if not found response is not
      *  included in the content, response with `NOT_FOUND` otherwise.
      */
-    private static Response contentContainsNotFound(final String content) {
+    private static Response contentContainsNotFound(final byte[] content) {
         final Response resp;
-        if (content.contains("404 Not Found")) {
+        if (new String(content).contains("404 Not Found")) {
             resp = new RsWithStatus(RsStatus.NOT_FOUND);
         } else {
             resp = new RsWithBody(
-                StandardRs.OK, new Content.From(content.getBytes())
+                StandardRs.OK, new Content.From(content)
             );
         }
         return resp;
