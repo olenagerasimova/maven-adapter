@@ -42,7 +42,6 @@ import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -140,7 +139,6 @@ final class MavenProxySliceITCase {
     }
 
     @Test
-    @Disabled
     void downloadJarFromCentralAndCacheFailsWithNotFound() throws Exception {
         final HttpURLConnection con = (HttpURLConnection) new URL(
             String.format("http://localhost:%s/notfoundexample", this.port)

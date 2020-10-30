@@ -29,13 +29,16 @@ import com.artipie.asto.cache.Cache;
 import com.artipie.asto.cache.CacheControl;
 import com.artipie.asto.cache.DigestVerification;
 import com.artipie.asto.ext.Digests;
+import com.artipie.asto.ext.PublisherAs;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.headers.Header;
 import com.artipie.http.rq.RequestLineFrom;
+import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
+import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.rs.StandardRs;
 import com.artipie.http.slice.KeyFromPath;
 import java.nio.ByteBuffer;
@@ -59,6 +62,10 @@ import org.reactivestreams.Publisher;
  *  with injected `Cache` and client `Slice` instances and verifies that target slice
  *  doesn't invalidate the cache if checksums headers matches and invalidates cache if
  *  checksums doesn't match.
+ * @todo #219:30min Change realization of response method.
+ *  Now response method reading the content into memory for every request. This is bad
+ *  especially if the file is large enough. This realization could be changed when the
+ *  issue artipie/asto#286 will be resolved.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class CachedProxySlice implements Slice {
@@ -123,7 +130,18 @@ final class CachedProxySlice implements Slice {
                             .collect(Collectors.toUnmodifiableList())
                         )
                     ).thenApply(
-                        pub -> new RsWithBody(StandardRs.OK, pub)
+                        pub -> {
+                            final Response resp;
+                            if (pub.size().isPresent()) {
+                                resp = new AsyncResponse(new PublisherAs(pub)
+                                    .bytes()
+                                    .thenApply(CachedProxySlice::contentContainsNotFound)
+                                );
+                            } else {
+                                resp = new RsWithBody(StandardRs.OK, new Content.From(pub));
+                            }
+                            return resp;
+                        }
                     )
             )
         );
@@ -154,5 +172,23 @@ final class CachedProxySlice implements Slice {
             res = CacheControl.Standard.ALWAYS;
         }
         return res;
+    }
+
+    /**
+     * Check the presence of `NOT_FOUND` in content.
+     * @param content Content
+     * @return Response with `OK` and content if not found response is not
+     *  included in the content, response with `NOT_FOUND` otherwise.
+     */
+    private static Response contentContainsNotFound(final byte[] content) {
+        final Response resp;
+        if (new String(content).contains("404 Not Found")) {
+            resp = new RsWithStatus(RsStatus.NOT_FOUND);
+        } else {
+            resp = new RsWithBody(
+                StandardRs.OK, new Content.From(content)
+            );
+        }
+        return resp;
     }
 }
