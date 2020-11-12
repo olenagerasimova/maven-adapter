@@ -28,22 +28,22 @@ import com.artipie.asto.Key;
 import com.artipie.asto.cache.Cache;
 import com.artipie.asto.cache.CacheControl;
 import com.artipie.asto.cache.DigestVerification;
+import com.artipie.asto.cache.Remote;
 import com.artipie.asto.ext.Digests;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.headers.Header;
 import com.artipie.http.rq.RequestLineFrom;
-import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
-import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.rs.StandardRs;
 import com.artipie.http.slice.KeyFromPath;
+import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -116,10 +116,28 @@ final class CachedProxySlice implements Slice {
                 .head(req.uri().getPath()).thenCompose(
                     head -> this.cache.load(
                         key,
-                        () -> CompletableFuture.completedFuture(
-                            new Content.From(
-                                new ProxyPublisher(this.client.response(line, Headers.EMPTY, body))
-                            )
+                        new Remote.WithErrorHandling(
+                            () -> {
+                                final CompletableFuture<Optional<? extends Content>> promise =
+                                    new CompletableFuture<>();
+                                this.client.response(line, Headers.EMPTY, Content.EMPTY).send(
+                                    (rsstatus, rsheaders, rsbody) -> {
+                                        final CompletableFuture<Void> term =
+                                            new CompletableFuture<>();
+                                        if (rsstatus.success()) {
+                                            final Flowable<ByteBuffer> res =
+                                                Flowable.fromPublisher(rsbody)
+                                                .doOnError(term::completeExceptionally)
+                                                .doOnTerminate(() -> term.complete(null));
+                                            promise.complete(Optional.of(new Content.From(res)));
+                                        } else {
+                                            promise.complete(Optional.empty());
+                                        }
+                                        return term;
+                                    }
+                                );
+                                return promise;
+                            }
                         ),
                         new CacheControl.All(
                             StreamSupport.stream(
@@ -129,18 +147,17 @@ final class CachedProxySlice implements Slice {
                             .map(CachedProxySlice::checksumControl)
                             .collect(Collectors.toUnmodifiableList())
                         )
-                    ).thenApply(
-                        pub -> {
-                            final Response resp;
-                            if (pub.size().isPresent()) {
-                                resp = new AsyncResponse(new PublisherAs(pub)
-                                    .bytes()
-                                    .thenApply(CachedProxySlice::contentContainsNotFound)
+                    ).handle(
+                        (content, throwable) -> {
+                            final Response result;
+                            if (throwable == null && content.isPresent()) {
+                                result = new RsWithBody(
+                                    StandardRs.OK, new Content.From(content.get())
                                 );
                             } else {
-                                resp = new RsWithBody(StandardRs.OK, new Content.From(pub));
+                                result = StandardRs.NOT_FOUND;
                             }
-                            return resp;
+                            return result;
                         }
                     )
             )
@@ -172,23 +189,5 @@ final class CachedProxySlice implements Slice {
             res = CacheControl.Standard.ALWAYS;
         }
         return res;
-    }
-
-    /**
-     * Check the presence of `NOT_FOUND` in content.
-     * @param content Content
-     * @return Response with `OK` and content if not found response is not
-     *  included in the content, response with `NOT_FOUND` otherwise.
-     */
-    private static Response contentContainsNotFound(final byte[] content) {
-        final Response resp;
-        if (new String(content).contains("404 Not Found")) {
-            resp = new RsWithStatus(RsStatus.NOT_FOUND);
-        } else {
-            resp = new RsWithBody(
-                StandardRs.OK, new Content.From(content)
-            );
-        }
-        return resp;
     }
 }

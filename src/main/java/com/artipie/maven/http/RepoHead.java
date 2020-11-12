@@ -67,14 +67,8 @@ final class RepoHead {
                 final CompletionStage<Optional<Headers>> res;
                 if (status == RsStatus.OK) {
                     res = CompletableFuture.completedFuture(Optional.of(rsheaders));
-                } else if (status == RsStatus.NOT_FOUND) {
-                    res = CompletableFuture.completedFuture(Optional.empty());
                 } else {
-                    res = CompletableFuture.failedFuture(
-                        new IllegalStateException(
-                            String.format("Unsuccessful response status `%s`", status.code())
-                        )
-                    );
+                    res = CompletableFuture.completedFuture(Optional.empty());
                 }
                 return res.thenAccept(promise::complete).toCompletableFuture();
             }
