@@ -28,7 +28,6 @@ import com.artipie.asto.Key;
 import com.artipie.asto.cache.Cache;
 import com.artipie.asto.cache.CacheControl;
 import com.artipie.asto.cache.DigestVerification;
-import com.artipie.asto.cache.Remote;
 import com.artipie.asto.ext.Digests;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
@@ -39,7 +38,6 @@ import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.StandardRs;
 import com.artipie.http.slice.KeyFromPath;
-import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Locale;
 import java.util.Map;
@@ -56,16 +54,13 @@ import org.reactivestreams.Publisher;
 /**
  * Maven proxy slice with cache support.
  * @since 0.5
- * @todo #146:30min Create integration test for cached proxy:
- *  the test starts new server instance and serves HEAD requests for artifact with checksum
- *  headers, cache contains some artifact, test requests this artifact from `CachedProxySlice`
- *  with injected `Cache` and client `Slice` instances and verifies that target slice
- *  doesn't invalidate the cache if checksums headers matches and invalidates cache if
- *  checksums doesn't match.
  * @todo #219:30min Change realization of response method.
  *  Now response method reading the content into memory for every request. This is bad
  *  especially if the file is large enough. This realization could be changed when the
  *  issue artipie/asto#286 will be resolved.
+ * @todo #222:30min Return not found on Remote Error
+ *  Let's make proxy return 404 Not Found when remote returned unsuccessful status. Make sure all
+ *  tests pass and enable `returnsNotFoundOnRemoteError` test method in `CachedProxySliceTest`
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class CachedProxySlice implements Slice {
@@ -116,28 +111,14 @@ final class CachedProxySlice implements Slice {
                 .head(req.uri().getPath()).thenCompose(
                     head -> this.cache.load(
                         key,
-                        new Remote.WithErrorHandling(
-                            () -> {
-                                final CompletableFuture<Optional<? extends Content>> promise =
-                                    new CompletableFuture<>();
-                                this.client.response(line, Headers.EMPTY, Content.EMPTY).send(
-                                    (rsstatus, rsheaders, rsbody) -> {
-                                        final CompletableFuture<Void> term =
-                                            new CompletableFuture<>();
-                                        if (rsstatus.success()) {
-                                            final Flowable<ByteBuffer> res =
-                                                Flowable.fromPublisher(rsbody)
-                                                .doOnError(term::completeExceptionally)
-                                                .doOnTerminate(() -> term.complete(null));
-                                            promise.complete(Optional.of(new Content.From(res)));
-                                        } else {
-                                            promise.complete(Optional.empty());
-                                        }
-                                        return term;
-                                    }
-                                );
-                                return promise;
-                            }
+                        () -> CompletableFuture.completedFuture(
+                            Optional.of(
+                                new Content.From(
+                                    new ProxyPublisher(
+                                        this.client.response(line, Headers.EMPTY, body)
+                                    )
+                                )
+                            )
                         ),
                         new CacheControl.All(
                             StreamSupport.stream(
