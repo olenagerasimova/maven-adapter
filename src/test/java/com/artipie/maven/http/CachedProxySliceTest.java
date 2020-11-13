@@ -39,7 +39,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -71,7 +70,6 @@ final class CachedProxySliceTest {
     }
 
     @Test
-    @Disabled
     void returnsNotFoundOnRemoteError() {
         MatcherAssert.assertThat(
             new CachedProxySlice(
