@@ -89,12 +89,12 @@ SOFTWARE.
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>asto</artifactId>
-      <version>0.32</version>
+      <version>0.34</version>
     </dependency>
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>http</artifactId>
-      <version>0.16.8</version>
+      <version>0.17.7</version>
     </dependency>
     <dependency>
       <groupId>com.artipie</groupId>
